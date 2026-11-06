@@ -67,8 +67,9 @@ public class LaunchPadBlock extends MachineBlock<LaunchPadBlockEntity> {
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
-        // buckets go into the tank like on the Vat
-        if (!stack.isEmpty() && level.getBlockEntity(pos) instanceof LaunchPadBlockEntity pad) {
+        // full buckets go into the tank like on the Vat; empty ones are left out, Ender IO's handler would drain the fuel
+        if (!stack.isEmpty() && !net.neoforged.neoforge.transfer.fluid.FluidUtil.getFirstStackContained(stack).isEmpty()
+            && level.getBlockEntity(pos) instanceof LaunchPadBlockEntity pad) {
             if (level.isClientSide()) {
                 return InteractionResult.SUCCESS;
             }

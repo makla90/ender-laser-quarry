@@ -111,7 +111,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
 
     private static final int STRUCTURE_CHECK_INTERVAL = 20;
 
-    private static final int SCAN_LOAD_WAIT = 200;
+    private static final int SCAN_LOAD_WAIT = 1200;
     private static final int KNOWN_PER_STEP = 32;
 
     // Small radar on top of the controller

@@ -76,11 +76,11 @@ public class CrystalObeliskRenderer extends LiveRenderer<CrystalObeliskBlockEnti
         model.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(TEXTURE)), LightCoordsUtil.FULL_BRIGHT,
             OverlayTexture.NO_OVERLAY, 0xFF000000 | color);
 
-        // halo: additive without depth write (eyes), otherwise it hides the crystal
+        // halo: additive without depth write, otherwise it hides the crystal
         float halo = 1.35f + 0.15f * charge + 0.4f * shake + 1.2f * flash + 0.05f * Mth.sin(time * 0.2f);
         poseStack.scale(halo, halo, halo);
         float strength = Math.min(1, (40 + 50 * charge + 140 * flash + 30 * heat) / 255f);
-        model.gem.render(poseStack, buffers.getBuffer(RenderTypes.eyes(TEXTURE)), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+        model.gem.render(poseStack, buffers.getBuffer(ModRenderTypes.glow(TEXTURE)), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
             ARGB.color(255, (int) (ARGB.red(color) * strength), (int) (ARGB.green(color) * strength),
                 (int) (ARGB.blue(color) * strength)));
         poseStack.popPose();

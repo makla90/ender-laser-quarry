@@ -1,18 +1,8 @@
 {
-  "parent": "minecraft:block/block",
-  "loader": "neoforge:composite",
-  "children": {
-    "port":
-    {
-      "parent": "minecraft:block/cube_bottom_top",
-      "textures": {
-        "top": "ender_laser_quarry:block/enhanced_satellite_dish_plating_top_nsw",
-        "side": "ender_laser_quarry:block/enhanced_satellite_dish_port_side",
-        "bottom": "ender_laser_quarry:block/enhanced_satellite_dish_port_bottom"
-      }
-    },
-    "overlay": { "parent": "enderio:block/io_overlay" }
-  },
-  "item_render_order": ["port", "overlay"],
-  "textures": { "particle": "ender_laser_quarry:block/enhanced_satellite_dish_port_side" }
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "ender_laser_quarry:block/enhanced_satellite_dish_plating_top_nsw",
+    "side": "ender_laser_quarry:block/enhanced_satellite_dish_port_side",
+    "bottom": "ender_laser_quarry:block/enhanced_satellite_dish_port_bottom"
+  }
 }

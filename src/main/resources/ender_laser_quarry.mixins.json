@@ -8,6 +8,9 @@
     "RegionFileStorageMixin",
     "WorldDimensionsMixin"
   ],
+  "client": [
+    "IOConfigOverlayMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

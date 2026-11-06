@@ -105,6 +105,8 @@ neoForge {
         create("gameTestServer") {
             type = "gameTestServer"
             systemProperty("neoforge.enabledGameTestNamespaces", property("mod_id") as String)
+            // gradlew runGameTestServer -Delq.tests=TransferGameTests: only those test classes
+            systemProperty("elq.tests", System.getProperty("elq.tests") ?: "")
         }
         configureEach {
             systemProperty("forge.logging.markers", "REGISTRIES")

@@ -100,8 +100,9 @@ final class AsteroidSkin {
         if (level != null) {
             holder = level.registryAccess().lookupOrThrow(Registries.BIOME).get(ResourceKey.create(Registries.BIOME, id));
         }
-        int water = holder.map(h -> h.value().getWaterColor()).orElse(0x3F76E4);
-        int foliage = holder.map(h -> h.value().getFoliageColor()).orElse(0x59AE30);
+        // ARGB in 26.1: without the mask the colour is negative, which means "no sea"
+        int water = holder.map(h -> h.value().getWaterColor() & 0xFFFFFF).orElse(0x3F76E4);
+        int foliage = holder.map(h -> h.value().getFoliageColor() & 0xFFFFFF).orElse(0x59AE30);
         switch (id.toString()) {
             // their own sand and terracotta already look right
             case "minecraft:desert", "minecraft:badlands", "minecraft:eroded_badlands", "minecraft:wooded_badlands",

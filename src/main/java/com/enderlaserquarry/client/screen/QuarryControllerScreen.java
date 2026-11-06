@@ -488,6 +488,10 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     public void removed() {
         super.removed();
         releaseTexture();
+        if (noDataTexture != null) {
+            minecraft.getTextureManager().release(NO_DATA_TEXTURE);
+            noDataTexture = null;
+        }
         spaceView.release();
     }
 
@@ -1243,40 +1247,84 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         g.text(font, label, x, y, edge, false);
     }
 
+    // The hatch over chunks without data is baked into a texture, per-pixel fills are slow
+    private static final Identifier NO_DATA_TEXTURE = EnderLaserQuarry.rl("dynamic/quarry_minimap_no_data");
+    @Nullable
+    private DynamicTexture noDataTexture;
+    @Nullable
+    private MinimapSnapshot noDataSnapshot;
+    private String noDataView = "";
+
     private void renderScanCoverage(GuiGraphicsExtractor g, int chunks, ChunkPos min) {
         int x0 = leftPos + MAP_X;
         int y0 = topPos + MAP_Y;
+        String view = screenX(0) + "," + screenY(0) + "," + screenX(16) + "," + screenY(16);
+        if (noDataTexture == null || noDataSnapshot != snapshot || !view.equals(noDataView)) {
+            bakeNoData(chunks, min, x0, y0);
+            noDataSnapshot = snapshot;
+            noDataView = view;
+        }
+        g.blit(RenderPipelines.GUI_TEXTURED, NO_DATA_TEXTURE, x0, y0, 0, 0, MAP_SIZE, MAP_SIZE, MAP_SIZE, MAP_SIZE, MAP_SIZE, MAP_SIZE);
+
         float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 200.0);
         for (int cz = 0; cz < chunks; cz++) {
             for (int cx = 0; cx < chunks; cx++) {
+                if (snapshot.scanState(new ChunkPos(min.x() + cx, min.z() + cz)) != MinimapSnapshot.SCANNING) {
+                    continue;
+                }
                 int left = screenX(cx * 16);
                 int top = screenY(cz * 16);
                 int right = screenX((cx + 1) * 16);
                 int bottom = screenY((cz + 1) * 16);
-                // skip chunks outside the view
                 if (right <= x0 || bottom <= y0 || left >= x0 + MAP_SIZE || top >= y0 + MAP_SIZE) {
                     continue;
                 }
-                byte state = snapshot.scanState(new ChunkPos(min.x() + cx, min.z() + cz));
-                if (state == MinimapSnapshot.SCANNED) {
+                int alpha = (int) (0x40 + 0x60 * pulse) << 24;
+                g.fill(left, top, right, bottom, alpha | (SCANNING_FILL & 0xFFFFFF));
+                g.outline(left, top, right - left, bottom - top, SCANNING_EDGE);
+            }
+        }
+    }
+
+    // one map-sized picture (1 texel = 1 GUI pixel) of the dark fill + diagonal lines over every chunk without data
+    private void bakeNoData(int chunks, ChunkPos min, int x0, int y0) {
+        if (noDataTexture == null) {
+            noDataTexture = new DynamicTexture("ender_laser_quarry_minimap_no_data", MAP_SIZE, MAP_SIZE, true);
+            minecraft.getTextureManager().register(NO_DATA_TEXTURE, noDataTexture);
+        }
+        NativeImage pixels = noDataTexture.getPixels();
+        pixels.fillRect(0, 0, MAP_SIZE, MAP_SIZE, 0);
+        int line = over(NO_DATA_LINE, NO_DATA);
+        for (int cz = 0; cz < chunks; cz++) {
+            for (int cx = 0; cx < chunks; cx++) {
+                if (snapshot.scanState(new ChunkPos(min.x() + cx, min.z() + cz)) == MinimapSnapshot.SCANNED) {
                     continue;
                 }
-
-                g.fill(left, top, right, bottom, NO_DATA);
-                for (int d = 2; d < (right - left) + (bottom - top); d += 4) {
-                    int sx = left + Math.max(0, d - (bottom - top));
-                    int sy = top + Math.min(d, bottom - top);
-                    for (; sx < right && sy > top; sx++, sy--) {
-                        g.fill(sx, sy - 1, sx + 1, sy, NO_DATA_LINE);
+                int left = screenX(cx * 16);
+                int top = screenY(cz * 16);
+                int right = Math.min(screenX((cx + 1) * 16), x0 + MAP_SIZE);
+                int bottom = Math.min(screenY((cz + 1) * 16), y0 + MAP_SIZE);
+                for (int y = Math.max(top, y0); y < bottom; y++) {
+                    for (int x = Math.max(left, x0); x < right; x++) {
+                        // a diagonal line every 4 px: x + y = 2 (mod 4) from the chunk's corner
+                        boolean onLine = ((x - left) + (y - top) + 1) % 4 == 2;
+                        pixels.setPixel(x - x0, y - y0, onLine ? line : NO_DATA);
                     }
-                }
-                if (state == MinimapSnapshot.SCANNING) {
-                    int alpha = (int) (0x40 + 0x60 * pulse) << 24;
-                    g.fill(left, top, right, bottom, alpha | (SCANNING_FILL & 0xFFFFFF));
-                    g.outline(left, top, right - left, bottom - top, SCANNING_EDGE);
                 }
             }
         }
+        noDataTexture.upload();
+    }
+
+    // ARGB "a over b"
+    private static int over(int a, int b) {
+        float aa = (a >>> 24) / 255f;
+        float ba = (b >>> 24) / 255f;
+        float out = aa + ba * (1 - aa);
+        int r = Math.round((((a >> 16) & 255) * aa + ((b >> 16) & 255) * ba * (1 - aa)) / out);
+        int gr = Math.round((((a >> 8) & 255) * aa + ((b >> 8) & 255) * ba * (1 - aa)) / out);
+        int bl = Math.round(((a & 255) * aa + (b & 255) * ba * (1 - aa)) / out);
+        return Math.round(out * 255) << 24 | r << 16 | gr << 8 | bl;
     }
 
     private void marker(GuiGraphicsExtractor g, BlockPos pos, int color) {
