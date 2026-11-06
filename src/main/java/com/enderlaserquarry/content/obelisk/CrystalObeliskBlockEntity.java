@@ -99,6 +99,8 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private int wearBlocks;
     // runtime, for tests: all blocks counted
     private long wornBlocksTotal;
+    // wear marks the obelisk dirty once per tick, not once per block
+    private long wearDirtyTick = Long.MIN_VALUE / 2;
     private int debugBlocksPerPoint;
     private boolean hasCrystal;
     private boolean voidCrystal;
@@ -190,7 +192,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         wearBlocks += blocks * multiplier;
         int points = wearBlocks / perPoint;
         if (points <= 0) {
-            setChanged();
+            markWearDirty();
             return;
         }
         wearBlocks -= points * perPoint;
@@ -206,7 +208,15 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
                 level.playSound(null, worldPosition, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 1, 0.8f);
             }
         }
-        setChanged();
+        markWearDirty();
+    }
+
+    private void markWearDirty() {
+        long now = level.getGameTime();
+        if (now != wearDirtyTick) {
+            wearDirtyTick = now;
+            setChanged();
+        }
     }
 
     // Mending (or any repair-with-XP enchantment) takes liquid XP from the controller's tank, vanilla rate

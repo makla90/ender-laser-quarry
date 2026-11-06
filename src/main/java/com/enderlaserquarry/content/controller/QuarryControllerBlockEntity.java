@@ -615,6 +615,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         return queue.chunks();
     }
 
+    // the queue as the menu syncs it
+    public String getTargetChunksEncoded() {
+        return queue.encoded();
+    }
+
     public int getChunkIndex() {
         return queue.index();
     }

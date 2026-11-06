@@ -169,6 +169,10 @@ public final class BiomeSampling {
         if (!checked) {
             checkFingerprint(server);
         }
+        // nothing to do: look for refinement work once a second only
+        if (URGENT.isEmpty() && JOBS.isEmpty() && server.getTickCount() % 20 != 0) {
+            return;
+        }
         if (ChunkSampler.limitsFromConfig) {
             ChunkSampler.maxHeldChunks = QuarryConfig.SAMPLING_MAX_HELD.get();
             ChunkSampler.countBudgetNanos = QuarryConfig.SAMPLING_TICK_BUDGET.get() * 1000L;

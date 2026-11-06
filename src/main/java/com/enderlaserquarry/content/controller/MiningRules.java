@@ -25,6 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * What the laser may mine and what it costs.
  */
 public final class MiningRules {
+    // values() copies the array every call
+    private static final Direction[] DIRECTIONS = Direction.values();
+
     // UPDATE_CLIENTS alone still sends shape updates and water floods the hole
     public static final int SILENT = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
@@ -67,7 +70,7 @@ public final class MiningRules {
 
     public static boolean holdsBackLiquid(ServerLevel level, BlockPos pos) {
         var neighbour = new BlockPos.MutableBlockPos();
-        for (Direction direction : Direction.values()) {
+        for (Direction direction : DIRECTIONS) {
             // doesn't flow up
             if (direction != Direction.DOWN && hasLiquid(level.getBlockState(neighbour.setWithOffset(pos, direction)))) {
                 return true;

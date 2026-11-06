@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -157,7 +158,11 @@ public class SatelliteDishRenderer implements BlockEntityRenderer<SatelliteDishB
     }
 
     @Override
-    public AABB getRenderBoundingBox(SatelliteDishBlockEntity blockEntity) {
-        return AABB.INFINITE;
+    public AABB getRenderBoundingBox(SatelliteDishBlockEntity dish) {
+        // the 3x3 frame and the dish on it, plus the beam to the crystal: dishes out of view are skipped
+        BlockPos pos = dish.getBlockPos();
+        AABB box = new AABB(pos.getX() - 1.5, pos.getY(), pos.getZ() - 1.5, pos.getX() + 2.5, pos.getY() + 4, pos.getZ() + 2.5);
+        BlockPos obelisk = dish.getObeliskPos();
+        return obelisk == null ? box : box.minmax(new AABB(obelisk).inflate(1, 2, 1));
     }
 }

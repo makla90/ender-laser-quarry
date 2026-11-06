@@ -82,7 +82,7 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         blocksMined = addSyncSlot(IntSyncSlot.readOnly(be::getBlocksMined));
         cursorY = addSyncSlot(IntSyncSlot.readOnly(be::getCursorY));
         walling = addSyncSlot(IntSyncSlot.readOnly(() -> be.isBuildingWall() ? 1 : 0));
-        queue = addSyncSlot(StringSyncSlot.readOnly(() -> encodeQueue(be.getTargetChunks())));
+        queue = addSyncSlot(StringSyncSlot.readOnly(be::getTargetChunksEncoded));
         chunkIndex = addSyncSlot(IntSyncSlot.readOnly(be::getChunkIndex));
         maxChunks = addSyncSlot(IntSyncSlot.readOnly(() -> be.getTier().maxChunks()));
         blocksPerTick = addSyncSlot(IntSyncSlot.readOnly(() -> {
@@ -360,17 +360,6 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
                 builder.append(';');
             }
             builder.append(id);
-        }
-        return builder.toString();
-    }
-
-    private static String encodeQueue(List<ChunkPos> chunks) {
-        var builder = new StringBuilder();
-        for (ChunkPos chunk : chunks) {
-            if (!builder.isEmpty()) {
-                builder.append(';');
-            }
-            builder.append(chunk.x).append(',').append(chunk.z);
         }
         return builder.toString();
     }
