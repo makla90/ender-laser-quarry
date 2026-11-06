@@ -18,12 +18,16 @@ import org.jspecify.annotations.Nullable;
 /** Draws the quads of a baked block model part into a vertex consumer, all with one light value. */
 public final class ModelQuads {
     private static final Direction[] SIDES = Direction.values();
+    // reused every frame (render thread only)
+    private static final QuadInstance INSTANCE = new QuadInstance();
+    private static final List<BlockStateModelPart> PARTS = new ArrayList<>();
+    private static final RandomSource RANDOM = RandomSource.create(42);
 
     public static void render(@Nullable BlockStateModelPart part, PoseStack.Pose pose, VertexConsumer buffer, int light, int overlay) {
         if (part == null) {
             return;
         }
-        QuadInstance instance = new QuadInstance();
+        QuadInstance instance = INSTANCE;
         instance.setColor(-1);
         instance.setLightCoords(light);
         instance.setOverlayCoords(overlay);
@@ -35,10 +39,11 @@ public final class ModelQuads {
 
     // a block's own model, like a placed block (fixed random)
     public static void renderBlock(BlockState state, PoseStack.Pose pose, MultiBufferSource buffers, int light, int overlay) {
-        List<BlockStateModelPart> parts = new ArrayList<>();
-        Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(state).collectParts(RandomSource.create(42), parts);
+        PARTS.clear();
+        RANDOM.setSeed(42);
+        Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(state).collectParts(RANDOM, PARTS);
         VertexConsumer buffer = buffers.getBuffer(Sheets.cutoutBlockSheet());
-        for (BlockStateModelPart part : parts) {
+        for (BlockStateModelPart part : PARTS) {
             render(part, pose, buffer, light, overlay);
         }
     }

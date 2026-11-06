@@ -632,6 +632,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         return queue.chunks();
     }
 
+    // the queue as the menu syncs it
+    public String getTargetChunksEncoded() {
+        return queue.encoded();
+    }
+
     public int getChunkIndex() {
         return queue.index();
     }
@@ -1140,7 +1145,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
 
         int speed = Math.max(1, obelisk.getBlocksPerTick());
-        if (fireLaser(serverLevel, chunk, obelisk, pad, speed) > 0) {
+        if (withOutputBuffer(() -> fireLaser(serverLevel, chunk, obelisk, pad, speed)) > 0) {
             setChanged();
         }
     }
@@ -1468,7 +1473,22 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     private boolean storeDrops(List<ItemStack> drops) {
         drops = QuarryOutput.applyVoidFilter(drops, getInventory().getStack(FILTER));
-        return QuarryOutput.insertAll(getInventory(), OUTPUT, drops);
+        return tickOutput != null ? tickOutput.add(drops) : QuarryOutput.insertAll(getInventory(), OUTPUT, drops);
+    }
+
+    // While the laser fires, drops collect in a buffer that is written to the output slots once at the end
+    @Nullable
+    private QuarryOutput.Buffer tickOutput;
+
+    private int withOutputBuffer(java.util.function.IntSupplier laser) {
+        tickOutput = new QuarryOutput.Buffer(getInventory(), OUTPUT);
+        try {
+            return laser.getAsInt();
+        } finally {
+            QuarryOutput.Buffer buffer = tickOutput;
+            tickOutput = null;
+            buffer.flush();
+        }
     }
 
     private void finish() {
@@ -1739,7 +1759,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
 
         int speed = Math.max(1, obelisk.getBlocksPerTick());
-        if (fireVoidLaser(serverLevel, obelisk, pad, field, speed) > 0) {
+        if (withOutputBuffer(() -> fireVoidLaser(serverLevel, obelisk, pad, field, speed)) > 0) {
             setChanged();
         }
     }

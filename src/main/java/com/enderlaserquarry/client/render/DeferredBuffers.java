@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,21 +18,41 @@ import java.util.Map;
 public final class DeferredBuffers implements MultiBufferSource {
     private final Map<RenderType, Recorder> recorders = new LinkedHashMap<>();
 
+    // Recorders go back here once replayed (vanilla draws each submit once), so their arrays live on between frames.
+    // Render thread only.
+    private static final ArrayDeque<Recorder> POOL = new ArrayDeque<>();
+    private static final int POOL_LIMIT = 64;
+    private static final PoseStack IDENTITY = new PoseStack();
+
     @Override
     public VertexConsumer getBuffer(RenderType renderType) {
-        return recorders.computeIfAbsent(renderType, type -> new Recorder());
+        return recorders.computeIfAbsent(renderType, type -> {
+            Recorder pooled = POOL.poll();
+            return pooled != null ? pooled : new Recorder();
+        });
     }
 
     // the recorded positions are final, so they're replayed with an identity pose
     public void submit(SubmitNodeCollector collector) {
-        PoseStack identity = new PoseStack();
         for (var entry : recorders.entrySet()) {
             Recorder recorder = entry.getValue();
             if (recorder.vertices > 0) {
-                collector.submitCustomGeometry(identity, entry.getKey(), (pose, buffer) -> recorder.replay(buffer));
+                collector.submitCustomGeometry(IDENTITY, entry.getKey(), (pose, buffer) -> {
+                    recorder.replay(buffer);
+                    release(recorder);
+                });
+            } else {
+                release(recorder);
             }
         }
         recorders.clear();
+    }
+
+    private static void release(Recorder recorder) {
+        recorder.vertices = 0;
+        if (POOL.size() < POOL_LIMIT) {
+            POOL.push(recorder);
+        }
     }
 
     // one vertex = 14 ints: x y z, color, u v, uv1 (2), uv2 (2), normal (3) and a mask of what was set

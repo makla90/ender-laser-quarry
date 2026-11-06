@@ -113,6 +113,10 @@ neoForge {
             logLevel = org.slf4j.event.Level.DEBUG
             // Dev runs load the tests and dev tools too (see the gametest source set)
             sourceSet = gametest
+            // gradlew runX -Delq.jfr=C:/path/rec.jfr [-Delq.jfc=C:/path/settings.jfc]: Java Flight Recorder profile of that run
+            System.getProperty("elq.jfr")?.let {
+                jvmArgument("-XX:StartFlightRecording=filename=$it,settings=${System.getProperty("elq.jfc") ?: "profile"}")
+            }
         }
     }
 

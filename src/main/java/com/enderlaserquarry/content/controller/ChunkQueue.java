@@ -25,9 +25,26 @@ public final class ChunkQueue {
     // same chunks, for fast lookups (big queues ask per mined block)
     private final LongOpenHashSet lookup = new LongOpenHashSet();
     private int index;
+    // "x,z;x,z" for the menu, rebuilt only after a change (the menu asks every tick)
+    @Nullable
+    private String encoded;
 
     public List<ChunkPos> chunks() {
         return List.copyOf(chunks);
+    }
+
+    public String encoded() {
+        if (encoded == null) {
+            var builder = new StringBuilder();
+            for (ChunkPos chunk : chunks) {
+                if (!builder.isEmpty()) {
+                    builder.append(';');
+                }
+                builder.append(chunk.x()).append(',').append(chunk.z());
+            }
+            encoded = builder.toString();
+        }
+        return encoded;
     }
 
     public ChunkPos get(int i) {
@@ -66,6 +83,7 @@ public final class ChunkQueue {
     public void add(ChunkPos chunk) {
         if (lookup.add(chunk.pack())) {
             chunks.add(chunk);
+            encoded = null;
         }
     }
 
@@ -76,6 +94,7 @@ public final class ChunkQueue {
         }
         chunks.remove(i);
         lookup.remove(chunk.pack());
+        encoded = null;
         if (i < index) {
             index--;
         }
@@ -85,6 +104,7 @@ public final class ChunkQueue {
     public void clear() {
         chunks.clear();
         lookup.clear();
+        encoded = null;
         index = 0;
     }
 
@@ -104,6 +124,7 @@ public final class ChunkQueue {
     public void load(ValueInput tag) {
         chunks.clear();
         lookup.clear();
+        encoded = null;
         var saved = tag.read(TARGET_CHUNKS, Codec.LONG_STREAM);
         if (saved.isPresent()) {
             saved.get().forEach(chunk -> add(ChunkPos.unpack(chunk)));

@@ -1147,28 +1147,48 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     // marching ants: dash of `dash` px, moving with offset
-    private static void dashedRect(GuiGraphicsExtractor g, int[] r, int color, float offset, int dash) {
+    // marching ants; one fill per dash, only the part inside the map
+    private void dashedRect(GuiGraphicsExtractor g, int[] r, int color, float offset, int dash) {
         int left = r[0];
         int top = r[1];
         int right = r[2] - 1;
         int bottom = r[3] - 1;
         int period = dash * 2;
         int o = Math.floorMod((int) offset, period);
-        for (int x = left; x <= right; x++) {
-            if (Math.floorMod(x - left + o, period) < dash) {
-                g.fill(x, top, x + 1, top + 1, color);
-            }
-            if (Math.floorMod(right - x + o, period) < dash) {
-                g.fill(x, bottom, x + 1, bottom + 1, color);
+        int minX = leftPos + MAP_X;
+        int minY = topPos + MAP_Y;
+        int maxX = minX + MAP_SIZE - 1;
+        int maxY = minY + MAP_SIZE - 1;
+        // top and right run forwards, bottom and left backwards, so the dashes travel around the rectangle
+        dashes(left, right, minX, maxX, x -> Math.floorMod(x - left + o, period) < dash, (a, b) -> g.fill(a, top, b + 1, top + 1, color),
+            top >= minY && top <= maxY);
+        dashes(left, right, minX, maxX, x -> Math.floorMod(right - x + o, period) < dash,
+            (a, b) -> g.fill(a, bottom, b + 1, bottom + 1, color), bottom >= minY && bottom <= maxY);
+        dashes(top, bottom, minY, maxY, y -> Math.floorMod(bottom - y + o, period) < dash,
+            (a, b) -> g.fill(left, a, left + 1, b + 1, color), left >= minX && left <= maxX);
+        dashes(top, bottom, minY, maxY, y -> Math.floorMod(y - top + o, period) < dash,
+            (a, b) -> g.fill(right, a, right + 1, b + 1, color), right >= minX && right <= maxX);
+    }
+
+    // runs of "on" positions between from and to, clipped to clipFrom .. clipTo, each drawn once
+    private static void dashes(int from, int to, int clipFrom, int clipTo, java.util.function.IntPredicate on,
+                               java.util.function.BiConsumer<Integer, Integer> draw, boolean visible) {
+        if (!visible) {
+            return;
+        }
+        int start = Integer.MIN_VALUE;
+        int end = Math.min(to, clipTo);
+        for (int i = Math.max(from, clipFrom); i <= end; i++) {
+            boolean lit = on.test(i);
+            if (lit && start == Integer.MIN_VALUE) {
+                start = i;
+            } else if (!lit && start != Integer.MIN_VALUE) {
+                draw.accept(start, i - 1);
+                start = Integer.MIN_VALUE;
             }
         }
-        for (int y = top; y <= bottom; y++) {
-            if (Math.floorMod(bottom - y + o, period) < dash) {
-                g.fill(left, y, left + 1, y + 1, color);
-            }
-            if (Math.floorMod(y - top + o, period) < dash) {
-                g.fill(right, y, right + 1, y + 1, color);
-            }
+        if (start != Integer.MIN_VALUE) {
+            draw.accept(start, end);
         }
     }
 

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -177,9 +178,22 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
 
     // endregion
 
+    // Conduits ask for every slot, so the multiblock search runs once per tick at most
+    @Nullable
+    private PortedMultiblock cachedCore;
+    private long coreTick = Long.MIN_VALUE;
+
     @Nullable
     private PortedMultiblock core() {
-        return level != null && MultiblockFrames.findCore(level, worldPosition) instanceof PortedMultiblock core ? core : null;
+        if (level == null) {
+            return null;
+        }
+        long now = level.getGameTime();
+        if (now != coreTick || (cachedCore instanceof BlockEntity be && be.isRemoved())) {
+            cachedCore = MultiblockFrames.findCore(level, worldPosition) instanceof PortedMultiblock core ? core : null;
+            coreTick = now;
+        }
+        return cachedCore;
     }
 
     // Per tick allowance that refills with the core's rate, rolled back with its transaction

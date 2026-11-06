@@ -17,6 +17,9 @@ import org.jetbrains.annotations.Nullable;
  * in, and handles liquid found later while mining.
  */
 public final class LiquidWall {
+    // values() copies the array every call
+    private static final Direction[] DIRECTIONS = Direction.values();
+
     public static final Block WALL_BLOCK = Blocks.DEEPSLATE_TILES;
     // 18 + 18 + 16 + 16
     public static final int COLUMNS = 68;
@@ -78,7 +81,7 @@ public final class LiquidWall {
             return false;
         }
         var neighbour = new BlockPos.MutableBlockPos();
-        for (Direction direction : Direction.values()) {
+        for (Direction direction : DIRECTIONS) {
             if (direction == Direction.DOWN) {
                 // doesn't flow up
                 continue;
@@ -127,7 +130,7 @@ public final class LiquidWall {
     public static int drainNeighbours(ServerLevel level, ChunkQueue queue, ChunkPos mining, BlockPos pos, int floor, Placer placer) {
         int drained = 0;
         var neighbour = new BlockPos.MutableBlockPos();
-        for (Direction direction : Direction.values()) {
+        for (Direction direction : DIRECTIONS) {
             neighbour.setWithOffset(pos, direction);
             if (direction == Direction.UP || !isInChunk(neighbour, mining) || neighbour.getY() < floor) {
                 continue;
