@@ -1,0 +1,116 @@
+package com.enderlaserquarry.client.screen;
+
+import com.enderio.enderio.foundation.state.MachineState;
+import com.enderlaserquarry.content.obelisk.CrystalObeliskMenu;
+import com.enderlaserquarry.content.obelisk.LaserCrystalItem;
+import com.enderlaserquarry.init.ModItems;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/** Crystal slot in the middle, the obelisk's status under it. */
+public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObeliskMenu> {
+    private static final int TEXT_COLOR = 0x404040;
+    /** Slot face colour, mostly opaque: the crystal shows faintly in the empty slot. */
+    private static final int GHOST_COVER = 0xB08B8B8B;
+    private static final int STATUS_Y = 44;
+    /** Enchantment names, like their tooltip purple, darkened for the light panel. */
+    private static final int ENCHANT_COLOR = 0x7A2FBF;
+
+    private final ItemStack ghost = new ItemStack(ModItems.LASER_CRYSTAL.get());
+
+    public CrystalObeliskScreen(CrystalObeliskMenu menu, Inventory playerInventory, Component title) {
+        super(menu, playerInventory, title);
+        imageWidth = 176;
+        imageHeight = 166;
+        // no "Inventory" label: the status lines use that room
+        inventoryLabelY = -10_000;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        titleLabelX = (imageWidth - font.width(title)) / 2;
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
+        int x = leftPos + CrystalObeliskMenu.CRYSTAL_X;
+        int y = topPos + CrystalObeliskMenu.CRYSTAL_Y;
+        GuiPanels.slot(g, x, y);
+        if (!menu.getSlot(0).hasItem()) {
+            g.renderFakeItem(ghost, x, y);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 200);
+            g.fill(x, y, x + 16, y + 16, GHOST_COVER);
+            g.pose().popPose();
+        }
+        GuiPanels.playerInventory(g, leftPos + CrystalObeliskMenu.PLAYER_INV_X, topPos + CrystalObeliskMenu.PLAYER_INV_Y);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        super.renderLabels(g, mouseX, mouseY);
+        MachineState problem = menu.getProblem();
+        Component state = problem != null
+            ? problem.component().copy().withStyle(ChatFormatting.DARK_RED)
+            : Component.translatable("message.ender_laser_quarry.obelisk.ready").withStyle(ChatFormatting.DARK_GREEN);
+        List<Component> lines = new ArrayList<>(List.of(
+            Component.translatable("gui.ender_laser_quarry.obelisk.status", state),
+            Component.translatable("gui.ender_laser_quarry.obelisk.dishes", menu.getActiveDishes(), menu.getDishes()),
+            Component.translatable("gui.ender_laser_quarry.obelisk.satellite", Component.translatable(menu.isLinked()
+                ? "message.ender_laser_quarry.obelisk.linked"
+                : "message.ender_laser_quarry.obelisk.unlinked"))));
+        ItemStack crystal = menu.getSlot(0).getItem();
+        // broken: the status line says it
+        if (crystal.isDamageableItem() && !LaserCrystalItem.isBroken(crystal)) {
+            int left = crystal.getMaxDamage() - crystal.getDamageValue();
+            ChatFormatting color = LaserCrystalItem.isWorn(crystal) ? ChatFormatting.GOLD : ChatFormatting.DARK_GRAY;
+            lines.add(Component.translatable("gui.ender_laser_quarry.obelisk.durability", left, crystal.getMaxDamage()).withStyle(color));
+        }
+        var enchantments = menu.getSlot(0).getItem().getEnchantments();
+        boolean showCost = !enchantments.isEmpty() && menu.getCostMultiplier() > 1;
+        // up to 4 lines (Fortune / Silk Touch, Unbreaking, Mending, cost): never down into the status lines
+        int enchantY = Math.max(6, CrystalObeliskMenu.CRYSTAL_Y + (18 - 9 * (enchantments.size() + (showCost ? 1 : 0))) / 2);
+        int enchantWidth = imageWidth - CrystalObeliskMenu.CRYSTAL_X - 26;
+        for (var entry : enchantments.entrySet()) {
+            Component name = Enchantment.getFullname(entry.getKey(), entry.getIntValue());
+            g.drawString(font, font.plainSubstrByWidth(name.getString(), enchantWidth),
+                CrystalObeliskMenu.CRYSTAL_X + 22, enchantY, ENCHANT_COLOR, false);
+            enchantY += 9;
+        }
+        if (showCost) {
+            Component cost = Component.translatable("gui.ender_laser_quarry.obelisk.enchant_cost",
+                LaserCrystalItem.formatMultiplier(menu.getCostMultiplier()));
+            g.drawString(font, font.plainSubstrByWidth(cost.getString(), enchantWidth),
+                CrystalObeliskMenu.CRYSTAL_X + 22, enchantY, TEXT_COLOR, false);
+        }
+
+        int y = STATUS_Y;
+        for (Component line : lines) {
+            // wrap long problems
+            for (var part : font.split(line, imageWidth - 16)) {
+                g.drawString(font, part, 8, y, TEXT_COLOR, false);
+                y += 9;
+            }
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
+        if (hoveredSlot == menu.getSlot(0) && !hoveredSlot.hasItem() && menu.getCarried().isEmpty()) {
+            g.renderComponentTooltip(font, List.of(Component.translatable("gui.ender_laser_quarry.obelisk.crystal_hint")), mouseX, mouseY);
+        } else {
+            renderTooltip(g, mouseX, mouseY);
+        }
+    }
+}

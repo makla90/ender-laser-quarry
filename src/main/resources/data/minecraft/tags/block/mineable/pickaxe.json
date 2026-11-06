@@ -1,0 +1,19 @@
+{
+  "values": [
+    "ender_laser_quarry:satellite_dish",
+    "ender_laser_quarry:enhanced_satellite_dish",
+    "ender_laser_quarry:ender_satellite_dish",
+    "ender_laser_quarry:quarry_controller",
+    "ender_laser_quarry:enhanced_quarry_controller",
+    "ender_laser_quarry:ender_quarry_controller",
+    "ender_laser_quarry:launch_pad_controller",
+    "ender_laser_quarry:launch_pad_plating",
+    "ender_laser_quarry:ground_radar",
+    "ender_laser_quarry:crystal_obelisk",
+    "#ender_laser_quarry:laser_quarry_frame",
+    "#ender_laser_quarry:satellite_dish_frame",
+    "ender_laser_quarry:launch_pad_port",
+    "ender_laser_quarry:quarry_structure",
+    "ender_laser_quarry:trash_can"
+  ]
+}

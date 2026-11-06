@@ -1,0 +1,13 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "pattern": ["ERE", "PBP", "ECE"],
+  "key": {
+    "E": { "tag": "c:ingots/end_steel" },
+    "R": { "item": "enderio:ender_resonator" },
+    "P": { "item": "enderio:vibrant_photovoltaic_module" },
+    "B": { "item": "ender_laser_quarry:enhanced_satellite" },
+    "C": { "tag": "c:gems/prescient_crystal" }
+  },
+  "result": { "id": "ender_laser_quarry:ender_satellite", "count": 1 }
+}

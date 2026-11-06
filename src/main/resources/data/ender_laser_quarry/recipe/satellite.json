@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["DTD", "PMP", "DCD"],
+  "key": {
+    "D": { "tag": "c:ingots/dark_steel" },
+    "T": { "item": "ender_laser_quarry:signal_transceiver" },
+    "P": { "item": "enderio:energetic_photovoltaic_module" },
+    "M": { "item": "ender_laser_quarry:reflector_mirror" },
+    "C": { "item": "enderio:basic_capacitor" }
+  },
+  "result": { "id": "ender_laser_quarry:satellite", "count": 1 }
+}

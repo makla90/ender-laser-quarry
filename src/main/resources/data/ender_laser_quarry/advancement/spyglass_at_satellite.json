@@ -1,0 +1,23 @@
+{
+  "parent": "minecraft:adventure/spyglass_at_parrot",
+  "display": {
+    "icon": {
+      "id": "ender_laser_quarry:satellite"
+    },
+    "title": {
+      "translate": "advancements.ender_laser_quarry.spyglass_at_satellite.title"
+    },
+    "description": {
+      "translate": "advancements.ender_laser_quarry.spyglass_at_satellite.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "spyglass_at_satellite": {
+      "trigger": "ender_laser_quarry:spyglass_at_satellite"
+    }
+  }
+}

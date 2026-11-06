@@ -1,0 +1,6 @@
+# Text files are stored with LF in the repo; gradlew must stay LF (Linux/macOS/CI), the .bat CRLF
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.nbt binary
+*.jar binary

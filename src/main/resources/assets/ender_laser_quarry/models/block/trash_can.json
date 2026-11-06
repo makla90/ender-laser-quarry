@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "ender_laser_quarry:block/trash_can_side",
+    "top": "ender_laser_quarry:block/trash_can_top",
+    "bottom": "ender_laser_quarry:block/trash_can_bottom"
+  }
+}

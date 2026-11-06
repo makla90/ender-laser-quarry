@@ -1,0 +1,6 @@
+{
+  "parent": "ender_laser_quarry:block/quarry_controller_mast_template",
+  "textures": {
+    "antenna": "ender_laser_quarry:block/ender_quarry_controller_antenna"
+  }
+}

@@ -1,0 +1,1702 @@
+package com.enderlaserquarry.content.launchpad;
+
+import com.enderio.enderio.foundation.MachineNBTKeys;
+import com.enderio.enderio.foundation.attachment.FluidTankUser;
+import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
+import com.enderio.enderio.foundation.block.entity.MultiConfigurable;
+import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
+import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
+import com.enderio.enderio.api.io.IOMode;
+import com.enderio.enderio.foundation.io.IOConfig;
+import com.enderio.enderio.foundation.io.fluid.FluidItemInteractive;
+import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
+import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
+import com.enderio.enderio.foundation.io.fluid.MachineTankLayout;
+import com.enderio.enderio.foundation.io.fluid.TankAccess;
+import com.enderio.enderio.foundation.state.MachineState;
+import com.enderio.enderio.init.EIODataComponents;
+import com.enderlaserquarry.EnderLaserQuarry;
+import com.enderlaserquarry.config.QuarryConfig;
+import com.enderlaserquarry.content.QuarryStates;
+import com.enderlaserquarry.content.QuarryTier;
+import com.enderlaserquarry.content.asteroid.AsteroidField;
+import com.enderlaserquarry.content.controller.QuarryControllerBlockEntity;
+import com.enderlaserquarry.content.controller.MinimapSnapshot;
+import com.enderlaserquarry.content.launchpad.FlightPhase.Mission;
+import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
+import com.enderlaserquarry.content.port.StructurePortBlockEntity;
+import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
+import com.enderlaserquarry.content.satellite.RocketItem;
+import com.enderlaserquarry.content.satellite.SatelliteItem;
+import com.enderlaserquarry.init.ModTriggers;
+import com.enderlaserquarry.network.RemoteSatellitePayload;
+import net.neoforged.neoforge.network.PacketDistributor;
+import com.enderlaserquarry.init.ModBlockEntities;
+import com.enderlaserquarry.init.ModBlocks;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.Containers;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import com.enderlaserquarry.content.port.PortedMultiblock;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Launch pad controller. Sits on the ring of the 5x5 pad, launches and recovers the satellite and runs the uplink.
+ * No entities for the flight: phase and start tick are synced and the client works out all positions from them.
+ */
+public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTankUser, FluidItemInteractive, MultiConfigurable, PortedMultiblock {
+    public static final SingleSlotAccess ROCKET = new SingleSlotAccess();
+    public static final SingleSlotAccess SATELLITE = new SingleSlotAccess();
+    public static final TankAccess FUEL = new TankAccess();
+
+    public static final TagKey<Block> FRAME_BLOCKS = TagKey.create(Registries.BLOCK, EnderLaserQuarry.rl("launch_pad_frame"));
+    public static final int RADIUS = 2;
+    public static final TagKey<Fluid> ROCKET_FUEL = TagKey.create(Registries.FLUID, EnderLaserQuarry.rl("rocket_fuel"));
+
+    // Flight geometry, relative to the pad center
+    public static final Vec3 LAUNCH_POINT = new Vec3(0.5, 1.0, 0.5);
+    public static final float ROCKET_SCALE = 1.25f;
+    // fairing center above the nozzle (67px in the model)
+    public static final double PAYLOAD_DOCK_HEIGHT = 67 / 16.0 * ROCKET_SCALE;
+    public static final double ORBIT_RADIUS = 6;
+    // one lap every 30 s
+    public static final double ORBIT_SPEED = Mth.TWO_PI / 600.0;
+    // drawn bigger in orbit so you can still see it
+    public static final float SATELLITE_DOCKED_SCALE = 0.75f;
+    public static final float SATELLITE_ORBIT_SCALE = 4.0f;
+    public static final double REFLECTOR_MIRROR_DROP = 9 / 16.0 * SATELLITE_ORBIT_SCALE;
+    private static final double HOVER_BELOW_ORBIT = 6;
+
+    private static final int STRUCTURE_CHECK_INTERVAL = 20;
+
+    // brief chunk loads for mapping new ground
+    private static final TicketType<ChunkPos> SCAN_TICKET = TicketType.create(EnderLaserQuarry.MOD_ID + "_scan",
+        Comparator.comparingLong(ChunkPos::toLong), 100);
+    private static final int SCAN_LOAD_WAIT = 200;
+    private static final int KNOWN_PER_STEP = 32;
+
+    // Small radar on top of the controller
+    public static final float MINI_RADAR_SCALE = 0.5f;
+    public static final Vec3 MINI_RADAR_PIVOT = new Vec3(0.5, 1 + 11 / 16.0 * MINI_RADAR_SCALE, 0.5);
+    public static final double MINI_RADAR_HORN = 11 / 16.0 * MINI_RADAR_SCALE;
+    public static final int LINK_FLASH_TICKS = 50;
+    private static final float MINI_RADAR_SWEEP_PITCH = 15;
+
+    private static final String PHASE = "Phase";
+    private static final String MISSION = "Mission";
+    private static final String PHASE_START = "PhaseStart";
+    private static final String FLIGHT_ROCKET = "FlightRocket";
+    private static final String PAYLOAD = "Payload";
+    private static final String ORBITING = "Orbiting";
+    private static final String HAS_PAYLOAD = "HasPayload";
+    private static final String IN_ORBIT = "InOrbit";
+    private static final String ROCKET_ON_PAD = "RocketOnPad";
+    private static final String ALTITUDE = "Altitude";
+    private static final String PLATING_OK = "PlatingOk";
+    private static final String SKY_OK = "SkyOk";
+    private static final String STATION_POS = "StationPos";
+    private static final String UPLINK = "Uplink";
+    private static final String SCAN_INDEX = "ScanIndex";
+    private static final String SCAN_RADIUS = "ScanRadius";
+    private static final String BEAM_TARGET = "BeamTarget";
+    private static final String DRAWN_TIER = "DrawnSatelliteTier";
+    private static final String SCAN_IMAGES = "ScanImages";
+    private static final String ASTEROIDS = "Asteroids";
+    private static final String PAD_CENTER = "PadCenter";
+    private static final String MARKED_CENTER = "MarkedCenter";
+    private static final String LINK_FLASH = "LinkFlash";
+    private static final String ORBIT_DX = "OrbitDx";
+    private static final String ORBIT_DZ = "OrbitDz";
+    private static final String MOVE_FROM_DX = "MoveFromDx";
+    private static final String MOVE_FROM_DZ = "MoveFromDz";
+    private static final String MOVE_START = "MoveStart";
+    private static final String MOVE_TICKS = "MoveTicks";
+    private static final String ARRIVING = "Arriving";
+    private static final String TRANSFER_DX = "TransferDx";
+    private static final String TRANSFER_DZ = "TransferDz";
+    private static final String TRANSFER_RANGE = "TransferRange";
+    private static final String FLIGHT_DX = "FlightDx";
+    private static final String FLIGHT_DZ = "FlightDz";
+    private static final Vec3 UP = new Vec3(0, 1, 0);
+    private static final double MAX_ROCKET_TILT = Math.toRadians(55);
+
+    private final MachineFluidHandler fluidHandler;
+
+    private boolean platingOk;
+    private boolean skyOk;
+
+    private FlightPhase phase = FlightPhase.IDLE;
+    private Mission mission = Mission.DEPLOY;
+    private long phaseStart;
+    private int orbitAltitude = 150;
+    // Server only: rocket in flight, satellite on board, satellite in orbit
+    private ItemStack flightRocket = ItemStack.EMPTY;
+    private ItemStack payload = ItemStack.EMPTY;
+    private ItemStack orbiting = ItemStack.EMPTY;
+    // synced for rendering
+    private boolean hasPayload;
+    private boolean inOrbit;
+    private QuarryTier drawnSatelliteTier = QuarryTier.BASIC;
+    private boolean rocketOnPad;
+
+    // The linked obelisk, its radar keeps the uplink
+    @Nullable
+    private BlockPos stationPos;
+    private UplinkStatus uplink = UplinkStatus.NO_SATELLITE;
+    private int scanIndex;
+    // from the satellite tier, kept after recovery
+    private int scanRadius = QuarryTier.BASIC.defaultChunkRadius();
+    private int scanTicks;
+    private final ScanImageStore scanImages = new ScanImageStore();
+    private final AsteroidField asteroids = new AsteroidField(this::setChanged);
+    private int refreshIndex;
+    // scan step waiting for an unloaded chunk to come in
+    private int scanWaitTicks;
+
+    // Orbit transfer: the centre of the satellite's area in chunks from the pad's chunk, and the move under way
+    private int orbitDx;
+    private int orbitDz;
+    private int moveFromDx;
+    private int moveFromDz;
+    private long moveStart;
+    private int moveTicks;
+    private boolean arriving;
+    // where the running TRANSFER flight sends it
+    private int transferDx;
+    private int transferDz;
+    // synced from the satellite tier (COMMON config isn't synced)
+    private int transferRange;
+    // where this flight's rocket meets the satellite, in chunks from the pad's chunk (the area it was over at launch)
+    private int flightDx;
+    private int flightDz;
+    // not saved: the tickets are checked again on world load
+    private boolean selfLoaded;
+
+    // block being lasered via our satellite
+    @Nullable
+    private BlockPos beamTarget;
+
+    private boolean structureChecked;
+
+    @Nullable
+    private BlockPos padCenter;
+    @Nullable
+    private BlockPos markedCenter;
+
+    // MIN_VALUE / 2 so now - NEVER can't overflow
+    private static final long NEVER = Long.MIN_VALUE / 2;
+    private long linkFlashStart = NEVER;
+    // client side animation
+    private float radarYaw;
+    private float prevRadarYaw;
+    private float radarPitch = MINI_RADAR_SWEEP_PITCH;
+    private float prevRadarPitch = MINI_RADAR_SWEEP_PITCH;
+
+    public LaunchPadBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.LAUNCH_PAD.get(), pos, state, true);
+        fluidHandler = createFluidHandler();
+    }
+
+    // region Inventory & tank
+
+    @Override
+    protected MachineInventoryLayout createInventoryLayout() {
+        // locked during a flight so the returning items always fit
+        return MachineInventoryLayout.builder()
+            .inputSlot((slot, stack) -> stack.getItem() instanceof RocketItem && phase == FlightPhase.IDLE)
+            .slotAccess(ROCKET)
+            .inputSlot((slot, stack) -> stack.getItem() instanceof SatelliteItem && phase == FlightPhase.IDLE)
+            .slotAccess(SATELLITE)
+            .build();
+    }
+
+    @Override
+    protected void onInventoryContentsChanged(int slot) {
+        super.onInventoryContentsChanged(slot);
+        if (level != null && !level.isClientSide() && ROCKET.isSlot(slot)) {
+            boolean onPad = !ROCKET.getItemStack(this).isEmpty();
+            if (onPad != rocketOnPad) {
+                rocketOnPad = onPad;
+                syncToClients();
+            }
+        }
+    }
+
+    @Override
+    public MachineTankLayout getTankLayout() {
+        // Fill only
+        return MachineTankLayout.builder()
+            .tank(FUEL, QuarryConfig.PAD_TANK_CAPACITY.get(), true, false, fluid -> fluid.is(ROCKET_FUEL))
+            .build();
+    }
+
+    @Override
+    public MachineFluidHandler createFluidHandler() {
+        return new MachineFluidHandler(this, getTankLayout()) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                super.onContentsChanged(slot);
+                setChanged();
+            }
+        };
+    }
+
+    @Override
+    public MachineFluidHandler getFluidHandler() {
+        return fluidHandler;
+    }
+
+    public MachineFluidTank getFuelTank() {
+        return FUEL.getTank(this);
+    }
+
+    public int getFuel() {
+        return FUEL.getFluidAmount(this);
+    }
+
+    // endregion
+
+    // region Structure
+
+    public void updateStructure() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+
+        BlockPos oldCenter = padCenter;
+        boolean nowPlating = updatePadCenter();
+        BlockPos center = getPadCenter();
+        // heightmap instead of sky light, light updates lag behind
+        boolean nowSky = level.getHeight(Heightmap.Types.WORLD_SURFACE, center.getX(), center.getZ()) <= center.getY() + 1;
+
+        boolean changed = nowPlating != platingOk || nowSky != skyOk || !Objects.equals(oldCenter, padCenter);
+        platingOk = nowPlating;
+        skyOk = nowSky;
+        markCenter(platingOk ? center : null);
+
+        // items restored from the dropped block don't fire a slot change
+        boolean nowRocketOnPad = phase == FlightPhase.IDLE && !ROCKET.getItemStack(this).isEmpty();
+        if (nowRocketOnPad != rocketOnPad) {
+            rocketOnPad = nowRocketOnPad;
+            changed = true;
+        }
+
+        // common config isn't synced, so send the altitude. Don't move it while something is up there
+        if (phase == FlightPhase.IDLE && orbiting.isEmpty() && orbitAltitude != QuarryConfig.ORBIT_ALTITUDE.get()) {
+            orbitAltitude = QuarryConfig.ORBIT_ALTITUDE.get();
+            changed = true;
+        }
+        changed |= updateScanRadius();
+
+        setState(QuarryStates.PAD_INCOMPLETE, !platingOk);
+        setState(QuarryStates.NO_SKY, !skyOk);
+        setState(MachineState.EMPTY_TANK, phase == FlightPhase.IDLE && getFuel() < QuarryConfig.FUEL_PER_FLIGHT.get());
+
+        if (changed) {
+            setChanged();
+            syncToClients();
+        }
+    }
+
+    // Picks the best matching 5x5 that has us on its ring. Returns true if it's complete.
+    private boolean updatePadCenter() {
+        if (phase != FlightPhase.IDLE && padCenter != null) {
+            return padScore(padCenter) == 25;
+        }
+        List<BlockPos> candidates = new ArrayList<>();
+        if (padCenter != null) {
+            candidates.add(padCenter);
+        }
+        candidates.add(defaultCenter());
+        for (int dx = -RADIUS; dx <= RADIUS; dx++) {
+            for (int dz = -RADIUS; dz <= RADIUS; dz++) {
+                if (Math.max(Math.abs(dx), Math.abs(dz)) == RADIUS) {
+                    candidates.add(worldPosition.offset(-dx, 0, -dz));
+                }
+            }
+        }
+        BlockPos best = null;
+        int bestScore = -1;
+        for (BlockPos candidate : candidates) {
+            int score = padScore(candidate);
+            if (score > bestScore) {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+        padCenter = best.immutable();
+        return bestScore == 25;
+    }
+
+    // 25 = complete
+    private int padScore(BlockPos center) {
+        int score = 0;
+        for (int dx = -RADIUS; dx <= RADIUS; dx++) {
+            for (int dz = -RADIUS; dz <= RADIUS; dz++) {
+                BlockPos pos = center.offset(dx, 0, dz);
+                if (pos.equals(worldPosition)) {
+                    score++;
+                    continue;
+                }
+                BlockState state = level.getBlockState(pos);
+                boolean outer = Math.max(Math.abs(dx), Math.abs(dz)) == RADIUS;
+                if (outer ? state.is(FRAME_BLOCKS) : state.is(ModBlocks.LAUNCH_PAD_PLATING.get())) {
+                    score++;
+                }
+            }
+        }
+        return score;
+    }
+
+    // behind the front, until there's plating
+    private BlockPos defaultCenter() {
+        Direction front = getBlockState().getOptionalValue(BlockStateProperties.HORIZONTAL_FACING).orElse(Direction.NORTH);
+        return worldPosition.relative(front.getOpposite(), RADIUS);
+    }
+
+    // Where the rocket stands, everything flight related is relative to this
+    public BlockPos getPadCenter() {
+        return padCenter != null ? padCenter : worldPosition;
+    }
+
+    // Orange pad texture on the center plating, null to clear
+    public void markCenter(@Nullable BlockPos center) {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        if (!Objects.equals(center, markedCenter)) {
+            setCenterFlag(markedCenter, false);
+            markedCenter = center;
+            setChanged();
+        }
+        // also for the same spot, a replaced plating lost the flag
+        setCenterFlag(center, true);
+    }
+
+    private void setCenterFlag(@Nullable BlockPos pos, boolean center) {
+        if (pos == null) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.hasProperty(LaunchPadPlatingBlock.CENTER) && state.getValue(LaunchPadPlatingBlock.CENTER) != center) {
+            level.setBlock(pos, state.setValue(LaunchPadPlatingBlock.CENTER, center), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        }
+    }
+
+    public boolean isPlatingComplete() {
+        return platingOk;
+    }
+
+    public boolean hasSky() {
+        return skyOk;
+    }
+
+    public boolean isFormed() {
+        return platingOk;
+    }
+
+    // IO config screen edits the ports
+    @Override
+    public List<BlockPos> getConfigurables() {
+        List<BlockPos> ports = findPorts();
+        return ports.isEmpty() ? List.of(worldPosition) : ports;
+    }
+
+    // No IO of its own, only through the ports
+    @Override
+    public IOConfig getDefaultIOConfig() {
+        return IOConfig.of(IOMode.DISABLED);
+    }
+
+    @Override
+    public @Nullable IItemHandler getPortItemHandler() {
+        return MachineBlockEntity.ITEM_HANDLER_PROVIDER.getCapability(this, null);
+    }
+
+    @Override
+    public @Nullable IFluidHandler getPortFluidHandler() {
+        return getFluidHandler();
+    }
+
+    // Read from the world, works client side too
+    @Override
+    public List<BlockPos> findPorts() {
+        List<BlockPos> ports = new ArrayList<>();
+        if (level != null) {
+            BlockPos center = getPadCenter();
+            for (int dx = -RADIUS; dx <= RADIUS; dx++) {
+                for (int dz = -RADIUS; dz <= RADIUS; dz++) {
+                    BlockPos pos = center.offset(dx, 0, dz);
+                    if (level.getBlockEntity(pos) instanceof StructurePortBlockEntity) {
+                        ports.add(pos);
+                    }
+                }
+            }
+        }
+        return ports;
+    }
+
+    // endregion
+
+    // region Ground station
+
+    @Nullable
+    public BlockPos getStationPos() {
+        return stationPos;
+    }
+
+    public void setStation(@Nullable BlockPos pos) {
+        if (pos != null && level != null) {
+            // show the link animation, also when relinking the same one
+            linkFlashStart = level.getGameTime();
+        } else if (Objects.equals(stationPos, pos)) {
+            return;
+        }
+        stationPos = pos == null ? null : pos.immutable();
+        setChanged();
+        syncToClients();
+    }
+
+    // Only if it links back to us
+    @Nullable
+    public QuarryControllerBlockEntity getStation() {
+        if (level == null || stationPos == null || !level.isLoaded(stationPos)) {
+            return null;
+        }
+        return level.getBlockEntity(stationPos) instanceof QuarryControllerBlockEntity controller
+            && worldPosition.equals(controller.getPadPos()) ? controller : null;
+    }
+
+    // The radar on the ring of the controller's obelisk
+    @Nullable
+    public GroundRadarBlockEntity getRadar() {
+        QuarryControllerBlockEntity station = getStation();
+        CrystalObeliskBlockEntity obelisk = station != null ? station.getObelisk() : null;
+        return obelisk != null ? obelisk.getRadar() : null;
+    }
+
+    // endregion
+
+    // region Flight control
+
+    // Deploys, or recovers if a satellite is up. Returns the reason if it can't fly.
+    @Nullable
+    public Component tryLaunch() {
+        if (level == null || level.isClientSide()) {
+            return launchError("busy");
+        }
+        if (phase != FlightPhase.IDLE) {
+            return launchError("busy");
+        }
+
+        updateStructure();
+        if (!platingOk) {
+            return launchError("incomplete");
+        }
+        if (!skyOk) {
+            return launchError("no_sky");
+        }
+
+        ItemStack rocket = ROCKET.getItemStack(this);
+        if (rocket.isEmpty()) {
+            return launchError("no_rocket");
+        }
+
+        Mission newMission = orbiting.isEmpty() ? Mission.DEPLOY : Mission.RECOVER;
+        ItemStack satellite = SATELLITE.getItemStack(this);
+        if (newMission == Mission.DEPLOY && satellite.isEmpty()) {
+            return launchError("no_satellite");
+        }
+        if (newMission == Mission.RECOVER && !satellite.isEmpty()) {
+            return launchError("satellite_slot_full");
+        }
+
+        int cost = QuarryConfig.FUEL_PER_FLIGHT.get();
+        if (getFuel() < cost) {
+            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", cost);
+        }
+
+        if (cost > 0) {
+            FUEL.drain(this, cost, IFluidHandler.FluidAction.EXECUTE);
+        }
+        flightRocket = rocket.copy();
+        ROCKET.setStackInSlot(this, ItemStack.EMPTY);
+        if (newMission == Mission.DEPLOY) {
+            payload = satellite.copy();
+            SATELLITE.setStackInSlot(this, ItemStack.EMPTY);
+        }
+        mission = newMission;
+        flightDx = orbitDx;
+        flightDz = orbitDz;
+        refreshSyncedItems();
+        setPhase(FlightPhase.COUNTDOWN, level.getGameTime());
+        return null;
+    }
+
+    private static Component launchError(String key) {
+        return Component.translatable("message.ender_laser_quarry.launch." + key);
+    }
+
+    /**
+     * Orbit transfer: the rocket fuels the satellite up and it flies over the area centred dx / dz chunks from the pad's
+     * chunk. Returns the reason if it can't go.
+     */
+    @Nullable
+    public Component tryTransfer(int dx, int dz) {
+        if (level == null || level.isClientSide() || phase != FlightPhase.IDLE || arriving) {
+            return launchError("busy");
+        }
+        updateStructure();
+        if (!platingOk) {
+            return launchError("incomplete");
+        }
+        if (!skyOk) {
+            return launchError("no_sky");
+        }
+        if (ROCKET.getItemStack(this).isEmpty()) {
+            return launchError("no_rocket");
+        }
+        QuarryTier tier = getSatelliteTier();
+        if (tier == null) {
+            return launchError("transfer_no_satellite");
+        }
+        int range = tier.transferRange();
+        if (range <= 0) {
+            return Component.translatable("message.ender_laser_quarry.launch.transfer_tier", tier.displayName());
+        }
+        if (Math.max(Math.abs(dx), Math.abs(dz)) > range) {
+            return Component.translatable("message.ender_laser_quarry.launch.transfer_too_far", range);
+        }
+        if (dx == orbitDx && dz == orbitDz) {
+            return launchError("transfer_same");
+        }
+        QuarryControllerBlockEntity station = getStation();
+        if (station != null && station.isRunning()) {
+            return launchError("transfer_stop_quarry");
+        }
+        int cost = getTransferCost(dx, dz);
+        if (getFuel() < cost) {
+            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", cost);
+        }
+
+        if (cost > 0) {
+            FUEL.drain(this, cost, IFluidHandler.FluidAction.EXECUTE);
+        }
+        flightRocket = ROCKET.getItemStack(this).copy();
+        ROCKET.setStackInSlot(this, ItemStack.EMPTY);
+        transferDx = dx;
+        transferDz = dz;
+        mission = Mission.TRANSFER;
+        flightDx = orbitDx;
+        flightDz = orbitDz;
+        refreshSyncedItems();
+        setPhase(FlightPhase.COUNTDOWN, level.getGameTime());
+        return null;
+    }
+
+    // chunks between the current area centre and that one
+    public double getTransferDistance(int dx, int dz) {
+        return Math.sqrt((double) (dx - orbitDx) * (dx - orbitDx) + (double) (dz - orbitDz) * (dz - orbitDz));
+    }
+
+    public int getTransferCost(int dx, int dz) {
+        return QuarryConfig.FUEL_PER_FLIGHT.get() + (int) Math.ceil(getTransferDistance(dx, dz) * QuarryConfig.FUEL_PER_TRANSFER_CHUNK.get());
+    }
+
+    // ticks the satellite needs to fly over
+    public static int relocationTicks(double chunks) {
+        return (int) Mth.clamp(60 + chunks * 6, 60, 300);
+    }
+
+    private void startRelocation(ServerLevel serverLevel, long start) {
+        moveFromDx = orbitDx;
+        moveFromDz = orbitDz;
+        orbitDx = transferDx;
+        orbitDz = transferDz;
+        moveStart = start;
+        moveTicks = relocationTicks(Math.sqrt((double) (orbitDx - moveFromDx) * (orbitDx - moveFromDx)
+            + (double) (orbitDz - moveFromDz) * (orbitDz - moveFromDz)));
+        arriving = true;
+        // map the new area from its middle outwards, known chunks fly by
+        scanIndex = 0;
+        refreshIndex = 0;
+        scanWaitTicks = 0;
+        setChanged();
+        syncToClients();
+        serverLevel.playSound(null, getPadCenter(), SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 2f, 1.3f);
+    }
+
+    private void tickArrival(ServerLevel serverLevel) {
+        if (!arriving || serverLevel.getGameTime() < moveStart + moveTicks) {
+            return;
+        }
+        arriving = false;
+        setChanged();
+        syncToClients();
+        serverLevel.playSound(null, getPadCenter(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 2f, 1.2f);
+        serverLevel.playSound(null, getPadCenter(), SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.5f, 1.5f);
+
+        QuarryControllerBlockEntity station = getStation();
+        if (station != null) {
+            station.onSatelliteMoved(this);
+        }
+        // the owner and whoever stands at the pad hear where it is now
+        ChunkPos area = getOrbitChunk();
+        int across = scanRadius * 2 + 1;
+        Component message = Component.translatable("message.ender_laser_quarry.transfer.arrived", area.getMiddleBlockX(), area.getMiddleBlockZ(),
+            across, across).withStyle(net.minecraft.ChatFormatting.AQUA);
+        java.util.Set<ServerPlayer> told = new java.util.HashSet<>();
+        for (ServerPlayer player : serverLevel.players()) {
+            if (player.blockPosition().closerThan(getPadCenter(), 48)) {
+                told.add(player);
+            }
+        }
+        if (station != null && station.getMachineOwner() != null) {
+            ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayer(station.getMachineOwner());
+            if (owner != null) {
+                told.add(owner);
+            }
+        }
+        told.forEach(player -> player.sendSystemMessage(message));
+    }
+
+    // The chunk in the middle of the satellite's area
+    public ChunkPos getOrbitChunk() {
+        ChunkPos pad = new ChunkPos(getPadCenter());
+        return new ChunkPos(pad.x + orbitDx, pad.z + orbitDz);
+    }
+
+    public int getOrbitDx() {
+        return orbitDx;
+    }
+
+    public int getOrbitDz() {
+        return orbitDz;
+    }
+
+    // flying over to its new area (also true while the rocket still brings it fuel)
+    public boolean isRelocating() {
+        return arriving || (phase != FlightPhase.IDLE && mission == Mission.TRANSFER);
+    }
+
+    // 0..1 of the fly-over, 0 before it starts
+    public float getRelocationProgress(float partialTick) {
+        if (!arriving || level == null || moveTicks <= 0) {
+            return 0;
+        }
+        return Mth.clamp((level.getGameTime() - moveStart + partialTick) / moveTicks, 0f, 1f);
+    }
+
+    // only the fly-over part
+    public boolean isArriving() {
+        return arriving;
+    }
+
+    // which way it flies over, horizontal unit vector (zero when not moving)
+    public Vec3 getRelocationDirection() {
+        Vec3 dir = new Vec3(orbitDx - moveFromDx, 0, orbitDz - moveFromDz);
+        return !arriving || dir.lengthSqr() < 1.0E-6 ? Vec3.ZERO : dir.normalize();
+    }
+
+    // 0..1 through countdown, ascent and fuelling of a transfer flight
+    public float getTransferFlightProgress() {
+        if (level == null || mission != Mission.TRANSFER || phase == FlightPhase.IDLE || phase == FlightPhase.DESCENT) {
+            return 0;
+        }
+        int total = FlightPhase.COUNTDOWN.duration() + FlightPhase.ASCENT.duration() + FlightPhase.ORBIT_OPS.duration();
+        int before = switch (phase) {
+            case ASCENT -> FlightPhase.COUNTDOWN.duration();
+            case ORBIT_OPS -> FlightPhase.COUNTDOWN.duration() + FlightPhase.ASCENT.duration();
+            default -> 0;
+        };
+        return Mth.clamp((before + getPhaseProgress(0) * phase.duration()) / total, 0f, 1f);
+    }
+
+    public boolean isRocketReady() {
+        return phase == FlightPhase.IDLE && !ROCKET.getItemStack(this).isEmpty();
+    }
+
+    // where a running transfer flight goes, or the current area
+    public int getTransferTargetDx() {
+        return phase != FlightPhase.IDLE && mission == Mission.TRANSFER ? transferDx : orbitDx;
+    }
+
+    public int getTransferTargetDz() {
+        return phase != FlightPhase.IDLE && mission == Mission.TRANSFER ? transferDz : orbitDz;
+    }
+
+    // synced: chunks this satellite may go from its pad (0 = none)
+    public int getTransferRange() {
+        return transferRange;
+    }
+
+    // Where the satellite circles, in blocks from the pad centre (glides along during the fly-over)
+    public Vec3 getOrbitAnchor(float partialTick) {
+        double dx = orbitDx;
+        double dz = orbitDz;
+        if (arriving) {
+            float t = smoothstep(getRelocationProgress(partialTick));
+            dx = Mth.lerp(t, moveFromDx, orbitDx);
+            dz = Mth.lerp(t, moveFromDz, orbitDz);
+        }
+        return new Vec3(dx * 16, 0, dz * 16);
+    }
+
+    private void setPhase(FlightPhase newPhase, long start) {
+        phase = newPhase;
+        phaseStart = start;
+        setState(MachineState.EMPTY_TANK, false);
+        setChanged();
+        syncToClients();
+    }
+
+    private void tickFlight(ServerLevel serverLevel) {
+        if (phase == FlightPhase.IDLE) {
+            return;
+        }
+
+        long now = serverLevel.getGameTime();
+        long elapsed = now - phaseStart;
+
+        if (phase == FlightPhase.COUNTDOWN && elapsed % 20 == 0 && elapsed < phase.duration()) {
+            serverLevel.playSound(null, getPadCenter(), SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.BLOCKS, 1.5f, 1.4f);
+        }
+        if (phase == FlightPhase.ASCENT && elapsed < 30 && elapsed % 5 == 0) {
+            scorchLaunchArea(serverLevel);
+        }
+
+        if (elapsed < phase.duration()) {
+            return;
+        }
+
+        // from the scheduled end so an unloaded pad catches up
+        long next = phaseStart + phase.duration();
+        switch (phase) {
+            case COUNTDOWN -> {
+                serverLevel.playSound(null, getPadCenter(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 3f, 0.5f);
+                serverLevel.playSound(null, getPadCenter(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.BLOCKS, 4f, 0.5f);
+                setPhase(FlightPhase.ASCENT, next);
+            }
+            case ASCENT -> setPhase(FlightPhase.ORBIT_OPS, next);
+            case ORBIT_OPS -> {
+                if (mission == Mission.DEPLOY) {
+                    orbiting = payload;
+                    payload = ItemStack.EMPTY;
+                } else if (mission == Mission.RECOVER) {
+                    payload = orbiting;
+                    orbiting = ItemStack.EMPTY;
+                    // the next one goes up over the pad again
+                    if (orbitDx != 0 || orbitDz != 0) {
+                        orbitDx = 0;
+                        orbitDz = 0;
+                        scanIndex = 0;
+                        refreshIndex = 0;
+                    }
+                } else {
+                    startRelocation(serverLevel, next);
+                }
+                refreshSyncedItems();
+                setPhase(FlightPhase.DESCENT, next);
+            }
+            case DESCENT -> land(serverLevel);
+            default -> setPhase(FlightPhase.IDLE, now);
+        }
+    }
+
+    private void land(ServerLevel serverLevel) {
+        returnToSlot(ROCKET, flightRocket);
+        returnToSlot(SATELLITE, payload);
+        flightRocket = ItemStack.EMPTY;
+        payload = ItemStack.EMPTY;
+        rocketOnPad = !ROCKET.getItemStack(this).isEmpty();
+        refreshSyncedItems();
+
+        serverLevel.playSound(null, getPadCenter(), SoundEvents.NETHERITE_BLOCK_PLACE, SoundSource.BLOCKS, 1.5f, 0.6f);
+        serverLevel.playSound(null, getPadCenter(), SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1f, 0.8f);
+        setPhase(FlightPhase.IDLE, serverLevel.getGameTime());
+    }
+
+    private void returnToSlot(SingleSlotAccess slot, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        if (slot.getItemStack(this).isEmpty()) {
+            slot.setStackInSlot(this, stack);
+        } else {
+            // shouldn't happen, but don't lose items
+            Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.2, worldPosition.getZ() + 0.5, stack);
+        }
+    }
+
+    // Don't stand on the pad at liftoff
+    private void scorchLaunchArea(ServerLevel serverLevel) {
+        BlockPos center = getPadCenter();
+        AABB area = new AABB(center.offset(-1, 1, -1).getCenter(), center.offset(1, 3, 1).getCenter()).inflate(0.5);
+        for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class, area)) {
+            entity.igniteForSeconds(3);
+        }
+    }
+
+    // Called when the controller is removed, the item only keeps the fuel
+    public void dropFlightContents() {
+        if (level == null) {
+            return;
+        }
+        ItemStack rocketSlot = ROCKET.getItemStack(this).copy();
+        ItemStack satelliteSlot = SATELLITE.getItemStack(this).copy();
+        ROCKET.setStackInSlot(this, ItemStack.EMPTY);
+        SATELLITE.setStackInSlot(this, ItemStack.EMPTY);
+        for (ItemStack stack : new ItemStack[] { rocketSlot, satelliteSlot, flightRocket, payload, orbiting }) {
+            if (!stack.isEmpty()) {
+                Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, stack.copy());
+            }
+        }
+        flightRocket = ItemStack.EMPTY;
+        payload = ItemStack.EMPTY;
+        orbiting = ItemStack.EMPTY;
+    }
+
+    private void refreshSyncedItems() {
+        hasPayload = !payload.isEmpty();
+        inOrbit = !orbiting.isEmpty();
+        updateScanRadius();
+        setChanged();
+        syncToClients();
+    }
+
+    public FlightPhase getPhase() {
+        return phase;
+    }
+
+    public Mission getMission() {
+        return mission;
+    }
+
+    public boolean isFlying() {
+        return phase != FlightPhase.IDLE;
+    }
+
+    public boolean hasSatelliteInOrbit() {
+        return inOrbit;
+    }
+
+    public int getOrbitAltitude() {
+        return orbitAltitude;
+    }
+
+    // endregion
+
+    // region Uplink & scanning
+
+    private void tickUplink() {
+        UplinkStatus status;
+        if (orbiting.isEmpty()) {
+            status = UplinkStatus.NO_SATELLITE;
+        } else {
+            QuarryControllerBlockEntity station = getStation();
+            GroundRadarBlockEntity radar = getRadar();
+            if (station == null) {
+                status = UplinkStatus.NO_STATION;
+            } else if (radar == null) {
+                status = UplinkStatus.NO_RADAR;
+            } else if (!radar.consumeUplinkEnergy()) {
+                status = UplinkStatus.NO_POWER;
+            } else {
+                status = UplinkStatus.ONLINE;
+            }
+        }
+
+        if (status != uplink) {
+            uplink = status;
+            syncToClients();
+        }
+        setState(QuarryStates.RADAR_NO_POWER, status == UplinkStatus.NO_POWER);
+
+        // in case the controller vanished mid beam
+        if (beamTarget != null && getReflectorProblem() != null) {
+            setBeamTarget(null);
+        }
+
+        // no mapping while it flies over
+        if (status == UplinkStatus.ONLINE && !arriving && ++scanTicks >= QuarryConfig.SCAN_TICKS_PER_CHUNK.get()) {
+            scanTicks = 0;
+            if (!isScanComplete()) {
+                scanStep();
+            } else {
+                // all mapped, keep refreshing so the map stays current
+                refreshIndex = (refreshIndex + 1) % getScanTotal();
+                int[] offset = ScanCoverage.of(scanRadius).offset(refreshIndex);
+                ChunkPos center = getOrbitChunk();
+                recordScanImage(new ChunkPos(center.x + offset[0], center.z + offset[1]));
+            }
+        }
+    }
+
+    // Maps the next chunk. One fresh picture per step; chunks with a picture from an earlier visit fly by, new unloaded
+    // ones are loaded for a moment (like a player walking past), given up after SCAN_LOAD_WAIT
+    private void scanStep() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        boolean advanced = false;
+        for (int i = 0; i < KNOWN_PER_STEP && !isScanComplete(); i++) {
+            ChunkPos chunk = getScanningChunk();
+            if (chunk == null) {
+                break;
+            }
+            LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x, chunk.z);
+            if (loaded == null && scanImages.get(chunk) == null && scanWaitTicks < SCAN_LOAD_WAIT) {
+                serverLevel.getChunkSource().addRegionTicket(SCAN_TICKET, chunk, 0, chunk);
+                scanWaitTicks += QuarryConfig.SCAN_TICKS_PER_CHUNK.get();
+                break;
+            }
+            if (loaded != null) {
+                scanImages.put(chunk, MinimapSnapshot.captureChunk(serverLevel, loaded));
+            }
+            scanWaitTicks = 0;
+            scanIndex++;
+            advanced = true;
+            // a known chunk (not loaded, old picture) costs nothing, go on
+            if (loaded != null || scanImages.get(chunk) == null) {
+                break;
+            }
+        }
+        if (advanced) {
+            setChanged();
+            syncToClients();
+        }
+    }
+
+    // Unloaded chunks are skipped (never load chunks for this), the refresh picks them up later
+    private void recordScanImage(@Nullable ChunkPos chunk) {
+        if (chunk != null && level instanceof ServerLevel serverLevel) {
+            LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x, chunk.z);
+            if (loaded != null && scanImages.put(chunk, MinimapSnapshot.captureChunk(serverLevel, loaded))) {
+                setChanged();
+            }
+        }
+    }
+
+    public void updateScanImage(ChunkPos chunk) {
+        if (isChunkScanned(chunk)) {
+            recordScanImage(chunk);
+        }
+    }
+
+    public byte @Nullable [] getScanImage(ChunkPos chunk) {
+        return isChunkScanned(chunk) ? scanImages.get(chunk) : null;
+    }
+
+    public ScanImageStore getScanImages() {
+        return scanImages;
+    }
+
+    public AsteroidField getAsteroids() {
+        return asteroids;
+    }
+
+    // Debug: satellite straight into orbit
+    public void debugPlaceInOrbit(ItemStack satellite) {
+        orbiting = satellite.copy();
+        refreshSyncedItems();
+    }
+
+    // Debug: satellite area moved without a flight
+    public void debugSetOrbit(int dx, int dz) {
+        orbitDx = dx;
+        orbitDz = dz;
+        arriving = false;
+        setChanged();
+        syncToClients();
+    }
+
+    // Debug: whole area mapped (no pictures)
+    public void debugCompleteScan() {
+        scanIndex = getScanTotal();
+        setChanged();
+        syncToClients();
+    }
+
+    public UplinkStatus getUplink() {
+        return uplink;
+    }
+
+    public int getScannedChunks() {
+        return scanIndex;
+    }
+
+    public int getScanTotal() {
+        return ScanCoverage.of(scanRadius).total();
+    }
+
+    public boolean isScanComplete() {
+        return scanIndex >= getScanTotal();
+    }
+
+    public boolean isChunkScanned(ChunkPos chunk) {
+        ChunkPos center = getOrbitChunk();
+        int index = ScanCoverage.of(scanRadius).indexOf(chunk.x - center.x, chunk.z - center.z);
+        // pictures from an earlier visit count right away
+        return index >= 0 && (index < scanIndex || scanImages.get(chunk) != null);
+    }
+
+    @Nullable
+    public ChunkPos getScanningChunk() {
+        if (uplink != UplinkStatus.ONLINE || !inOrbit || arriving || isScanComplete()) {
+            return null;
+        }
+        int[] offset = ScanCoverage.of(scanRadius).offset(scanIndex);
+        ChunkPos center = getOrbitChunk();
+        return new ChunkPos(center.x + offset[0], center.z + offset[1]);
+    }
+
+    // endregion
+
+    // region Reflecting (the obelisk's beam bounces off the satellite down onto the chunk)
+
+    // Horizontal only, range = the controller tier's linkRange
+    public boolean isInLinkRange(BlockPos pos, long range) {
+        long dx = pos.getX() - getPadCenter().getX();
+        long dz = pos.getZ() - getPadCenter().getZ();
+        return dx * dx + dz * dz <= range * range;
+    }
+
+    public int getScanRadius() {
+        return scanRadius;
+    }
+
+    // Server only
+    @Nullable
+    public QuarryTier getSatelliteTier() {
+        return SatelliteItem.tierOf(orbiting);
+    }
+
+    public QuarryTier getDrawnSatelliteTier() {
+        return drawnSatelliteTier;
+    }
+
+    // A bigger satellite keeps mapping outwards, a smaller one keeps the inner rings
+    private boolean updateScanRadius() {
+        QuarryTier tier = getSatelliteTier();
+        int range = tier != null ? tier.transferRange() : transferRange;
+        boolean rangeChanged = range != transferRange;
+        transferRange = range;
+        int radius = tier != null ? tier.chunkRadius() : scanRadius;
+        if (radius == scanRadius) {
+            return rangeChanged;
+        }
+        scanRadius = radius;
+        scanIndex = Math.min(scanIndex, ScanCoverage.of(scanRadius).total());
+        return true;
+    }
+
+    public @Nullable MachineState getReflectorProblem() {
+        // busy docking while the rocket catches it
+        if (!inOrbit || (phase == FlightPhase.ORBIT_OPS && mission == Mission.RECOVER)) {
+            return QuarryStates.NO_SATELLITE;
+        }
+        if (isRelocating()) {
+            return QuarryStates.SATELLITE_MOVING;
+        }
+        return uplink == UplinkStatus.ONLINE ? null : QuarryStates.SATELLITE_OFFLINE;
+    }
+
+    @Nullable
+    public BlockPos getBeamTarget() {
+        return beamTarget;
+    }
+
+    public void setBeamTarget(@Nullable BlockPos target) {
+        if (Objects.equals(beamTarget, target)) {
+            return;
+        }
+        beamTarget = target == null ? null : target.immutable();
+        syncToClients();
+    }
+
+    public @Nullable Vec3 getMirrorWorldPos(float partialTick) {
+        Vec3 mirror = getMirrorPos(partialTick);
+        return mirror == null ? null : Vec3.atLowerCornerOf(getPadCenter()).add(mirror);
+    }
+
+    @Nullable
+    public Vec3 getMirrorPos(float partialTick) {
+        if (!inOrbit || phase == FlightPhase.ORBIT_OPS) {
+            return null;
+        }
+        return getOrbitPos(partialTick).add(0, -REFLECTOR_MIRROR_DROP, 0);
+    }
+
+    // endregion
+
+    // region Ticking
+
+    @Override
+    public void serverTick() {
+        super.serverTick();
+
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        if (!structureChecked || serverLevel.getGameTime() % STRUCTURE_CHECK_INTERVAL == 0) {
+            structureChecked = true;
+            updateStructure();
+        }
+
+        tickFlight(serverLevel);
+        tickArrival(serverLevel);
+        tickUplink();
+        if (serverLevel.getGameTime() % 10 == 0) {
+            updateRegistry(serverLevel);
+            tickSelfLoading(serverLevel);
+        }
+        if (serverLevel.getGameTime() % 10 == 0) {
+            checkSpyglasses(serverLevel);
+        }
+    }
+
+    // advancement: someone looks at the satellite in orbit through a spyglass
+    private void checkSpyglasses(ServerLevel serverLevel) {
+        Vec3 satellite = getSatellitePos(0);
+        if (satellite == null || getSatelliteTransfer(0) < 1 || serverLevel.players().isEmpty()) {
+            return;
+        }
+        ModTriggers.SPYGLASS_AT_SATELLITE.get().checkPlayers(serverLevel, Vec3.atLowerCornerOf(getPadCenter()).add(satellite));
+    }
+
+    @Override
+    public boolean isActive() {
+        return phase != FlightPhase.IDLE || uplink == UplinkStatus.ONLINE;
+    }
+
+    // Exhaust, smoke and sound
+    @Override
+    public void clientTick() {
+        super.clientTick();
+        tickMiniRadar();
+        relocationTrail();
+        rocketEffects();
+    }
+
+    private void rocketEffects() {
+        if (level == null || phase == FlightPhase.IDLE) {
+            return;
+        }
+
+        Vec3 rocketRel = getRocketPos(0);
+        if (rocketRel == null) {
+            return;
+        }
+
+        RandomSource random = level.getRandom();
+        BlockPos center = getPadCenter();
+        Vec3 nozzle = Vec3.atLowerCornerOf(center).add(rocketRel);
+        float progress = getPhaseProgress(0);
+        boolean onGround = rocketRel.y - LAUNCH_POINT.y < 8;
+        Vec3 down = getRocketUp(0).scale(-1);
+
+        if (isEngineBurning(0)) {
+            for (int i = 0; i < 3; i++) {
+                level.addAlwaysVisibleParticle(ParticleTypes.FLAME, true, nozzle.x + down.x * 0.2 + random.nextGaussian() * 0.15,
+                    nozzle.y + down.y * 0.2, nozzle.z + down.z * 0.2 + random.nextGaussian() * 0.15,
+                    down.x * 0.6 + random.nextGaussian() * 0.03, down.y * 0.6, down.z * 0.6 + random.nextGaussian() * 0.03);
+            }
+            level.addAlwaysVisibleParticle(ParticleTypes.LARGE_SMOKE, true, nozzle.x + down.x * 0.6, nozzle.y + down.y * 0.6, nozzle.z + down.z * 0.6,
+                down.x * 0.25 + random.nextGaussian() * 0.05, down.y * 0.25, down.z * 0.25 + random.nextGaussian() * 0.05);
+
+            if (phase == FlightPhase.ASCENT && level.getGameTime() % 2 == 0) {
+                // contrail
+                level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true, nozzle.x + down.x, nozzle.y + down.y, nozzle.z + down.z,
+                    random.nextGaussian() * 0.01, 0.01, random.nextGaussian() * 0.01);
+            }
+
+            if (onGround) {
+                // exhaust spreading over the pad
+                for (int i = 0; i < 4; i++) {
+                    double angle = random.nextDouble() * Mth.TWO_PI;
+                    double speed = 0.25 + random.nextDouble() * 0.25;
+                    level.addAlwaysVisibleParticle(random.nextBoolean() ? ParticleTypes.CLOUD : ParticleTypes.LARGE_SMOKE, true,
+                        center.getX() + 0.5, center.getY() + 1.2, center.getZ() + 0.5,
+                        Math.cos(angle) * speed, 0.02, Math.sin(angle) * speed);
+                }
+            }
+
+            if (level.getGameTime() % 4 == 0) {
+                level.playLocalSound(nozzle.x, nozzle.y, nozzle.z, SoundEvents.BLAZE_SHOOT, SoundSource.BLOCKS,
+                    onGround ? 2.5f : 4f, 0.45f + random.nextFloat() * 0.1f, false);
+            }
+        } else if (phase == FlightPhase.COUNTDOWN && progress > 0.4f) {
+            // venting before ignition
+            level.addParticle(ParticleTypes.CLOUD, nozzle.x + random.nextGaussian() * 0.4, nozzle.y + 0.3,
+                nozzle.z + random.nextGaussian() * 0.4, 0, 0.05, 0);
+        }
+    }
+
+    // client copy of a far pad (RemoteSatellites): only the effects up at the satellite and a rocket out there
+    public void remoteEffects() {
+        relocationTrail();
+        if (isRocketAway()) {
+            rocketEffects();
+        }
+    }
+
+    // Players around the satellite may not have this pad's chunk: SatelliteRegistry sends them its data (RemoteSatellites)
+    private void updateRegistry(ServerLevel serverLevel) {
+        Vec3 satellite = inOrbit || arriving || isRocketAway() ? getTrackingTarget(0) : null;
+        if (satellite == null) {
+            SatelliteRegistry.remove(serverLevel, worldPosition);
+            return;
+        }
+        SatelliteRegistry.update(serverLevel, this, Vec3.atLowerCornerOf(getPadCenter()).add(satellite));
+    }
+
+    // Keeps its own chunk loaded while the satellite moves or maps a far area, nobody may be around the base
+    private void tickSelfLoading(ServerLevel serverLevel) {
+        boolean wanted = wantsSelfLoad();
+        if (wanted != selfLoaded) {
+            ChunkPos chunk = new ChunkPos(worldPosition);
+            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, wanted, false);
+            selfLoaded = wanted;
+        }
+    }
+
+    // also asked on world load (EnderLaserQuarry.CHUNK_TICKETS)
+    public boolean wantsSelfLoad() {
+        return isRelocating() || isRocketAway() || (inOrbit && (orbitDx != 0 || orbitDz != 0) && !isScanComplete());
+    }
+
+    // when the block goes
+    public void releaseSelfLoading() {
+        if (selfLoaded && level instanceof ServerLevel serverLevel) {
+            ChunkPos chunk = new ChunkPos(worldPosition);
+            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, false, false);
+            selfLoaded = false;
+        }
+        if (level != null) {
+            SatelliteRegistry.remove(level, worldPosition);
+        }
+    }
+
+    // orbit transfer: sparkles behind the satellite, a soft burn sound
+    private void relocationTrail() {
+        if (level == null || !arriving) {
+            return;
+        }
+        Vec3 satellite = getSatellitePos(0);
+        if (satellite == null) {
+            return;
+        }
+        Vec3 world = Vec3.atLowerCornerOf(getPadCenter()).add(satellite);
+        Vec3 back = getRelocationDirection().scale(-2.5);
+        RandomSource random = level.getRandom();
+        for (int i = 0; i < 2; i++) {
+            level.addAlwaysVisibleParticle(random.nextInt(3) == 0 ? ParticleTypes.FIREWORK : ParticleTypes.END_ROD, true,
+                world.x + back.x + random.nextGaussian() * 0.3, world.y + random.nextGaussian() * 0.3, world.z + back.z + random.nextGaussian() * 0.3,
+                back.x * 0.02, -0.01, back.z * 0.02);
+        }
+        if (level.getGameTime() % 12 == 0) {
+            level.playLocalSound(world.x, world.y, world.z, SoundEvents.BLAZE_BURN, SoundSource.BLOCKS, 3f, 1.6f, false);
+        }
+    }
+
+    // Faces the controller antenna, sweeps while unlinked
+    private void tickMiniRadar() {
+        prevRadarYaw = radarYaw;
+        prevRadarPitch = radarPitch;
+        Vec3 target = getStationTarget();
+        float targetPitch = MINI_RADAR_SWEEP_PITCH;
+        if (target != null) {
+            Vec3 dir = target.subtract(Vec3.atLowerCornerOf(worldPosition).add(MINI_RADAR_PIVOT));
+            double horizontal = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
+            float targetYaw = horizontal > 1.0E-3 ? (float) Math.toDegrees(Math.atan2(dir.x, dir.z)) : radarYaw;
+            radarYaw += Mth.clamp(Mth.wrapDegrees(targetYaw - radarYaw), -5, 5);
+            targetPitch = Mth.clamp((float) Math.toDegrees(Math.atan2(dir.y, horizontal)), -10, 60);
+        } else {
+            radarYaw += 1.5f;
+        }
+        radarPitch += Mth.clamp(targetPitch - radarPitch, -3, 3);
+        if (radarYaw > 180 || radarYaw < -180) {
+            float wrapped = Mth.wrapDegrees(radarYaw);
+            prevRadarYaw += wrapped - radarYaw;
+            radarYaw = wrapped;
+        }
+    }
+
+    @Nullable
+    public Vec3 getStationTarget() {
+        if (stationPos == null || level == null) {
+            return null;
+        }
+        return QuarryControllerBlockEntity.antennaTip(stationPos, level.getBlockState(stationPos));
+    }
+
+    public float getMiniRadarYaw(float partialTick) {
+        return Mth.lerp(partialTick, prevRadarYaw, radarYaw);
+    }
+
+    public float getMiniRadarPitch(float partialTick) {
+        return Mth.lerp(partialTick, prevRadarPitch, radarPitch);
+    }
+
+    public Vec3 getMiniRadarHorn(float partialTick) {
+        float yaw = getMiniRadarYaw(partialTick) * Mth.DEG_TO_RAD;
+        float pitch = getMiniRadarPitch(partialTick) * Mth.DEG_TO_RAD;
+        Vec3 axis = new Vec3(Mth.sin(yaw) * Mth.cos(pitch), Mth.sin(pitch), Mth.cos(yaw) * Mth.cos(pitch));
+        return Vec3.atLowerCornerOf(worldPosition).add(MINI_RADAR_PIVOT).add(axis.scale(MINI_RADAR_HORN));
+    }
+
+    // 0..1 during the link animation, -1 otherwise
+    public float getLinkFlash(float partialTick) {
+        if (level == null) {
+            return -1;
+        }
+        float age = level.getGameTime() - linkFlashStart + partialTick;
+        return age >= 0 && age < LINK_FLASH_TICKS ? age / LINK_FLASH_TICKS : -1;
+    }
+
+    // endregion
+
+    // region Flight path (shared by server, renderers and radar)
+
+    public float getPhaseProgress(float partialTick) {
+        if (level == null || phase == FlightPhase.IDLE) {
+            return 0;
+        }
+        return Mth.clamp((level.getGameTime() - phaseStart + partialTick) / phase.duration(), 0f, 1f);
+    }
+
+    public boolean isEngineBurning(float partialTick) {
+        float progress = getPhaseProgress(partialTick);
+        return switch (phase) {
+            case COUNTDOWN -> progress > 0.8f;
+            case ASCENT -> true;
+            case DESCENT -> progress > 0.55f;
+            default -> false;
+        };
+    }
+
+    public float getThrottle(float partialTick) {
+        float progress = getPhaseProgress(partialTick);
+        return switch (phase) {
+            case COUNTDOWN -> progress > 0.8f ? (progress - 0.8f) / 0.2f * 0.7f : 0;
+            case ASCENT -> 1f - progress * 0.4f;
+            case DESCENT -> progress > 0.55f ? 0.8f : 0;
+            default -> 0;
+        };
+    }
+
+    public double getHoverAltitude() {
+        return orbitAltitude - HOVER_BELOW_ORBIT;
+    }
+
+    // Nozzle position, null = nothing to draw
+    @Nullable
+    public Vec3 getRocketPos(float partialTick) {
+        float progress = getPhaseProgress(partialTick);
+        double hover = getHoverAltitude();
+        return switch (phase) {
+            case IDLE -> rocketOnPad ? LAUNCH_POINT : null;
+            case COUNTDOWN -> {
+                float shake = progress > 0.8f ? 0.03f : 0;
+                float time = level == null ? 0 : level.getGameTime() + partialTick;
+                yield LAUNCH_POINT.add(Mth.sin(time * 2.1f) * shake, 0, Mth.cos(time * 2.7f) * shake);
+            }
+            case ASCENT, ORBIT_OPS, DESCENT -> rocketPath(phase, progress);
+        };
+    }
+
+    // In flight: straight up, then over to the satellite's area (flightDx / flightDz) and back down at the end
+    private Vec3 rocketPath(FlightPhase flight, float progress) {
+        double hover = getHoverAltitude();
+        Vec3 away = new Vec3(flightDx * 16, 0, flightDz * 16);
+        return switch (flight) {
+            case ASCENT -> LAUNCH_POINT.add(away.scale(smoothstep(Mth.clamp((progress - 0.2f) / 0.8f, 0, 1))))
+                .add(0, hover * smoothstep(progress), 0);
+            case DESCENT -> LAUNCH_POINT.add(away.scale(1 - smoothstep(Mth.clamp(progress / 0.75f, 0, 1))))
+                .add(0, hover * (1 - smoothstep(progress)), 0);
+            default -> LAUNCH_POINT.add(away).add(0, hover + 0.15 * Mth.sin(progress * Mth.TWO_PI), 0);
+        };
+    }
+
+    // Which way the rocket's nose points: leans into the climb on the way out, engine first on the way back
+    public Vec3 getRocketUp(float partialTick) {
+        if ((phase != FlightPhase.ASCENT && phase != FlightPhase.DESCENT) || (flightDx == 0 && flightDz == 0)) {
+            return UP;
+        }
+        float progress = getPhaseProgress(partialTick);
+        Vec3 velocity = rocketPath(phase, Math.min(1, progress + 0.01f)).subtract(rocketPath(phase, Math.max(0, progress - 0.01f)));
+        double horizontal = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        if (horizontal < 1.0E-4) {
+            return UP;
+        }
+        // upright again before docking with the satellite
+        float settle = phase == FlightPhase.ASCENT ? Mth.clamp((1 - progress) / 0.15f, 0, 1) : Mth.clamp(progress / 0.15f, 0, 1);
+        double tilt = Math.min(Math.atan2(horizontal, Math.abs(velocity.y)), MAX_ROCKET_TILT) * smoothstep(settle);
+        double side = Math.sin(tilt) / horizontal * (phase == FlightPhase.ASCENT ? 1 : -1);
+        return new Vec3(velocity.x * side, Math.cos(tilt), velocity.z * side);
+    }
+
+    // in flight away from the pad (orbit transfer, or recovering a moved satellite)
+    public boolean isRocketAway() {
+        return phase != FlightPhase.IDLE && phase != FlightPhase.COUNTDOWN && (flightDx != 0 || flightDz != 0);
+    }
+
+    public Vec3 getOrbitPos(float partialTick) {
+        double angle = getOrbitAngle(partialTick);
+        return LAUNCH_POINT.add(getOrbitAnchor(partialTick)).add(Math.cos(angle) * ORBIT_RADIUS, orbitAltitude, Math.sin(angle) * ORBIT_RADIUS);
+    }
+
+    public double getOrbitAngle(float partialTick) {
+        return level == null ? 0 : (level.getGameTime() + partialTick) * ORBIT_SPEED;
+    }
+
+    @Nullable
+    public Vec3 getSatellitePos(float partialTick) {
+        // a transfer doesn't dock: the rocket only brings it fuel
+        if (phase == FlightPhase.ORBIT_OPS && mission != Mission.TRANSFER) {
+            Vec3 rocket = getRocketPos(partialTick);
+            Vec3 dock = rocket.add(0, PAYLOAD_DOCK_HEIGHT, 0);
+            return dock.lerp(getOrbitPos(partialTick), getSatelliteTransfer(partialTick));
+        }
+        return inOrbit ? getOrbitPos(partialTick) : null;
+    }
+
+    // 0 = docked, 1 = in orbit
+    public float getSatelliteTransfer(float partialTick) {
+        if (phase != FlightPhase.ORBIT_OPS || mission == Mission.TRANSFER) {
+            return inOrbit ? 1 : 0;
+        }
+        float move = smoothstep(Mth.clamp((getPhaseProgress(partialTick) - 0.25f) / 0.5f, 0, 1));
+        return mission == Mission.DEPLOY ? move : 1 - move;
+    }
+
+    public float getFairingOpen(float partialTick) {
+        if (phase != FlightPhase.ORBIT_OPS) {
+            return 0;
+        }
+        float progress = getPhaseProgress(partialTick);
+        if (progress < 0.2f) {
+            return smoothstep(progress / 0.2f);
+        }
+        return progress > 0.8f ? smoothstep((1 - progress) / 0.2f) : 1;
+    }
+
+    // For the radar: the satellite, else the rocket
+    @Nullable
+    public Vec3 getTrackingTarget(float partialTick) {
+        Vec3 satellite = getSatellitePos(partialTick);
+        if (satellite != null) {
+            return satellite;
+        }
+        return phase != FlightPhase.IDLE ? getRocketPos(partialTick) : null;
+    }
+
+    private static float smoothstep(float t) {
+        return t * t * (3 - 2 * t);
+    }
+
+    // endregion
+
+    @Override
+    public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new LaunchPadMenu(containerId, playerInventory, this);
+    }
+
+    private void setState(MachineState state, boolean wanted) {
+        // every update sends a block update, so only on change
+        if (wanted != getMachineStates().contains(state)) {
+            updateMachineState(state, wanted);
+        }
+    }
+
+    private void syncToClients() {
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    // region Serialization
+
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        saveTank(registries, tag);
+        if (!flightRocket.isEmpty()) {
+            tag.put(FLIGHT_ROCKET, flightRocket.save(registries));
+        }
+        if (!payload.isEmpty()) {
+            tag.put(PAYLOAD, payload.save(registries));
+        }
+        if (!orbiting.isEmpty()) {
+            tag.put(ORBITING, orbiting.save(registries));
+        }
+        if (!scanImages.isEmpty()) {
+            tag.put(SCAN_IMAGES, scanImages.save());
+        }
+        // always saved so asteroid ids never repeat
+        tag.put(ASTEROIDS, asteroids.save());
+        if (markedCenter != null) {
+            tag.put(MARKED_CENTER, NbtUtils.writeBlockPos(markedCenter));
+        }
+    }
+
+    @Override
+    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditionalSynced(tag, registries);
+        tag.putInt(PHASE, phase.ordinal());
+        tag.putInt(MISSION, mission.ordinal());
+        tag.putLong(PHASE_START, phaseStart);
+        tag.putBoolean(HAS_PAYLOAD, hasPayload);
+        tag.putBoolean(IN_ORBIT, inOrbit);
+        tag.putBoolean(ROCKET_ON_PAD, rocketOnPad);
+        tag.putInt(ALTITUDE, orbitAltitude);
+        tag.putBoolean(PLATING_OK, platingOk);
+        tag.putBoolean(SKY_OK, skyOk);
+        if (stationPos != null) {
+            tag.put(STATION_POS, NbtUtils.writeBlockPos(stationPos));
+        }
+        tag.putInt(UPLINK, uplink.ordinal());
+        tag.putInt(SCAN_INDEX, scanIndex);
+        tag.putInt(SCAN_RADIUS, scanRadius);
+        QuarryTier drawn = SatelliteItem.tierOf(!payload.isEmpty() ? payload : orbiting);
+        tag.putInt(DRAWN_TIER, drawn == null ? 0 : drawn.ordinal());
+        if (beamTarget != null) {
+            tag.put(BEAM_TARGET, NbtUtils.writeBlockPos(beamTarget));
+        }
+        if (padCenter != null) {
+            tag.put(PAD_CENTER, NbtUtils.writeBlockPos(padCenter));
+        }
+        tag.putLong(LINK_FLASH, linkFlashStart);
+        tag.putInt(ORBIT_DX, orbitDx);
+        tag.putInt(ORBIT_DZ, orbitDz);
+        tag.putInt(MOVE_FROM_DX, moveFromDx);
+        tag.putInt(MOVE_FROM_DZ, moveFromDz);
+        tag.putLong(MOVE_START, moveStart);
+        tag.putInt(MOVE_TICKS, moveTicks);
+        tag.putBoolean(ARRIVING, arriving);
+        tag.putInt(TRANSFER_DX, transferDx);
+        tag.putInt(TRANSFER_DZ, transferDz);
+        tag.putInt(TRANSFER_RANGE, transferRange);
+        tag.putInt(FLIGHT_DX, flightDx);
+        tag.putInt(FLIGHT_DZ, flightDz);
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        if (tag.contains(MachineNBTKeys.FLUIDS)) {
+            loadTank(registries, tag);
+        }
+
+        phase = FlightPhase.byOrdinal(tag.getInt(PHASE));
+        mission = Mission.byOrdinal(tag.getInt(MISSION));
+        phaseStart = tag.getLong(PHASE_START);
+        hasPayload = tag.getBoolean(HAS_PAYLOAD);
+        inOrbit = tag.getBoolean(IN_ORBIT);
+        rocketOnPad = tag.getBoolean(ROCKET_ON_PAD);
+        orbitAltitude = tag.contains(ALTITUDE) ? tag.getInt(ALTITUDE) : orbitAltitude;
+        platingOk = tag.getBoolean(PLATING_OK);
+        skyOk = tag.getBoolean(SKY_OK);
+        stationPos = NbtUtils.readBlockPos(tag, STATION_POS).orElse(null);
+        uplink = UplinkStatus.byOrdinal(tag.getInt(UPLINK));
+        scanIndex = tag.getInt(SCAN_INDEX);
+        scanRadius = tag.contains(SCAN_RADIUS) ? tag.getInt(SCAN_RADIUS) : scanRadius;
+        drawnSatelliteTier = QuarryTier.values()[Math.floorMod(tag.getInt(DRAWN_TIER), QuarryTier.values().length)];
+        beamTarget = NbtUtils.readBlockPos(tag, BEAM_TARGET).orElse(null);
+        padCenter = NbtUtils.readBlockPos(tag, PAD_CENTER).orElse(null);
+        linkFlashStart = tag.contains(LINK_FLASH) ? tag.getLong(LINK_FLASH) : NEVER;
+        orbitDx = tag.getInt(ORBIT_DX);
+        orbitDz = tag.getInt(ORBIT_DZ);
+        moveFromDx = tag.getInt(MOVE_FROM_DX);
+        moveFromDz = tag.getInt(MOVE_FROM_DZ);
+        moveStart = tag.getLong(MOVE_START);
+        moveTicks = tag.getInt(MOVE_TICKS);
+        arriving = tag.getBoolean(ARRIVING);
+        transferDx = tag.getInt(TRANSFER_DX);
+        transferDz = tag.getInt(TRANSFER_DZ);
+        transferRange = tag.getInt(TRANSFER_RANGE);
+        flightDx = tag.getInt(FLIGHT_DX);
+        flightDz = tag.getInt(FLIGHT_DZ);
+        if (tag.contains(MARKED_CENTER)) {
+            markedCenter = NbtUtils.readBlockPos(tag, MARKED_CENTER).orElse(null);
+        }
+
+        if (tag.contains(SCAN_IMAGES)) {
+            scanImages.load(tag.getCompound(SCAN_IMAGES));
+        }
+        if (tag.contains(ASTEROIDS)) {
+            asteroids.load(tag.getCompound(ASTEROIDS));
+        }
+
+        // full save only
+        if (tag.contains(FLIGHT_ROCKET) || tag.contains(PAYLOAD) || tag.contains(ORBITING)) {
+            flightRocket = ItemStack.parseOptional(registries, tag.getCompound(FLIGHT_ROCKET));
+            payload = ItemStack.parseOptional(registries, tag.getCompound(PAYLOAD));
+            orbiting = ItemStack.parseOptional(registries, tag.getCompound(ORBITING));
+            hasPayload = !payload.isEmpty();
+            inOrbit = !orbiting.isEmpty();
+        }
+    }
+
+    // Keep the fuel in the item
+
+    @Override
+    protected void applyImplicitComponents(DataComponentInput components) {
+        super.applyImplicitComponents(components);
+        SimpleFluidContent stored = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
+        if (stored != null) {
+            FUEL.getTank(this).setFluid(stored.copy());
+        }
+    }
+
+    @Override
+    protected void collectImplicitComponents(DataComponentMap.Builder components) {
+        super.collectImplicitComponents(components);
+        // rocket and satellite drop on the ground instead
+        components.set(DataComponents.CONTAINER, null);
+        var tank = FUEL.getTank(this);
+        if (!tank.isEmpty()) {
+            components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
+        }
+    }
+
+    // endregion
+}

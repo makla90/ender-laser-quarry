@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "ender_laser_quarry:block/ground_radar_top",
+    "side": "ender_laser_quarry:block/ender_ground_radar_side_tier",
+    "bottom": "ender_laser_quarry:block/quarry_machine_bottom"
+  }
+}

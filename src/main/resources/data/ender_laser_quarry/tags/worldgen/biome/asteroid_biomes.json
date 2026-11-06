@@ -1,0 +1,14 @@
+{
+  "values": [
+    "minecraft:plains", "minecraft:forest", "minecraft:birch_forest", "minecraft:dark_forest", "minecraft:taiga",
+    "minecraft:snowy_plains", "minecraft:snowy_taiga", "minecraft:desert", "minecraft:savanna", "minecraft:jungle",
+    "minecraft:badlands", "minecraft:swamp", "minecraft:mangrove_swamp", "minecraft:river", "minecraft:beach",
+    "minecraft:ocean", "minecraft:warm_ocean", "minecraft:cold_ocean", "minecraft:frozen_ocean",
+    "minecraft:mushroom_fields", "minecraft:meadow", "minecraft:cherry_grove", "minecraft:windswept_hills",
+    "minecraft:jagged_peaks", "minecraft:stony_peaks", "minecraft:dripstone_caves", "minecraft:lush_caves",
+    "minecraft:deep_dark",
+    "minecraft:nether_wastes", "minecraft:crimson_forest", "minecraft:warped_forest", "minecraft:soul_sand_valley",
+    "minecraft:basalt_deltas",
+    "minecraft:the_end", "minecraft:end_highlands"
+  ]
+}

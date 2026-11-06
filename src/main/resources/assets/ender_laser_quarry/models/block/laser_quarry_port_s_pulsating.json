@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "neoforge:composite",
+  "children": {
+    "port": {
+      "parent": "minecraft:block/cube",
+      "textures": {
+        "particle": "ender_laser_quarry:block/laser_quarry_port_side",
+        "up": "ender_laser_quarry:block/laser_quarry_plating_top_s_pulsating",
+        "down": "ender_laser_quarry:block/laser_quarry_port_bottom",
+        "north": "ender_laser_quarry:block/laser_quarry_port_side",
+        "south": "ender_laser_quarry:block/laser_quarry_port_side",
+        "east": "ender_laser_quarry:block/laser_quarry_port_side_l",
+        "west": "ender_laser_quarry:block/laser_quarry_port_side_r"
+      }
+    },
+    "overlay": { "parent": "enderio:block/io_overlay" }
+  },
+  "item_render_order": ["port", "overlay"],
+  "textures": { "particle": "ender_laser_quarry:block/laser_quarry_port_side" }
+}

@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "front": "ender_laser_quarry:block/quarry_controller_front",
+    "side": "ender_laser_quarry:block/quarry_controller_side",
+    "top": "ender_laser_quarry:block/quarry_controller_top",
+    "bottom": "ender_laser_quarry:block/quarry_controller_bottom"
+  }
+}

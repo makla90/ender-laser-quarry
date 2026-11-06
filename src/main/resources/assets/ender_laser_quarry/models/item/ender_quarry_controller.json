@@ -1,0 +1,29 @@
+{
+  "parent": "ender_laser_quarry:block/quarry_controller_template",
+  "textures": {
+    "front": "ender_laser_quarry:block/ender_quarry_controller_front",
+    "side": "ender_laser_quarry:block/ender_quarry_controller_side",
+    "top": "ender_laser_quarry:block/ender_quarry_controller_top",
+    "bottom": "ender_laser_quarry:block/ender_quarry_controller_bottom",
+    "antenna": "ender_laser_quarry:block/ender_quarry_controller_antenna"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        -1.25,
+        0
+      ],
+      "scale": [
+        0.55,
+        0.55,
+        0.55
+      ]
+    }
+  }
+}

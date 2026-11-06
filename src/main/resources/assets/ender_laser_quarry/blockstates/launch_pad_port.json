@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "east=false,north=false,south=false,west=false": { "model": "ender_laser_quarry:block/launch_pad_port" },
+    "east=false,north=true,south=false,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_n" },
+    "east=true,north=false,south=false,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_e" },
+    "east=true,north=true,south=false,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_ne" },
+    "east=false,north=false,south=true,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_s" },
+    "east=false,north=true,south=true,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_ns" },
+    "east=true,north=false,south=true,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_es" },
+    "east=true,north=true,south=true,west=false": { "model": "ender_laser_quarry:block/launch_pad_port_nes" },
+    "east=false,north=false,south=false,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_w" },
+    "east=false,north=true,south=false,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_nw" },
+    "east=true,north=false,south=false,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_ew" },
+    "east=true,north=true,south=false,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_new" },
+    "east=false,north=false,south=true,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_sw" },
+    "east=false,north=true,south=true,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_nsw" },
+    "east=true,north=false,south=true,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_esw" },
+    "east=true,north=true,south=true,west=true": { "model": "ender_laser_quarry:block/launch_pad_port_nesw" }
+  }
+}

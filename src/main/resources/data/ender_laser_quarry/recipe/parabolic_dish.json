@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["C C", "CGC", " C "],
+  "key": {
+    "C": { "tag": "c:ingots/conductive_alloy" },
+    "G": { "tag": "c:gears/iron" }
+  },
+  "result": { "id": "ender_laser_quarry:parabolic_dish", "count": 1 }
+}

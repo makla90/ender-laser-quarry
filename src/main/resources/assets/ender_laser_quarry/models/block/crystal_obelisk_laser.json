@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "neoforge:obj",
+  "model": "ender_laser_quarry:models/block/crystal_obelisk.obj",
+  "flip_v": true,
+  "automatic_culling": false,
+  "textures": {
+    "particle": "ender_laser_quarry:block/crystal_obelisk_side_laser",
+    "top": "ender_laser_quarry:block/crystal_obelisk_top_laser",
+    "side": "ender_laser_quarry:block/crystal_obelisk_side_laser",
+    "bottom": "ender_laser_quarry:block/quarry_machine_bottom"
+  }
+}
