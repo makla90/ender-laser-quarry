@@ -15,11 +15,12 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -90,14 +91,14 @@ public class LaserLinkerItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (player.isShiftKeyDown() && getSource(stack).isPresent()) {
             if (!level.isClientSide()) {
                 clearSource(stack);
                 PlayerMessages.show(player, Component.translatable("message.ender_laser_quarry.linker.cleared"));
             }
-            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+            return InteractionResult.SUCCESS;
         }
         return super.use(level, player, hand);
     }
@@ -194,12 +195,12 @@ public class LaserLinkerItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
         getSource(stack).ifPresentOrElse(source -> {
             BlockPos pos = source.pos();
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.linker.source", pos.getX(), pos.getY(), pos.getZ())
+            tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.linker.source", pos.getX(), pos.getY(), pos.getZ())
                 .withStyle(ChatFormatting.AQUA));
-        }, () -> tooltip.add(Component.translatable("tooltip.ender_laser_quarry.linker.usage").withStyle(ChatFormatting.GRAY)));
+        }, () -> tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.linker.usage").withStyle(ChatFormatting.GRAY)));
     }
 
     // endregion

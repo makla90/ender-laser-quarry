@@ -3,11 +3,11 @@
   "category": "misc",
   "pattern": [" L ", "DGD", "OCO"],
   "key": {
-    "L": { "item": "ender_laser_quarry:focusing_lens" },
-    "D": { "tag": "c:ingots/dark_steel" },
-    "G": { "tag": "c:gears/dark_steel" },
-    "O": { "item": "minecraft:obsidian" },
-    "C": { "item": "enderio:void_chassis" }
+    "L": "ender_laser_quarry:focusing_lens",
+    "D": "#c:ingots/dark_steel",
+    "G": "#c:gears/dark_steel",
+    "O": "minecraft:obsidian",
+    "C": "enderio:void_chassis"
   },
   "result": { "id": "ender_laser_quarry:crystal_obelisk", "count": 1 }
 }

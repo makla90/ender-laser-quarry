@@ -15,7 +15,10 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+import com.enderlaserquarry.client.render.DeferredBuffers;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +48,7 @@ public final class RemoteSatellites {
         Ghost old = GHOSTS.get(pos);
         LaunchPadBlockEntity pad = old != null ? old.pad() : new LaunchPadBlockEntity(pos, Block.stateById(payload.blockState()));
         pad.setLevel(level);
-        pad.handleUpdateTag(payload.data(), level.registryAccess());
+        pad.handleUpdateTag(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), payload.data()));
         GHOSTS.put(pos, new Ghost(pad, level.getGameTime()));
     }
 
@@ -85,7 +88,7 @@ public final class RemoteSatellites {
         if (real(level, pos) == null) {
             return false;
         }
-        Vec3 camera = minecraft.gameRenderer.getMainCamera().getPosition();
+        Vec3 camera = minecraft.gameRenderer.getMainCamera().position();
         double reach = Math.min(LaunchPadRenderer.VIEW_DISTANCE - 16, (minecraft.options.getEffectiveRenderDistance() - 2) * 16);
         double dx = camera.x - (pos.getX() + 0.5);
         double dz = camera.z - (pos.getZ() + 0.5);
@@ -100,15 +103,15 @@ public final class RemoteSatellites {
     }
 
     @SubscribeEvent
-    static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || GHOSTS.isEmpty()) {
+    static void onRenderLevel(SubmitCustomGeometryEvent event) {
+        if (GHOSTS.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        Vec3 camera = event.getCamera().getPosition();
+        float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        Vec3 camera = minecraft.gameRenderer.getMainCamera().position();
         PoseStack poseStack = event.getPoseStack();
-        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
+        DeferredBuffers buffers = new DeferredBuffers();
         ClientLevel level = minecraft.level;
         for (Ghost ghost : GHOSTS.values()) {
             BlockPos pos = ghost.pad().getBlockPos();
@@ -120,7 +123,8 @@ public final class RemoteSatellites {
             if (pad == null) {
                 pad = ghost.pad();
             }
-            if (!(minecraft.getBlockEntityRenderDispatcher().getRenderer(pad) instanceof LaunchPadRenderer renderer)) {
+            Object found = minecraft.getBlockEntityRenderDispatcher().getRenderer(pad);
+            if (!(found instanceof LaunchPadRenderer renderer)) {
                 continue;
             }
             poseStack.pushPose();
@@ -128,7 +132,7 @@ public final class RemoteSatellites {
             renderer.renderRemote(pad, partialTick, poseStack, buffers);
             poseStack.popPose();
         }
-        buffers.endBatch();
+        buffers.submit(event.getSubmitNodeCollector());
     }
 
     // dev client test

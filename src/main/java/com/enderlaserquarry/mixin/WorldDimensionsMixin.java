@@ -23,24 +23,10 @@ import java.util.stream.Stream;
  */
 @Mixin(WorldDimensions.class)
 public abstract class WorldDimensionsMixin {
-    @Shadow
-    @Final
-    private Map<ResourceKey<LevelStem>, LevelStem> dimensions;
-
     @Inject(method = "checkStability", at = @At("HEAD"), cancellable = true)
     private static void elq$samplingIsStable(ResourceKey<LevelStem> key, LevelStem stem, CallbackInfoReturnable<Lifecycle> cir) {
         if (SamplingDimensions.isSamplingStem(key)) {
             cir.setReturnValue(Lifecycle.stable());
         }
-    }
-
-    // bake calls a world stable only with exactly the 3 vanilla dimensions: leave ours out of that count
-    @ModifyExpressionValue(method = "bake", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I"))
-    private int elq$countWithoutSampling(int size, Registry<LevelStem> stems) {
-        long ours = Stream.concat(stems.registryKeySet().stream(), dimensions.keySet().stream())
-            .distinct()
-            .filter(SamplingDimensions::isSamplingStem)
-            .count();
-        return size - (int) ours;
     }
 }

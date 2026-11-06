@@ -1,7 +1,7 @@
 plugins {
     `java-library`
     idea
-    id("net.neoforged.moddev") version "2.0.124"
+    id("net.neoforged.moddev") version "2.0.148"
 }
 
 
@@ -14,7 +14,7 @@ base {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
 // GameTests, the client test, /elq demo and the dev tools (src/gametest): part of the mod in every dev run, never in the
@@ -35,18 +35,17 @@ repositories {
         }
     }
     // JEI (handy in dev, Ender IO integrates with it)
-    maven("https://modmaven.dev") {
-        content { includeGroup("mezz.jei") }
+    maven("https://maven.blamejared.com") {
+        content {
+            includeGroup("mezz.jei")
+            // JEI 29's config library
+            includeGroup("net.mezzdev.config")
+        }
     }
 }
 
 neoForge {
     version = property("neo_version") as String
-
-    parchment {
-        minecraftVersion = property("parchment_minecraft_version") as String
-        mappingsVersion = property("parchment_mappings_version") as String
-    }
 
     runs {
         create("client") {
@@ -130,9 +129,9 @@ dependencies {
     implementation("com.enderio:enderio:${property("enderio_version")}")
 
     // JEI at runtime for testing
-    runtimeOnly("mezz.jei:jei-1.21.1-neoforge:19.25.0.321")
+    runtimeOnly("mezz.jei:jei-26.1.2-neoforge:29.53.0.115")
     // JEI API for the dev tools only (gametest/RecipeShots), never in the mod
-    gametest.compileOnlyConfigurationName("mezz.jei:jei-1.21.1-neoforge:19.25.0.321")
+    gametest.compileOnlyConfigurationName("mezz.jei:jei-26.1.2-neoforge:29.53.0.115")
     // claim mod APIs for gametest/ClaimCheck only (the run loads them from run-claimcheck/mods)
     gametest.compileOnlyConfigurationName(fileTree("src/gametest/libs") { include("*.jar") })
     // Endergy capacitors at runtime for testing (optional for players)
@@ -186,4 +185,9 @@ val devJar by tasks.registering(Jar::class) {
         include("com/enderlaserquarry/gametest/TestQuarry*.class")
     }
     manifest.from(tasks.jar.get().manifest)
+}
+
+// show every compile error (the port has many), in English
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
 }

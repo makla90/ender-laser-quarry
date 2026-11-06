@@ -3,9 +3,9 @@
   "category": "misc",
   "pattern": ["ODO", "DED", "ODO"],
   "key": {
-    "O": { "item": "minecraft:obsidian" },
-    "D": { "tag": "c:ingots/dark_steel" },
-    "E": { "tag": "c:ender_pearls" }
+    "O": "minecraft:obsidian",
+    "D": "#c:ingots/dark_steel",
+    "E": "#c:ender_pearls"
   },
   "result": { "id": "ender_laser_quarry:laser_quarry_plating", "count": 8 }
 }

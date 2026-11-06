@@ -2,6 +2,7 @@ package com.enderlaserquarry.content.port;
 
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
 import com.enderio.enderio.foundation.io.TransferUtil;
+import com.enderio.enderio.foundation.storage.SidedResourceHandler;
 import com.enderlaserquarry.content.MultiblockFrames;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.init.ModBlockEntities;
@@ -10,18 +11,21 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.resource.Resource;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * I/O port: passes items, fluids and energy on to the multiblock it belongs to. Looks the core up on every call, so
@@ -39,12 +43,48 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
 
     private final Budget itemBudget = new Budget(ITEM_BUDGET_TICKS);
     private final Budget fluidBudget = new Budget(FLUID_BUDGET_TICKS);
-    private final IItemHandler items = new PortItemHandler();
-    private final IFluidHandler fluids = new PortFluidHandler();
-    private final IEnergyStorage energy = new PortEnergyStorage();
-    private final Map<Direction, IItemHandler> sidedItems = new EnumMap<>(Direction.class);
-    private final Map<Direction, IFluidHandler> sidedFluids = new EnumMap<>(Direction.class);
-    private final Map<Direction, IEnergyStorage> sidedEnergy = new EnumMap<>(Direction.class);
+    private final ResourceHandler<ItemResource> items = new PortHandler<>(ItemResource.EMPTY, PortedMultiblock::getPortItemHandler) {
+        @Override
+        public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
+            PortedMultiblock core = core();
+            ResourceHandler<ItemResource> target = core == null ? null : core.getPortItemHandler();
+            if (target == null || index >= target.size() || amount <= 0) {
+                return 0;
+            }
+            long allowed = itemBudget.available(core.getPortItemRate());
+            if (allowed <= 0) {
+                // spent this tick's items: the capacitor is the bottleneck
+                if (!target.getResource(index).isEmpty()) {
+                    core.onPortOutputLimited();
+                }
+                return 0;
+            }
+            int out = target.extract(index, resource, (int) Math.min(amount, allowed), transaction);
+            itemBudget.use(out, transaction);
+            return out;
+        }
+    };
+    private final ResourceHandler<FluidResource> fluids = new PortHandler<>(FluidResource.EMPTY, PortedMultiblock::getPortFluidHandler) {
+        @Override
+        public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
+            PortedMultiblock core = core();
+            ResourceHandler<FluidResource> target = core == null ? null : core.getPortFluidHandler();
+            if (target == null || index >= target.size() || amount <= 0) {
+                return 0;
+            }
+            long allowed = fluidBudget.available(core.getPortFluidRate());
+            if (allowed <= 0) {
+                return 0;
+            }
+            int filled = target.insert(index, resource, (int) Math.min(amount, allowed), transaction);
+            fluidBudget.use(filled, transaction);
+            return filled;
+        }
+    };
+    private final EnergyHandler energy = new PortEnergy(null);
+    private final Map<Direction, ResourceHandler<ItemResource>> sidedItems = new EnumMap<>(Direction.class);
+    private final Map<Direction, ResourceHandler<FluidResource>> sidedFluids = new EnumMap<>(Direction.class);
+    private final Map<Direction, EnergyHandler> sidedEnergy = new EnumMap<>(Direction.class);
 
     public StructurePortBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STRUCTURE_PORT.get(), pos, state, true);
@@ -56,36 +96,36 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
 
     // side null = no IO mode applied
     @Nullable
-    public IItemHandler getItemHandler(@Nullable Direction side) {
+    public ResourceHandler<ItemResource> getItemHandler(@Nullable Direction side) {
         if (!structure().items) {
             return null;
         }
         if (side == null) {
             return items;
         }
-        return getIOMode(side).canConnect() ? sidedItems.computeIfAbsent(side, SidedItemHandler::new) : null;
+        return getIOMode(side).canConnect() ? sidedItems.computeIfAbsent(side, s -> SidedResourceHandler.of(items, s, this)) : null;
     }
 
     @Nullable
-    public IFluidHandler getFluidHandler(@Nullable Direction side) {
+    public ResourceHandler<FluidResource> getFluidHandler(@Nullable Direction side) {
         if (!structure().fluids) {
             return null;
         }
         if (side == null) {
             return fluids;
         }
-        return getIOMode(side).canConnect() ? sidedFluids.computeIfAbsent(side, SidedFluidHandler::new) : null;
+        return getIOMode(side).canConnect() ? sidedFluids.computeIfAbsent(side, s -> SidedResourceHandler.of(fluids, s, this)) : null;
     }
 
     @Nullable
-    public IEnergyStorage getEnergyStorage(@Nullable Direction side) {
+    public EnergyHandler getEnergyStorage(@Nullable Direction side) {
         if (!structure().energy) {
             return null;
         }
         if (side == null) {
             return energy;
         }
-        return getIOMode(side).canConnect() ? sidedEnergy.computeIfAbsent(side, SidedEnergyStorage::new) : null;
+        return getIOMode(side).canConnect() ? sidedEnergy.computeIfAbsent(side, PortEnergy::new) : null;
     }
 
     // region Ender IO machine: active push / pull, no menu of its own (clicks go to the multiblock's core)
@@ -98,15 +138,15 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
     @Override
     protected void distributeResources(Direction side) {
         if (canAct(ITEM_TRANSFER_INTERVAL)) {
-            IItemHandler self = getSelfCapability(Capabilities.ItemHandler.BLOCK, side);
-            IItemHandler other = getNeighbouringCapability(Capabilities.ItemHandler.BLOCK, side);
+            ResourceHandler<ItemResource> self = getSelfCapability(Capabilities.Item.BLOCK, side);
+            ResourceHandler<ItemResource> other = getNeighbouringCapability(Capabilities.Item.BLOCK, side);
             if (self != null && other != null) {
                 TransferUtil.distributeItems(getIOMode(side), self, other);
             }
         }
         if (canAct(FLUID_TRANSFER_INTERVAL)) {
-            IFluidHandler self = getSelfCapability(Capabilities.FluidHandler.BLOCK, side);
-            IFluidHandler other = getNeighbouringCapability(Capabilities.FluidHandler.BLOCK, side);
+            ResourceHandler<FluidResource> self = getSelfCapability(Capabilities.Fluid.BLOCK, side);
+            ResourceHandler<FluidResource> other = getNeighbouringCapability(Capabilities.Fluid.BLOCK, side);
             if (self != null && other != null) {
                 TransferUtil.distributeFluids(getIOMode(side), self, other);
             }
@@ -137,35 +177,13 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
 
     // endregion
 
-    // region Targets
-
     @Nullable
     private PortedMultiblock core() {
         return level != null && MultiblockFrames.findCore(level, worldPosition) instanceof PortedMultiblock core ? core : null;
     }
 
-    @Nullable
-    private IItemHandler itemTarget() {
-        PortedMultiblock core = core();
-        return core == null ? null : core.getPortItemHandler();
-    }
-
-    @Nullable
-    private IFluidHandler fluidTarget() {
-        PortedMultiblock core = core();
-        return core == null ? null : core.getPortFluidHandler();
-    }
-
-    @Nullable
-    private IEnergyStorage energyTarget() {
-        PortedMultiblock core = core();
-        return core == null ? null : core.getPortEnergyStorage();
-    }
-
-    // endregion
-
-    // Per tick allowance that refills with the core's rate
-    private final class Budget {
+    // Per tick allowance that refills with the core's rate, rolled back with its transaction
+    private final class Budget extends SnapshotJournal<Long> {
         private final int carryTicks;
         private long tick = Long.MIN_VALUE;
         private long left;
@@ -187,276 +205,122 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
             return left;
         }
 
-        void use(int amount) {
-            left -= amount;
+        void use(int amount, TransactionContext transaction) {
+            if (amount > 0) {
+                updateSnapshots(transaction);
+                left -= amount;
+            }
+        }
+
+        @Override
+        protected Long createSnapshot() {
+            return left;
+        }
+
+        @Override
+        protected void revertToSnapshot(Long snapshot) {
+            left = snapshot;
         }
     }
 
-    private class PortItemHandler implements IItemHandler {
-        @Override
-        public int getSlots() {
-            IItemHandler target = itemTarget();
-            return target == null ? 0 : target.getSlots();
+    // forwards to the core's handler, looked up per call
+    private class PortHandler<T extends Resource> implements ResourceHandler<T> {
+        private final T empty;
+        private final Function<PortedMultiblock, @Nullable ResourceHandler<T>> lookup;
+
+        PortHandler(T empty, Function<PortedMultiblock, @Nullable ResourceHandler<T>> lookup) {
+            this.empty = empty;
+            this.lookup = lookup;
         }
 
-        @Override
-        public ItemStack getStackInSlot(int slot) {
-            IItemHandler target = itemTarget();
-            return target == null || slot >= target.getSlots() ? ItemStack.EMPTY : target.getStackInSlot(slot);
-        }
-
-        @Override
-        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            IItemHandler target = itemTarget();
-            return target == null || slot >= target.getSlots() ? stack : target.insertItem(slot, stack, simulate);
-        }
-
-        @Override
-        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        @Nullable
+        private ResourceHandler<T> target() {
             PortedMultiblock core = core();
-            IItemHandler target = core == null ? null : core.getPortItemHandler();
-            if (target == null || slot >= target.getSlots() || amount <= 0) {
-                return ItemStack.EMPTY;
-            }
-            long allowed = itemBudget.available(core.getPortItemRate());
-            if (allowed <= 0) {
-                // spent this tick's items: the capacitor is the bottleneck
-                if (!target.getStackInSlot(slot).isEmpty()) {
-                    core.onPortOutputLimited();
-                }
-                return ItemStack.EMPTY;
-            }
-            ItemStack out = target.extractItem(slot, (int) Math.min(amount, allowed), simulate);
-            if (!simulate) {
-                itemBudget.use(out.getCount());
-            }
-            return out;
+            return core == null ? null : lookup.apply(core);
         }
 
         @Override
-        public int getSlotLimit(int slot) {
-            IItemHandler target = itemTarget();
-            return target == null || slot >= target.getSlots() ? 0 : target.getSlotLimit(slot);
+        public int size() {
+            ResourceHandler<T> target = target();
+            return target == null ? 0 : target.size();
         }
 
         @Override
-        public boolean isItemValid(int slot, ItemStack stack) {
-            IItemHandler target = itemTarget();
-            return target != null && slot < target.getSlots() && target.isItemValid(slot, stack);
+        public T getResource(int index) {
+            ResourceHandler<T> target = target();
+            return target == null || index >= target.size() ? empty : target.getResource(index);
+        }
+
+        @Override
+        public long getAmountAsLong(int index) {
+            ResourceHandler<T> target = target();
+            return target == null || index >= target.size() ? 0 : target.getAmountAsLong(index);
+        }
+
+        @Override
+        public long getCapacityAsLong(int index, T resource) {
+            ResourceHandler<T> target = target();
+            return target == null || index >= target.size() ? 0 : target.getCapacityAsLong(index, resource);
+        }
+
+        @Override
+        public boolean isValid(int index, T resource) {
+            ResourceHandler<T> target = target();
+            return target != null && index < target.size() && target.isValid(index, resource);
+        }
+
+        @Override
+        public int insert(int index, T resource, int amount, TransactionContext transaction) {
+            ResourceHandler<T> target = target();
+            return target == null || index >= target.size() ? 0 : target.insert(index, resource, amount, transaction);
+        }
+
+        @Override
+        public int extract(int index, T resource, int amount, TransactionContext transaction) {
+            ResourceHandler<T> target = target();
+            return target == null || index >= target.size() ? 0 : target.extract(index, resource, amount, transaction);
         }
     }
 
-    private class PortFluidHandler implements IFluidHandler {
-        @Override
-        public int getTanks() {
-            IFluidHandler target = fluidTarget();
-            return target == null ? 0 : target.getTanks();
+    // receive only; side null = no IO mode
+    private class PortEnergy implements EnergyHandler {
+        @Nullable
+        private final Direction side;
+
+        PortEnergy(@Nullable Direction side) {
+            this.side = side;
         }
 
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            IFluidHandler target = fluidTarget();
-            return target == null || tank >= target.getTanks() ? FluidStack.EMPTY : target.getFluidInTank(tank);
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            IFluidHandler target = fluidTarget();
-            return target == null || tank >= target.getTanks() ? 0 : target.getTankCapacity(tank);
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack stack) {
-            IFluidHandler target = fluidTarget();
-            return target != null && tank < target.getTanks() && target.isFluidValid(tank, stack);
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
+        @Nullable
+        private EnergyHandler target() {
             PortedMultiblock core = core();
-            IFluidHandler target = core == null ? null : core.getPortFluidHandler();
-            if (target == null || resource.isEmpty()) {
+            return core == null ? null : core.getPortEnergyStorage();
+        }
+
+        @Override
+        public long getAmountAsLong() {
+            EnergyHandler target = target();
+            return target == null ? 0 : target.getAmountAsLong();
+        }
+
+        @Override
+        public long getCapacityAsLong() {
+            EnergyHandler target = target();
+            return target == null ? 0 : target.getCapacityAsLong();
+        }
+
+        @Override
+        public int insert(int amount, TransactionContext transaction) {
+            if (side != null && !getIOMode(side).canInput()) {
                 return 0;
             }
-            long allowed = fluidBudget.available(core.getPortFluidRate());
-            if (allowed <= 0) {
-                return 0;
-            }
-            int filled = target.fill(resource.copyWithAmount((int) Math.min(resource.getAmount(), allowed)), action);
-            if (action.execute()) {
-                fluidBudget.use(filled);
-            }
-            return filled;
+            EnergyHandler target = target();
+            return target == null ? 0 : target.insert(amount, transaction);
         }
 
         @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            IFluidHandler target = fluidTarget();
-            return target == null ? FluidStack.EMPTY : target.drain(resource, action);
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            IFluidHandler target = fluidTarget();
-            return target == null ? FluidStack.EMPTY : target.drain(maxDrain, action);
-        }
-    }
-
-    private class PortEnergyStorage implements IEnergyStorage {
-        @Override
-        public int receiveEnergy(int maxReceive, boolean simulate) {
-            IEnergyStorage target = energyTarget();
-            return target == null ? 0 : target.receiveEnergy(maxReceive, simulate);
-        }
-
-        @Override
-        public int extractEnergy(int maxExtract, boolean simulate) {
+        public int extract(int amount, TransactionContext transaction) {
             return 0;
         }
-
-        @Override
-        public int getEnergyStored() {
-            IEnergyStorage target = energyTarget();
-            return target == null ? 0 : target.getEnergyStored();
-        }
-
-        @Override
-        public int getMaxEnergyStored() {
-            IEnergyStorage target = energyTarget();
-            return target == null ? 0 : target.getMaxEnergyStored();
-        }
-
-        @Override
-        public boolean canExtract() {
-            return false;
-        }
-
-        @Override
-        public boolean canReceive() {
-            return true;
-        }
     }
-
-    // region Per-side views (IO mode)
-
-    private class SidedItemHandler implements IItemHandler {
-        private final Direction side;
-
-        SidedItemHandler(Direction side) {
-            this.side = side;
-        }
-
-        @Override
-        public int getSlots() {
-            return items.getSlots();
-        }
-
-        @Override
-        public ItemStack getStackInSlot(int slot) {
-            return items.getStackInSlot(slot);
-        }
-
-        @Override
-        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            return getIOMode(side).canInput() ? items.insertItem(slot, stack, simulate) : stack;
-        }
-
-        @Override
-        public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return getIOMode(side).canOutput() ? items.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return items.getSlotLimit(slot);
-        }
-
-        @Override
-        public boolean isItemValid(int slot, ItemStack stack) {
-            return getIOMode(side).canInput() && items.isItemValid(slot, stack);
-        }
-    }
-
-    private class SidedFluidHandler implements IFluidHandler {
-        private final Direction side;
-
-        SidedFluidHandler(Direction side) {
-            this.side = side;
-        }
-
-        @Override
-        public int getTanks() {
-            return fluids.getTanks();
-        }
-
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            return fluids.getFluidInTank(tank);
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            return fluids.getTankCapacity(tank);
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack stack) {
-            return getIOMode(side).canInput() && fluids.isFluidValid(tank, stack);
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            return getIOMode(side).canInput() ? fluids.fill(resource, action) : 0;
-        }
-
-        @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            return getIOMode(side).canOutput() ? fluids.drain(resource, action) : FluidStack.EMPTY;
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            return getIOMode(side).canOutput() ? fluids.drain(maxDrain, action) : FluidStack.EMPTY;
-        }
-    }
-
-    private class SidedEnergyStorage implements IEnergyStorage {
-        private final Direction side;
-
-        SidedEnergyStorage(Direction side) {
-            this.side = side;
-        }
-
-        @Override
-        public int receiveEnergy(int maxReceive, boolean simulate) {
-            return getIOMode(side).canInput() ? energy.receiveEnergy(maxReceive, simulate) : 0;
-        }
-
-        @Override
-        public int extractEnergy(int maxExtract, boolean simulate) {
-            return 0;
-        }
-
-        @Override
-        public int getEnergyStored() {
-            return energy.getEnergyStored();
-        }
-
-        @Override
-        public int getMaxEnergyStored() {
-            return energy.getMaxEnergyStored();
-        }
-
-        @Override
-        public boolean canExtract() {
-            return false;
-        }
-
-        @Override
-        public boolean canReceive() {
-            return getIOMode(side).canInput();
-        }
-    }
-
-    // endregion
 }

@@ -31,11 +31,11 @@ public record QuarryActionPayload(BlockPos controllerPos, Action action, long ch
     }
 
     public static QuarryActionPayload setQueued(BlockPos controllerPos, ChunkPos chunk, boolean queued) {
-        return new QuarryActionPayload(controllerPos, queued ? Action.ADD_CHUNK : Action.REMOVE_CHUNK, chunk.toLong(), 0);
+        return new QuarryActionPayload(controllerPos, queued ? Action.ADD_CHUNK : Action.REMOVE_CHUNK, chunk.pack(), 0);
     }
 
     public static QuarryActionPayload setBoxQueued(BlockPos controllerPos, ChunkPos from, ChunkPos to, boolean queued) {
-        return new QuarryActionPayload(controllerPos, queued ? Action.ADD_BOX : Action.REMOVE_BOX, from.toLong(), to.toLong());
+        return new QuarryActionPayload(controllerPos, queued ? Action.ADD_BOX : Action.REMOVE_BOX, from.pack(), to.pack());
     }
 
     public static QuarryActionPayload requestMinimap(BlockPos controllerPos, int since) {
@@ -57,7 +57,7 @@ public record QuarryActionPayload(BlockPos controllerPos, Action action, long ch
 
     // dx / dz in chunks from the pad's chunk, packed like a ChunkPos
     public static QuarryActionPayload transferSatellite(BlockPos controllerPos, int dx, int dz) {
-        return new QuarryActionPayload(controllerPos, Action.TRANSFER_SATELLITE, ChunkPos.asLong(dx, dz), 0);
+        return new QuarryActionPayload(controllerPos, Action.TRANSFER_SATELLITE, ChunkPos.pack(dx, dz), 0);
     }
 
     public static QuarryActionPayload setDepthMode(BlockPos controllerPos, DepthMode mode) {

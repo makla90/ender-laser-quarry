@@ -10,15 +10,16 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -30,9 +31,9 @@ import org.joml.Quaternionf;
  * Rocket, satellite, beams and the controller's mini radar. Flight positions are relative to the pad center, not the
  * controller.
  */
-public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEntity> {
-    private static final ResourceLocation ROCKET_TEXTURE = EnderLaserQuarry.rl("textures/entity/rocket.png");
-    private static final ResourceLocation[] SATELLITE_TEXTURES = {
+public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
+    private static final Identifier ROCKET_TEXTURE = EnderLaserQuarry.rl("textures/entity/rocket.png");
+    private static final Identifier[] SATELLITE_TEXTURES = {
         EnderLaserQuarry.rl("textures/entity/satellite.png"),
         EnderLaserQuarry.rl("textures/entity/enhanced_satellite.png"),
         EnderLaserQuarry.rl("textures/entity/ender_satellite.png")};
@@ -149,15 +150,15 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         poseStack.translate(0.5, 1.0, 0.5);
         poseStack.scale(scale, scale, scale);
         miniRadar.horn.visible = false;
-        miniRadar.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(GroundRadarRenderer.TEXTURE)), light,
+        miniRadar.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(GroundRadarRenderer.TEXTURE)), light,
             OverlayTexture.NO_OVERLAY);
         miniRadar.horn.visible = true;
         miniRadar.root.translateAndRotate(poseStack);
         miniRadar.turret.translateAndRotate(poseStack);
         miniRadar.antenna.translateAndRotate(poseStack);
         boolean linked = pad.getStation() != null;
-        miniRadar.horn.render(poseStack, buffers.getBuffer(RenderType.entityTranslucentEmissive(GroundRadarRenderer.TEXTURE)),
-            linked ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, linked ? 0xFFFFFFFF : 0xFF505050);
+        miniRadar.horn.render(poseStack, buffers.getBuffer(RenderTypes.entityTranslucentEmissive(GroundRadarRenderer.TEXTURE)),
+            linked ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, linked ? 0xFFFFFFFF : 0xFF505050);
         poseStack.popPose();
 
         Vec3 target = pad.getStationTarget();
@@ -204,7 +205,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         poseStack.mulPose(new Quaternionf().rotationTo(0, 1, 0, (float) up.x, (float) up.y, (float) up.z));
         poseStack.scale(scale, scale, scale);
         rocket.setFairingOpen(pad.getFairingOpen(partialTick));
-        rocket.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(ROCKET_TEXTURE)), light, OverlayTexture.NO_OVERLAY);
+        rocket.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(ROCKET_TEXTURE)), light, OverlayTexture.NO_OVERLAY);
         poseStack.popPose();
 
         // exhaust
@@ -219,7 +220,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
 
     private void renderSatellite(LaunchPadBlockEntity pad, Level level, Vec3 pos, float partialTick, float time,
                                  PoseStack poseStack, MultiBufferSource buffers) {
-        ResourceLocation texture = SATELLITE_TEXTURES[Math.min(pad.getDrawnSatelliteTier().ordinal(), SATELLITE_TEXTURES.length - 1)];
+        Identifier texture = SATELLITE_TEXTURES[Math.min(pad.getDrawnSatelliteTier().ordinal(), SATELLITE_TEXTURES.length - 1)];
         float transfer = pad.getSatelliteTransfer(partialTick);
         float scale = Mth.lerp(transfer, LaunchPadBlockEntity.SATELLITE_DOCKED_SCALE, LaunchPadBlockEntity.SATELLITE_ORBIT_SCALE);
         float wings = Mth.clamp((transfer - 0.2f) / 0.6f, 0, 1);
@@ -246,7 +247,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         satellite.navLeft.visible = false;
         satellite.navRight.visible = false;
         satellite.ring.visible = false;
-        satellite.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(texture)), light, OverlayTexture.NO_OVERLAY);
+        satellite.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(texture)), light, OverlayTexture.NO_OVERLAY);
         satellite.beacon.visible = true;
         satellite.scanner.visible = true;
         satellite.mirror.visible = true;
@@ -254,16 +255,16 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         satellite.navRight.visible = true;
         satellite.ring.visible = true;
 
-        var glow = buffers.getBuffer(RenderType.entityTranslucentEmissive(texture));
+        var glow = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(texture));
         boolean blink = (level.getGameTime() % 30) < 4;
-        satellite.beacon.render(poseStack, glow, blink ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY,
+        satellite.beacon.render(poseStack, glow, blink ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY,
             blink ? 0xFFFFFFFF : 0xFF606060);
         // lens lights up while scanning
         ChunkPos scanning = pad.getScanningChunk();
-        satellite.scanner.render(poseStack, glow, scanning != null ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY,
+        satellite.scanner.render(poseStack, glow, scanning != null ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY,
             scanning != null ? 0xFFFFFFFF : 0xFF707070);
         // lights: beacon beam type, no directional shading, so they glow from below too
-        var lights = buffers.getBuffer(RenderType.beaconBeam(texture, false));
+        var lights = buffers.getBuffer(RenderTypes.beaconBeam(texture, false));
         if (wings > 0.5f) {
             renderNavLights(poseStack, lights, level.getGameTime());
         }
@@ -313,14 +314,14 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         poseStack.scale(scale, scale, scale);
 
         satellite.mirrorSurface.visible = false;
-        satellite.mirror.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(texture)), light, OverlayTexture.NO_OVERLAY);
+        satellite.mirror.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(texture)), light, OverlayTexture.NO_OVERLAY);
         satellite.mirrorSurface.visible = true;
 
         boolean reflecting = targetCentre != null;
-        int surfaceColor = reflecting ? FastColor.ARGB32.color((int) (215 + 40 * Mth.sin(time * 0.6f)), 255, 255, 255) : 0xFFB8C0CC;
+        int surfaceColor = reflecting ? ARGB.color((int) (215 + 40 * Mth.sin(time * 0.6f)), 255, 255, 255) : 0xFFB8C0CC;
         // get it again, the cutout buffer may have flushed it
-        glow =buffers.getBuffer(RenderType.entityTranslucentEmissive(texture));
-        satellite.mirrorSurface.render(poseStack, glow, reflecting ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, surfaceColor);
+        glow =buffers.getBuffer(RenderTypes.entityTranslucentEmissive(texture));
+        satellite.mirrorSurface.render(poseStack, glow, reflecting ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, surfaceColor);
         poseStack.popPose();
 
         if (reflecting) {
@@ -353,7 +354,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         wing.translateAndRotate(poseStack);
         panel.translateAndRotate(poseStack);
         outer.translateAndRotate(poseStack);
-        light.render(poseStack, glow, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
+        light.render(poseStack, glow, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
         poseStack.popPose();
     }
 
@@ -365,9 +366,9 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         for (int i = 0; i < SatelliteModel.RING_SEGMENTS; i++) {
             float behind = Math.floorMod((int) Math.floor(head) - i, SatelliteModel.RING_SEGMENTS) + (head - (float) Math.floor(head));
             float bright = Math.max(0, 1 - behind / 3f);
-            int color = FastColor.ARGB32.color(255, (int) Mth.lerp(bright, 0x30, 0xE0), (int) Mth.lerp(bright, 0xE8, 0xFF),
+            int color = ARGB.color(255, (int) Mth.lerp(bright, 0x30, 0xE0), (int) Mth.lerp(bright, 0xE8, 0xFF),
                 (int) Mth.lerp(bright, 0xC8, 0xF8));
-            satellite.ringSegments[i].render(poseStack, glow, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
+            satellite.ringSegments[i].render(poseStack, glow, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
         }
         poseStack.popPose();
     }
@@ -389,14 +390,14 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
 
     // no light data above the build limit
     static int lightAt(Level level, BlockPos pos) {
-        if (pos.getY() >= level.getMaxBuildHeight()) {
-            return LightTexture.pack(0, 15);
+        if (pos.getY() >= (level.getMaxY() + 1)) {
+            return LightCoordsUtil.pack(0, 15);
         }
-        return LevelRenderer.getLightColor(level, pos);
+        return LevelRenderer.getLightCoords(level, pos);
     }
 
     @Override
-    public boolean shouldRenderOffScreen(LaunchPadBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

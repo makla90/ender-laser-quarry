@@ -76,8 +76,8 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         super(ModMenus.QUARRY_CONTROLLER.get(), containerId, playerInventory, be);
 
         hasTarget = addSyncSlot(IntSyncSlot.readOnly(() -> be.getWorkChunk() != null ? 1 : 0));
-        targetX = addSyncSlot(IntSyncSlot.readOnly(() -> be.getWorkChunk() != null ? be.getWorkChunk().x : 0));
-        targetZ = addSyncSlot(IntSyncSlot.readOnly(() -> be.getWorkChunk() != null ? be.getWorkChunk().z : 0));
+        targetX = addSyncSlot(IntSyncSlot.readOnly(() -> be.getWorkChunk() != null ? be.getWorkChunk().x() : 0));
+        targetZ = addSyncSlot(IntSyncSlot.readOnly(() -> be.getWorkChunk() != null ? be.getWorkChunk().z() : 0));
         running = addSyncSlot(IntSyncSlot.readOnly(() -> be.isRunning() ? 1 : 0));
         blocksMined = addSyncSlot(IntSyncSlot.readOnly(be::getBlocksMined));
         cursorY = addSyncSlot(IntSyncSlot.readOnly(be::getCursorY));
@@ -102,8 +102,8 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         analyzeId = addSyncSlot(IntSyncSlot.readOnly(be::getAnalyzeId));
         analyzeProgress = addSyncSlot(IntSyncSlot.readOnly(() -> Math.round(be.getAnalyzeProgress() * 1000)));
         analyzeStalled = addSyncSlot(IntSyncSlot.readOnly(() -> be.isAnalyzeStalled() ? 1 : 0));
-        coolant = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getCoolantTank())));
-        xp = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getXpTank())));
+        coolant = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> be.getCoolantTank().info()));
+        xp = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> be.getXpTank().info()));
         portItemRate = addSyncSlot(IntSyncSlot.readOnly(be::getPortItemRate));
         energyIntake = addSyncSlot(IntSyncSlot.readOnly(be::getEnergyIntake));
         for (int i = 0; i < ORBIT_SLOTS; i++) {
@@ -210,11 +210,11 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
 
     private void addSlots() {
         var inventory = getMachineInventory();
-        var outputs = QuarryControllerBlockEntity.OUTPUT.getAccesses();
-        for (int i = 0; i < outputs.size(); i++) {
+        var outputs = QuarryControllerBlockEntity.OUTPUT;
+        for (int i = 0; i < outputs.count(); i++) {
             int x = OUTPUT_X + (i % OUTPUT_COLUMNS) * 18;
             int y = OUTPUT_Y + (i / OUTPUT_COLUMNS) * 18;
-            addSlot(new MachineSlot(inventory, outputs.get(i).getIndex(), x, y));
+            addSlot(new MachineSlot(inventory, outputs.slot(i), x, y));
         }
 
         addSlot(new MachineSlot(inventory, QuarryControllerBlockEntity.FILTER, FILTER_X, FILTER_Y));
@@ -370,7 +370,7 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
             if (!builder.isEmpty()) {
                 builder.append(';');
             }
-            builder.append(chunk.x).append(',').append(chunk.z);
+            builder.append(chunk.x()).append(',').append(chunk.z());
         }
         return builder.toString();
     }

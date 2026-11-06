@@ -8,8 +8,13 @@ import com.enderio.enderio.foundation.block.entity.MultiConfigurable;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.block.entity.flags.CapacitorSupport;
-import com.enderio.enderio.foundation.inventory.MachineInventory;
-import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
+import com.enderio.core.common.storage.layout.ItemStorageLayout;
+import com.enderio.core.common.storage.slot.SingleResourceSlotKey;
+import com.enderio.enderio.foundation.inventory.MachineSlotTemplates;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.enderlaserquarry.EnderLaserQuarry;
 import com.enderlaserquarry.config.QuarryConfig;
@@ -35,11 +40,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
+import com.enderio.enderio.api.EnderIOCapabilities;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -113,8 +119,10 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     private float spin, prevSpin;
     private float lastSequenceTicks = -1;
 
+    public static final SingleResourceSlotKey<ItemResource> CAPACITOR = new SingleResourceSlotKey<>();
+
     public SatelliteDishBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.SATELLITE_DISH.get(), pos, state, true, CapacitorSupport.REQUIRED, EnergyIOMode.Input,
+        super(ModBlockEntities.SATELLITE_DISH.get(), pos, state, true, CapacitorSupport.REQUIRED, CAPACITOR, EnergyIOMode.Input,
             ENERGY_CAPACITY.get(tierOf(state)), ENERGY_USAGE.get(tierOf(state)));
     }
 
@@ -215,7 +223,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     // region I/O ports
 
     @Override
-    public @Nullable IEnergyStorage getPortEnergyStorage() {
+    public @Nullable EnergyHandler getPortEnergyStorage() {
         return getEnergyStorage();
     }
 
@@ -291,7 +299,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
             return 0;
         }
 
-        int drawn = getEnergyStorage().consumeEnergy(amount, false);
+        int drawn = getEnergyStorage().consume(amount, null);
         if (drawn > 0) {
             usedSum += drawn;
             lastBeamTick = level.getGameTime();
@@ -300,8 +308,17 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     }
 
     // wears capacitors that wear (Endergy's Totemic), once per mined chunk
+    // Ender IO 9 hands the extension a copy of the slot (its storage builds a new stack), so wear the stack and put it back
     public void wearCapacitor() {
-        onMachineUsed();
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        ItemStack capacitor = getInventory().getStack(CAPACITOR);
+        var extension = capacitor.getCapability(EnderIOCapabilities.CAPACITOR_EXTENSION);
+        if (extension != null) {
+            extension.onMachineUsed(capacitor, serverLevel);
+            getInventory().setStack(CAPACITOR, capacitor);
+        }
     }
 
     // Capacitor level squared like Ender IO's machines, times the dish speed: Basic 1/4/9, Enhanced 2/6/14, Ender 2/8/18
@@ -323,7 +340,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     // Unpowered dishes don't count for the obelisk
     public boolean isPowered() {
         if (level != null && !level.isClientSide()) {
-            return getEnergyStorage().getEnergyStored() > 0;
+            return getEnergyStorage().getAmountAsInt() > 0;
         }
         return powered;
     }
@@ -354,7 +371,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
         }
 
         if (level != null) {
-            if (getEnergyStorage().getEnergyStored() > 0) {
+            if (getEnergyStorage().getAmountAsInt() > 0) {
                 lastPoweredTick = level.getGameTime();
             }
             boolean nowPowered = level.getGameTime() - lastPoweredTick <= BEAM_LINGER_TICKS;
@@ -512,25 +529,9 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     // endregion
 
     @Override
-    protected MachineInventoryLayout createInventoryLayout() {
-        return MachineInventoryLayout.builder().capacitor().build();
-    }
-
-    // Ender IO's inventory. Endergy capacitors go into any dish, below Ender they show an error instead of working
-    @Override
-    protected MachineInventory createMachineInventory(MachineInventoryLayout layout) {
-        return new MachineInventory(this, layout) {
-            @Override
-            protected void onContentsChanged(int slot) {
-                onInventoryContentsChanged(slot);
-                setChanged();
-            }
-
-            @Override
-            public void updateMachineState(MachineState state, boolean add) {
-                SatelliteDishBlockEntity.this.updateMachineState(state, add);
-            }
-        };
+    protected ItemStorageLayout createInventoryLayout() {
+        // Endergy capacitors go into any dish, below Ender they show an error instead of working
+        return ItemStorageLayout.builder().add(CAPACITOR, MachineSlotTemplates.capacitor()).build();
     }
 
     @Override
@@ -547,11 +548,9 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     // region Serialization
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
-        if (obeliskPos != null) {
-            tag.put(OBELISK_POS, NbtUtils.writeBlockPos(obeliskPos));
-        }
+    protected void saveAdditionalSynced(ValueOutput tag) {
+        super.saveAdditionalSynced(tag);
+        tag.storeNullable(OBELISK_POS, BlockPos.CODEC, obeliskPos);
         tag.putBoolean(BEAMING, beaming);
         tag.putBoolean(FORMED, formed);
         tag.putInt(CAPACITOR_TIER, capacitorTier);
@@ -559,13 +558,13 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        obeliskPos = NbtUtils.readBlockPos(tag, OBELISK_POS).orElse(null);
-        beaming = tag.getBoolean(BEAMING);
-        formed = tag.getBoolean(FORMED);
-        capacitorTier = tag.getInt(CAPACITOR_TIER);
-        powered = tag.getBoolean(POWERED);
+    protected void loadAdditional(ValueInput tag) {
+        super.loadAdditional(tag);
+        obeliskPos = tag.read(OBELISK_POS, BlockPos.CODEC).orElse(null);
+        beaming = tag.getBooleanOr(BEAMING, false);
+        formed = tag.getBooleanOr(FORMED, false);
+        capacitorTier = tag.getIntOr(CAPACITOR_TIER, 0);
+        powered = tag.getBooleanOr(POWERED, false);
     }
 
     // endregion

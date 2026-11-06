@@ -8,13 +8,14 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
@@ -38,7 +39,7 @@ import java.util.Set;
  * change. Scroll zooms, right drag pans.
  */
 final class SpaceMapView {
-    private static final ResourceLocation TEXTURE = EnderLaserQuarry.rl("dynamic/quarry_space");
+    private static final Identifier TEXTURE = EnderLaserQuarry.rl("dynamic/quarry_space");
     private static final int ORE_LINES = 8;
     private static final int ROCK_LINES = 6;
     private static final float MIN_TINT_SHARE = 0.005f;
@@ -123,7 +124,7 @@ final class SpaceMapView {
 
     private void bake() {
         if (texture == null) {
-            texture = new DynamicTexture(FIELD, FIELD, true);
+            texture = new DynamicTexture("ender_laser_quarry_space", FIELD, FIELD, true);
             Minecraft.getInstance().getTextureManager().register(TEXTURE, texture);
         }
         NativeImage image = texture.getPixels();
@@ -154,7 +155,7 @@ final class SpaceMapView {
                     g += 34;
                     b += 40;
                 }
-                image.setPixelRGBA(x, y, abgr(r, g, b));
+                image.setPixelABGR(x, y, abgr(r, g, b));
             }
         }
     }
@@ -247,7 +248,7 @@ final class SpaceMapView {
                     light = Math.max(light, 1f);
                 }
                 // stepped shading looks more like pixel art
-                image.setPixelRGBA(x, y, shade(color, Math.round(light * 6) / 6f));
+                image.setPixelABGR(x, y, shade(color, Math.round(light * 6) / 6f));
             }
         }
 
@@ -269,7 +270,7 @@ final class SpaceMapView {
             int x = Math.round(cx + Mth.cos(angle) * rx);
             int y = Math.round(cy + sin * ry - Mth.cos(angle) * ry * 0.4f);
             if (x >= 0 && y >= 0 && x < FIELD && y < FIELD) {
-                image.setPixelRGBA(x, y, shade(color, back ? 0.6f : 1.05f));
+                image.setPixelABGR(x, y, shade(color, back ? 0.6f : 1.05f));
             }
         }
     }
@@ -292,11 +293,11 @@ final class SpaceMapView {
         static final Analysis NONE = new Analysis(-1, 0, false, -1);
     }
 
-    void render(GuiGraphics g, Font font, int x0, int y0, List<Integer> queue, boolean running, double mouseX, double mouseY,
+    void render(GuiGraphicsExtractor g, Font font, int x0, int y0, List<Integer> queue, boolean running, double mouseX, double mouseY,
                 Analysis analysis) {
         int left = x0 + screen(0, viewX);
         int top = y0 + screen(0, viewY);
-        g.blit(TEXTURE, left, top, x0 + screen(FIELD, viewX) - left, y0 + screen(FIELD, viewY) - top, 0, 0, FIELD, FIELD, FIELD, FIELD);
+        g.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left, top, 0, 0, x0 + screen(FIELD, viewX) - left, y0 + screen(FIELD, viewY) - top, FIELD, FIELD, FIELD, FIELD);
 
         long now = System.currentTimeMillis();
         // flash as soon as the synced analysis ends, the new rock colours come a bit later
@@ -321,7 +322,7 @@ final class SpaceMapView {
             } else if (!knowsRock(asteroid)) {
                 // a faint "?" so unknown asteroids read as unknown
                 if (r >= 6) {
-                    g.drawString(font, "?", cx - 2, cy - 4, 0x90C8D0DC, false);
+                    g.text(font, "?", cx - 2, cy - 4, 0x90C8D0DC, false);
                 }
             }
             Long flash = flashes.get(asteroid.id());
@@ -344,14 +345,14 @@ final class SpaceMapView {
             int index = queue.indexOf(asteroid.id());
             if (index >= 0) {
                 int edge = index == 0 && running ? ((int) (0x80 + 0x7F * pulse) << 24) | (QUEUED & 0xFFFFFF) : QUEUED;
-                g.renderOutline(cx - r, cy - r, 2 * r + 1, 2 * r + 1, edge);
-                g.drawString(font, String.valueOf(index + 1), cx + r - 3, cy - r - 3, 0xFFFFFFFF, true);
+                g.outline(cx - r, cy - r, 2 * r + 1, 2 * r + 1, edge);
+                g.text(font, String.valueOf(index + 1), cx + r - 3, cy - r - 3, 0xFFFFFFFF, true);
             }
         }
     }
 
     // Lock-on brackets closing in, a scan line sweeping the rock, a ring of dots for the progress and data bits rising to the satellite
-    private static void renderAnalyzing(GuiGraphics g, int cx, int cy, int r, Analysis analysis, long now) {
+    private static void renderAnalyzing(GuiGraphicsExtractor g, int cx, int cy, int r, Analysis analysis, long now) {
         boolean stalled = analysis.stalled();
         int color = stalled ? STALLED : SCAN;
         if (stalled) {
@@ -399,7 +400,7 @@ final class SpaceMapView {
     }
 
     // a white flash over the rock and a ring running outwards, when the analysis is done
-    private static void renderFlash(GuiGraphics g, int cx, int cy, int r, float t) {
+    private static void renderFlash(GuiGraphicsExtractor g, int cx, int cy, int r, float t) {
         int fade = (int) (0xD0 * (1 - t) * (1 - t));
         int body = Math.max(2, r - 1);
         for (int dy = -body; dy <= body; dy++) {
@@ -417,7 +418,7 @@ final class SpaceMapView {
         }
     }
 
-    private static void brackets(GuiGraphics g, int cx, int cy, int reach, int len, int color) {
+    private static void brackets(GuiGraphicsExtractor g, int cx, int cy, int reach, int len, int color) {
         int l = cx - reach;
         int rr = cx + reach;
         int t = cy - reach;
@@ -452,7 +453,7 @@ final class SpaceMapView {
 
     static List<Component> tooltip(SpaceMapPayload.AsteroidInfo asteroid) {
         List<Component> lines = new ArrayList<>();
-        ResourceLocation biome = asteroid.biome();
+        Identifier biome = asteroid.biome();
         lines.add(Component.translatable("gui.ender_laser_quarry.asteroid." + asteroid.size().key(),
             Component.translatable("biome." + biome.getNamespace() + "." + biome.getPath())));
         lines.add(Component.translatable("gui.ender_laser_quarry.asteroid.remaining", NUMBERS.format(asteroid.remaining()),
@@ -468,7 +469,7 @@ final class SpaceMapView {
             .sorted(Comparator.comparingInt((SpaceMapPayload.Part part) -> isOwnRock(part) ? 0 : 1)
                 .thenComparing(SpaceMapPayload.Part::share, Comparator.reverseOrder()))
             .toList();
-        int rocksShown = Screen.hasControlDown() ? rocks.size() : Math.min(rocks.size(), ROCK_LINES);
+        int rocksShown = Minecraft.getInstance().hasControlDown() ? rocks.size() : Math.min(rocks.size(), ROCK_LINES);
         boolean perMillion = false;
         for (int i = 0; i < rocksShown; i++) {
             lines.add(partLine(rocks.get(i), ChatFormatting.GRAY));
@@ -486,7 +487,7 @@ final class SpaceMapView {
                 continue;
             }
             Block block = Block.stateById(part.stateId()).getBlock();
-            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
             String key = id.getNamespace() + ":" + id.getPath().replace("deepslate_", "");
             shares.computeIfAbsent(key, k -> new float[1])[0] += part.share();
             if (!names.containsKey(key) || !id.getPath().contains("deepslate")) {
@@ -495,7 +496,7 @@ final class SpaceMapView {
         }
         List<String> ores = new ArrayList<>(shares.keySet());
         ores.sort((a, b) -> Float.compare(shares.get(b)[0], shares.get(a)[0]));
-        int shown = Screen.hasShiftDown() ? ores.size() : Math.min(ores.size(), ORE_LINES);
+        int shown = Minecraft.getInstance().hasShiftDown() ? ores.size() : Math.min(ores.size(), ORE_LINES);
         for (int i = 0; i < shown; i++) {
             lines.add(shareLine(shares.get(ores.get(i))[0], names.get(ores.get(i)), ChatFormatting.GOLD));
             perMillion |= isPerMillion(shares.get(ores.get(i))[0]);

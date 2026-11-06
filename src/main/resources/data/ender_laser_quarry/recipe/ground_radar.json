@@ -3,12 +3,12 @@
   "category": "misc",
   "pattern": ["GPG", "TVT", "DOD"],
   "key": {
-    "G": { "tag": "c:gears/dark_steel" },
-    "P": { "item": "ender_laser_quarry:parabolic_dish" },
-    "T": { "item": "ender_laser_quarry:signal_transceiver" },
-    "V": { "item": "enderio:void_chassis" },
-    "D": { "tag": "c:ingots/dark_steel" },
-    "O": { "item": "minecraft:observer" }
+    "G": "#c:gears/dark_steel",
+    "P": "ender_laser_quarry:parabolic_dish",
+    "T": "ender_laser_quarry:signal_transceiver",
+    "V": "enderio:void_chassis",
+    "D": "#c:ingots/dark_steel",
+    "O": "minecraft:observer"
   },
   "result": { "id": "ender_laser_quarry:ground_radar", "count": 1 }
 }

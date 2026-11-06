@@ -61,13 +61,13 @@ public enum DepthMode {
             return clampY(level, playerY);
         }
         if (this == Y_LEVEL && level.dimension() == Level.OVERWORLD) {
-            return Math.max(level.getMinBuildHeight(), QuarryConfig.DEPTH_FLOOR_Y.get());
+            return Math.max(level.getMinY(), QuarryConfig.DEPTH_FLOOR_Y.get());
         }
-        return level.getMinBuildHeight();
+        return level.getMinY();
     }
 
     public static int clampY(Level level, int y) {
-        return Mth.clamp(y, level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
+        return Mth.clamp(y, level.getMinY(), level.getMaxY());
     }
 
     public static DepthMode byOrdinal(int ordinal) {

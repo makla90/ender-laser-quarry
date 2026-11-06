@@ -3,10 +3,10 @@
   "category": "misc",
   "pattern": ["BCB", "GPG", "BCB"],
   "key": {
-    "B": { "item": "enderio:conduit_binder" },
-    "C": { "tag": "c:ingots/conductive_alloy" },
-    "G": { "tag": "c:gears/iron" },
-    "P": [ { "item": "ender_laser_quarry:satellite_dish_plating" }, { "item": "ender_laser_quarry:enhanced_satellite_dish_plating" }, { "item": "ender_laser_quarry:ender_satellite_dish_plating" } ]
+    "B": "enderio:conduit_binder",
+    "C": "#c:ingots/conductive_alloy",
+    "G": "#c:gears/iron",
+    "P": ["ender_laser_quarry:satellite_dish_plating", "ender_laser_quarry:enhanced_satellite_dish_plating", "ender_laser_quarry:ender_satellite_dish_plating"]
   },
   "result": { "id": "ender_laser_quarry:satellite_dish_port", "count": 1 }
 }

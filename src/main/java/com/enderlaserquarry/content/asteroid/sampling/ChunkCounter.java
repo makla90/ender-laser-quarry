@@ -105,8 +105,8 @@ public final class ChunkCounter {
     // structure pieces reaching into this chunk are left out
     private static List<BoundingBox> structureBoxes(ServerLevel level, ChunkAccess chunk) {
         List<BoundingBox> boxes = new ArrayList<>();
-        BoundingBox chunkBox = new BoundingBox(chunk.getPos().getMinBlockX(), level.getMinBuildHeight(), chunk.getPos().getMinBlockZ(),
-            chunk.getPos().getMaxBlockX(), level.getMaxBuildHeight(), chunk.getPos().getMaxBlockZ());
+        BoundingBox chunkBox = new BoundingBox(chunk.getPos().getMinBlockX(), level.getMinY(), chunk.getPos().getMinBlockZ(),
+            chunk.getPos().getMaxBlockX(), (level.getMaxY() + 1), chunk.getPos().getMaxBlockZ());
         for (StructureStart start : level.structureManager().startsForStructure(chunk.getPos(), structure -> true)) {
             for (StructurePiece piece : start.getPieces()) {
                 if (piece.getBoundingBox().intersects(chunkBox)) {

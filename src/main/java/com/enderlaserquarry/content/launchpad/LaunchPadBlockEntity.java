@@ -1,18 +1,26 @@
 package com.enderlaserquarry.content.launchpad;
 
 import com.enderio.enderio.foundation.MachineNBTKeys;
-import com.enderio.enderio.foundation.attachment.FluidTankUser;
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
 import com.enderio.enderio.foundation.block.entity.MultiConfigurable;
-import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
-import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
+import com.enderio.core.common.storage.ExternalResourceStorageView;
+import com.enderio.core.common.storage.FluidStorage;
+import com.enderio.core.common.storage.layout.FluidStorageLayout;
+import com.enderio.core.common.storage.layout.ItemStorageLayout;
+import com.enderio.core.common.storage.layout.SlotTemplates;
+import com.enderio.core.common.storage.slot.SingleResourceSlotKey;
+import com.enderlaserquarry.content.Tank;
+import com.enderlaserquarry.init.ModTickets;
+import net.minecraft.core.component.DataComponentGetter;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.io.fluid.FluidItemInteractive;
-import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
-import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
-import com.enderio.enderio.foundation.io.fluid.MachineTankLayout;
-import com.enderio.enderio.foundation.io.fluid.TankAccess;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.enderio.enderio.init.EIODataComponents;
 import com.enderlaserquarry.EnderLaserQuarry;
@@ -45,7 +53,6 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
@@ -67,8 +74,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
 import com.enderlaserquarry.content.port.PortedMultiblock;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,10 +86,10 @@ import java.util.Objects;
  * Launch pad controller. Sits on the ring of the 5x5 pad, launches and recovers the satellite and runs the uplink.
  * No entities for the flight: phase and start tick are synced and the client works out all positions from them.
  */
-public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTankUser, FluidItemInteractive, MultiConfigurable, PortedMultiblock {
-    public static final SingleSlotAccess ROCKET = new SingleSlotAccess();
-    public static final SingleSlotAccess SATELLITE = new SingleSlotAccess();
-    public static final TankAccess FUEL = new TankAccess();
+public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidItemInteractive, MultiConfigurable, PortedMultiblock {
+    public static final SingleResourceSlotKey<ItemResource> ROCKET = new SingleResourceSlotKey<>();
+    public static final SingleResourceSlotKey<ItemResource> SATELLITE = new SingleResourceSlotKey<>();
+    public static final SingleResourceSlotKey<FluidResource> FUEL = new SingleResourceSlotKey<>();
 
     public static final TagKey<Block> FRAME_BLOCKS = TagKey.create(Registries.BLOCK, EnderLaserQuarry.rl("launch_pad_frame"));
     public static final int RADIUS = 2;
@@ -106,9 +111,6 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     private static final int STRUCTURE_CHECK_INTERVAL = 20;
 
-    // brief chunk loads for mapping new ground
-    private static final TicketType<ChunkPos> SCAN_TICKET = TicketType.create(EnderLaserQuarry.MOD_ID + "_scan",
-        Comparator.comparingLong(ChunkPos::toLong), 100);
     private static final int SCAN_LOAD_WAIT = 200;
     private static final int KNOWN_PER_STEP = 32;
 
@@ -123,6 +125,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private static final String MISSION = "Mission";
     private static final String PHASE_START = "PhaseStart";
     private static final String FLIGHT_ROCKET = "FlightRocket";
+    private static final String FULL_SAVE = "FullSave";
+    private static final String FLUIDS = "Fluids";
     private static final String PAYLOAD = "Payload";
     private static final String ORBITING = "Orbiting";
     private static final String HAS_PAYLOAD = "HasPayload";
@@ -157,7 +161,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private static final Vec3 UP = new Vec3(0, 1, 0);
     private static final double MAX_ROCKET_TILT = Math.toRadians(55);
 
-    private final MachineFluidHandler fluidHandler;
+    private final FluidStorage fluidStorage;
+    private final ResourceHandler<FluidResource> externalFluids;
+    private final Tank fuelTank;
 
     private boolean platingOk;
     private boolean skyOk;
@@ -231,27 +237,36 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     public LaunchPadBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LAUNCH_PAD.get(), pos, state, true);
-        fluidHandler = createFluidHandler();
+        fluidStorage = new FluidStorage(FluidStorageLayout.builder()
+            // fill only from outside
+            .add(FUEL, SlotTemplates.input(QuarryConfig.PAD_TANK_CAPACITY.get()), slot -> slot.filter((i, fluid) -> fluid.is(ROCKET_FUEL)))
+            .build()) {
+            @Override
+            protected void onContentsChanged(int index, FluidStack previousContents) {
+                super.onContentsChanged(index, previousContents);
+                setChanged();
+            }
+        };
+        externalFluids = new ExternalResourceStorageView<>(fluidStorage);
+        fuelTank = new Tank(fluidStorage, FUEL);
     }
 
     // region Inventory & tank
 
     @Override
-    protected MachineInventoryLayout createInventoryLayout() {
+    protected ItemStorageLayout createInventoryLayout() {
         // locked during a flight so the returning items always fit
-        return MachineInventoryLayout.builder()
-            .inputSlot((slot, stack) -> stack.getItem() instanceof RocketItem && phase == FlightPhase.IDLE)
-            .slotAccess(ROCKET)
-            .inputSlot((slot, stack) -> stack.getItem() instanceof SatelliteItem && phase == FlightPhase.IDLE)
-            .slotAccess(SATELLITE)
+        return ItemStorageLayout.builder()
+            .add(ROCKET, SlotTemplates.input(1), slot -> slot.filter((i, item) -> item.getItem() instanceof RocketItem && phase == FlightPhase.IDLE))
+            .add(SATELLITE, SlotTemplates.input(1), slot -> slot.filter((i, item) -> item.getItem() instanceof SatelliteItem && phase == FlightPhase.IDLE))
             .build();
     }
 
     @Override
     protected void onInventoryContentsChanged(int slot) {
         super.onInventoryContentsChanged(slot);
-        if (level != null && !level.isClientSide() && ROCKET.isSlot(slot)) {
-            boolean onPad = !ROCKET.getItemStack(this).isEmpty();
+        if (level != null && !level.isClientSide() && ROCKET.index(getInventory()) == slot) {
+            boolean onPad = !getInventory().getStack(ROCKET).isEmpty();
             if (onPad != rocketOnPad) {
                 rocketOnPad = onPad;
                 syncToClients();
@@ -259,36 +274,16 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
     }
 
-    @Override
-    public MachineTankLayout getTankLayout() {
-        // Fill only
-        return MachineTankLayout.builder()
-            .tank(FUEL, QuarryConfig.PAD_TANK_CAPACITY.get(), true, false, fluid -> fluid.is(ROCKET_FUEL))
-            .build();
+    public FluidStorage getFluidStorage() {
+        return fluidStorage;
     }
 
-    @Override
-    public MachineFluidHandler createFluidHandler() {
-        return new MachineFluidHandler(this, getTankLayout()) {
-            @Override
-            protected void onContentsChanged(int slot) {
-                super.onContentsChanged(slot);
-                setChanged();
-            }
-        };
-    }
-
-    @Override
-    public MachineFluidHandler getFluidHandler() {
-        return fluidHandler;
-    }
-
-    public MachineFluidTank getFuelTank() {
-        return FUEL.getTank(this);
+    public Tank getFuelTank() {
+        return fuelTank;
     }
 
     public int getFuel() {
-        return FUEL.getFluidAmount(this);
+        return fuelTank.getFluidAmount();
     }
 
     // endregion
@@ -312,7 +307,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         markCenter(platingOk ? center : null);
 
         // items restored from the dropped block don't fire a slot change
-        boolean nowRocketOnPad = phase == FlightPhase.IDLE && !ROCKET.getItemStack(this).isEmpty();
+        boolean nowRocketOnPad = phase == FlightPhase.IDLE && !getInventory().getStack(ROCKET).isEmpty();
         if (nowRocketOnPad != rocketOnPad) {
             rocketOnPad = nowRocketOnPad;
             changed = true;
@@ -446,13 +441,13 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     }
 
     @Override
-    public @Nullable IItemHandler getPortItemHandler() {
+    public @Nullable ResourceHandler<ItemResource> getPortItemHandler() {
         return MachineBlockEntity.ITEM_HANDLER_PROVIDER.getCapability(this, null);
     }
 
     @Override
-    public @Nullable IFluidHandler getPortFluidHandler() {
-        return getFluidHandler();
+    public @Nullable ResourceHandler<FluidResource> getPortFluidHandler() {
+        return externalFluids;
     }
 
     // Read from the world, works client side too
@@ -534,13 +529,13 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             return launchError("no_sky");
         }
 
-        ItemStack rocket = ROCKET.getItemStack(this);
+        ItemStack rocket = getInventory().getStack(ROCKET);
         if (rocket.isEmpty()) {
             return launchError("no_rocket");
         }
 
         Mission newMission = orbiting.isEmpty() ? Mission.DEPLOY : Mission.RECOVER;
-        ItemStack satellite = SATELLITE.getItemStack(this);
+        ItemStack satellite = getInventory().getStack(SATELLITE);
         if (newMission == Mission.DEPLOY && satellite.isEmpty()) {
             return launchError("no_satellite");
         }
@@ -554,13 +549,13 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
 
         if (cost > 0) {
-            FUEL.drain(this, cost, IFluidHandler.FluidAction.EXECUTE);
+            fuelTank.drain(cost, false);
         }
         flightRocket = rocket.copy();
-        ROCKET.setStackInSlot(this, ItemStack.EMPTY);
+        getInventory().setStack(ROCKET, ItemStack.EMPTY);
         if (newMission == Mission.DEPLOY) {
             payload = satellite.copy();
-            SATELLITE.setStackInSlot(this, ItemStack.EMPTY);
+            getInventory().setStack(SATELLITE, ItemStack.EMPTY);
         }
         mission = newMission;
         flightDx = orbitDx;
@@ -590,7 +585,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         if (!skyOk) {
             return launchError("no_sky");
         }
-        if (ROCKET.getItemStack(this).isEmpty()) {
+        if (getInventory().getStack(ROCKET).isEmpty()) {
             return launchError("no_rocket");
         }
         QuarryTier tier = getSatelliteTier();
@@ -617,10 +612,10 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
 
         if (cost > 0) {
-            FUEL.drain(this, cost, IFluidHandler.FluidAction.EXECUTE);
+            fuelTank.drain(cost, false);
         }
-        flightRocket = ROCKET.getItemStack(this).copy();
-        ROCKET.setStackInSlot(this, ItemStack.EMPTY);
+        flightRocket = getInventory().getStack(ROCKET).copy();
+        getInventory().setStack(ROCKET, ItemStack.EMPTY);
         transferDx = dx;
         transferDz = dz;
         mission = Mission.TRANSFER;
@@ -699,8 +694,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     // The chunk in the middle of the satellite's area
     public ChunkPos getOrbitChunk() {
-        ChunkPos pad = new ChunkPos(getPadCenter());
-        return new ChunkPos(pad.x + orbitDx, pad.z + orbitDz);
+        ChunkPos pad = ChunkPos.containing(getPadCenter());
+        return new ChunkPos(pad.x() + orbitDx, pad.z() + orbitDz);
     }
 
     public int getOrbitDx() {
@@ -750,7 +745,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     }
 
     public boolean isRocketReady() {
-        return phase == FlightPhase.IDLE && !ROCKET.getItemStack(this).isEmpty();
+        return phase == FlightPhase.IDLE && !getInventory().getStack(ROCKET).isEmpty();
     }
 
     // where a running transfer flight goes, or the current area
@@ -845,7 +840,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         returnToSlot(SATELLITE, payload);
         flightRocket = ItemStack.EMPTY;
         payload = ItemStack.EMPTY;
-        rocketOnPad = !ROCKET.getItemStack(this).isEmpty();
+        rocketOnPad = !getInventory().getStack(ROCKET).isEmpty();
         refreshSyncedItems();
 
         serverLevel.playSound(null, getPadCenter(), SoundEvents.NETHERITE_BLOCK_PLACE, SoundSource.BLOCKS, 1.5f, 0.6f);
@@ -853,12 +848,12 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         setPhase(FlightPhase.IDLE, serverLevel.getGameTime());
     }
 
-    private void returnToSlot(SingleSlotAccess slot, ItemStack stack) {
+    private void returnToSlot(SingleResourceSlotKey<ItemResource> slot, ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
-        if (slot.getItemStack(this).isEmpty()) {
-            slot.setStackInSlot(this, stack);
+        if (getInventory().getStack(slot).isEmpty()) {
+            getInventory().setStack(slot, stack);
         } else {
             // shouldn't happen, but don't lose items
             Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.2, worldPosition.getZ() + 0.5, stack);
@@ -875,14 +870,23 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     }
 
     // Called when the controller is removed, the item only keeps the fuel
+    // block broken or replaced
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        dropFlightContents();
+        markCenter(null);
+        releaseSelfLoading();
+    }
+
     public void dropFlightContents() {
         if (level == null) {
             return;
         }
-        ItemStack rocketSlot = ROCKET.getItemStack(this).copy();
-        ItemStack satelliteSlot = SATELLITE.getItemStack(this).copy();
-        ROCKET.setStackInSlot(this, ItemStack.EMPTY);
-        SATELLITE.setStackInSlot(this, ItemStack.EMPTY);
+        ItemStack rocketSlot = getInventory().getStack(ROCKET).copy();
+        ItemStack satelliteSlot = getInventory().getStack(SATELLITE).copy();
+        getInventory().setStack(ROCKET, ItemStack.EMPTY);
+        getInventory().setStack(SATELLITE, ItemStack.EMPTY);
         for (ItemStack stack : new ItemStack[] { rocketSlot, satelliteSlot, flightRocket, payload, orbiting }) {
             if (!stack.isEmpty()) {
                 Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, stack.copy());
@@ -964,7 +968,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
                 refreshIndex = (refreshIndex + 1) % getScanTotal();
                 int[] offset = ScanCoverage.of(scanRadius).offset(refreshIndex);
                 ChunkPos center = getOrbitChunk();
-                recordScanImage(new ChunkPos(center.x + offset[0], center.z + offset[1]));
+                recordScanImage(new ChunkPos(center.x() + offset[0], center.z() + offset[1]));
             }
         }
     }
@@ -981,9 +985,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             if (chunk == null) {
                 break;
             }
-            LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x, chunk.z);
+            LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x(), chunk.z());
             if (loaded == null && scanImages.get(chunk) == null && scanWaitTicks < SCAN_LOAD_WAIT) {
-                serverLevel.getChunkSource().addRegionTicket(SCAN_TICKET, chunk, 0, chunk);
+                serverLevel.getChunkSource().addTicketWithRadius(ModTickets.SCAN.get(), chunk, 0);
                 scanWaitTicks += QuarryConfig.SCAN_TICKS_PER_CHUNK.get();
                 break;
             }
@@ -1007,7 +1011,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     // Unloaded chunks are skipped (never load chunks for this), the refresh picks them up later
     private void recordScanImage(@Nullable ChunkPos chunk) {
         if (chunk != null && level instanceof ServerLevel serverLevel) {
-            LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x, chunk.z);
+            LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x(), chunk.z());
             if (loaded != null && scanImages.put(chunk, MinimapSnapshot.captureChunk(serverLevel, loaded))) {
                 setChanged();
             }
@@ -1072,7 +1076,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     public boolean isChunkScanned(ChunkPos chunk) {
         ChunkPos center = getOrbitChunk();
-        int index = ScanCoverage.of(scanRadius).indexOf(chunk.x - center.x, chunk.z - center.z);
+        int index = ScanCoverage.of(scanRadius).indexOf(chunk.x() - center.x(), chunk.z() - center.z());
         // pictures from an earlier visit count right away
         return index >= 0 && (index < scanIndex || scanImages.get(chunk) != null);
     }
@@ -1084,7 +1088,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
         int[] offset = ScanCoverage.of(scanRadius).offset(scanIndex);
         ChunkPos center = getOrbitChunk();
-        return new ChunkPos(center.x + offset[0], center.z + offset[1]);
+        return new ChunkPos(center.x() + offset[0], center.z() + offset[1]);
     }
 
     // endregion
@@ -1292,8 +1296,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private void tickSelfLoading(ServerLevel serverLevel) {
         boolean wanted = wantsSelfLoad();
         if (wanted != selfLoaded) {
-            ChunkPos chunk = new ChunkPos(worldPosition);
-            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, wanted, false);
+            ChunkPos chunk = ChunkPos.containing(worldPosition);
+            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x(), chunk.z(), wanted, false);
             selfLoaded = wanted;
         }
     }
@@ -1306,8 +1310,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     // when the block goes
     public void releaseSelfLoading() {
         if (selfLoaded && level instanceof ServerLevel serverLevel) {
-            ChunkPos chunk = new ChunkPos(worldPosition);
-            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, false, false);
+            ChunkPos chunk = ChunkPos.containing(worldPosition);
+            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x(), chunk.z(), false, false);
             selfLoaded = false;
         }
         if (level != null) {
@@ -1556,31 +1560,30 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     // region Serialization
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        saveTank(registries, tag);
+    protected void saveAdditional(ValueOutput tag) {
+        super.saveAdditional(tag);
+        tag.putChild(FLUIDS, fluidStorage);
+        tag.putBoolean(FULL_SAVE, true);
         if (!flightRocket.isEmpty()) {
-            tag.put(FLIGHT_ROCKET, flightRocket.save(registries));
+            tag.store(FLIGHT_ROCKET, ItemStack.CODEC, flightRocket);
         }
         if (!payload.isEmpty()) {
-            tag.put(PAYLOAD, payload.save(registries));
+            tag.store(PAYLOAD, ItemStack.CODEC, payload);
         }
         if (!orbiting.isEmpty()) {
-            tag.put(ORBITING, orbiting.save(registries));
+            tag.store(ORBITING, ItemStack.CODEC, orbiting);
         }
         if (!scanImages.isEmpty()) {
-            tag.put(SCAN_IMAGES, scanImages.save());
+            tag.store(SCAN_IMAGES, CompoundTag.CODEC, scanImages.save());
         }
         // always saved so asteroid ids never repeat
-        tag.put(ASTEROIDS, asteroids.save());
-        if (markedCenter != null) {
-            tag.put(MARKED_CENTER, NbtUtils.writeBlockPos(markedCenter));
-        }
+        tag.store(ASTEROIDS, CompoundTag.CODEC, asteroids.save());
+        tag.storeNullable(MARKED_CENTER, BlockPos.CODEC, markedCenter);
     }
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
+    protected void saveAdditionalSynced(ValueOutput tag) {
+        super.saveAdditionalSynced(tag);
         tag.putInt(PHASE, phase.ordinal());
         tag.putInt(MISSION, mission.ordinal());
         tag.putLong(PHASE_START, phaseStart);
@@ -1590,20 +1593,14 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         tag.putInt(ALTITUDE, orbitAltitude);
         tag.putBoolean(PLATING_OK, platingOk);
         tag.putBoolean(SKY_OK, skyOk);
-        if (stationPos != null) {
-            tag.put(STATION_POS, NbtUtils.writeBlockPos(stationPos));
-        }
+        tag.storeNullable(STATION_POS, BlockPos.CODEC, stationPos);
         tag.putInt(UPLINK, uplink.ordinal());
         tag.putInt(SCAN_INDEX, scanIndex);
         tag.putInt(SCAN_RADIUS, scanRadius);
         QuarryTier drawn = SatelliteItem.tierOf(!payload.isEmpty() ? payload : orbiting);
         tag.putInt(DRAWN_TIER, drawn == null ? 0 : drawn.ordinal());
-        if (beamTarget != null) {
-            tag.put(BEAM_TARGET, NbtUtils.writeBlockPos(beamTarget));
-        }
-        if (padCenter != null) {
-            tag.put(PAD_CENTER, NbtUtils.writeBlockPos(padCenter));
-        }
+        tag.storeNullable(BEAM_TARGET, BlockPos.CODEC, beamTarget);
+        tag.storeNullable(PAD_CENTER, BlockPos.CODEC, padCenter);
         tag.putLong(LINK_FLASH, linkFlashStart);
         tag.putInt(ORBIT_DX, orbitDx);
         tag.putInt(ORBIT_DZ, orbitDz);
@@ -1620,57 +1617,49 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains(MachineNBTKeys.FLUIDS)) {
-            loadTank(registries, tag);
-        }
+    protected void loadAdditional(ValueInput tag) {
+        super.loadAdditional(tag);
+        tag.readChild(FLUIDS, fluidStorage);
 
-        phase = FlightPhase.byOrdinal(tag.getInt(PHASE));
-        mission = Mission.byOrdinal(tag.getInt(MISSION));
-        phaseStart = tag.getLong(PHASE_START);
-        hasPayload = tag.getBoolean(HAS_PAYLOAD);
-        inOrbit = tag.getBoolean(IN_ORBIT);
-        rocketOnPad = tag.getBoolean(ROCKET_ON_PAD);
-        orbitAltitude = tag.contains(ALTITUDE) ? tag.getInt(ALTITUDE) : orbitAltitude;
-        platingOk = tag.getBoolean(PLATING_OK);
-        skyOk = tag.getBoolean(SKY_OK);
-        stationPos = NbtUtils.readBlockPos(tag, STATION_POS).orElse(null);
-        uplink = UplinkStatus.byOrdinal(tag.getInt(UPLINK));
-        scanIndex = tag.getInt(SCAN_INDEX);
-        scanRadius = tag.contains(SCAN_RADIUS) ? tag.getInt(SCAN_RADIUS) : scanRadius;
-        drawnSatelliteTier = QuarryTier.values()[Math.floorMod(tag.getInt(DRAWN_TIER), QuarryTier.values().length)];
-        beamTarget = NbtUtils.readBlockPos(tag, BEAM_TARGET).orElse(null);
-        padCenter = NbtUtils.readBlockPos(tag, PAD_CENTER).orElse(null);
-        linkFlashStart = tag.contains(LINK_FLASH) ? tag.getLong(LINK_FLASH) : NEVER;
-        orbitDx = tag.getInt(ORBIT_DX);
-        orbitDz = tag.getInt(ORBIT_DZ);
-        moveFromDx = tag.getInt(MOVE_FROM_DX);
-        moveFromDz = tag.getInt(MOVE_FROM_DZ);
-        moveStart = tag.getLong(MOVE_START);
-        moveTicks = tag.getInt(MOVE_TICKS);
-        arriving = tag.getBoolean(ARRIVING);
-        transferDx = tag.getInt(TRANSFER_DX);
-        transferDz = tag.getInt(TRANSFER_DZ);
-        transferRange = tag.getInt(TRANSFER_RANGE);
-        flightDx = tag.getInt(FLIGHT_DX);
-        flightDz = tag.getInt(FLIGHT_DZ);
-        if (tag.contains(MARKED_CENTER)) {
-            markedCenter = NbtUtils.readBlockPos(tag, MARKED_CENTER).orElse(null);
-        }
+        phase = FlightPhase.byOrdinal(tag.getIntOr(PHASE, 0));
+        mission = Mission.byOrdinal(tag.getIntOr(MISSION, 0));
+        phaseStart = tag.getLongOr(PHASE_START, 0L);
+        hasPayload = tag.getBooleanOr(HAS_PAYLOAD, false);
+        inOrbit = tag.getBooleanOr(IN_ORBIT, false);
+        rocketOnPad = tag.getBooleanOr(ROCKET_ON_PAD, false);
+        orbitAltitude = tag.getIntOr(ALTITUDE, orbitAltitude);
+        platingOk = tag.getBooleanOr(PLATING_OK, false);
+        skyOk = tag.getBooleanOr(SKY_OK, false);
+        stationPos = tag.read(STATION_POS, BlockPos.CODEC).orElse(null);
+        uplink = UplinkStatus.byOrdinal(tag.getIntOr(UPLINK, 0));
+        scanIndex = tag.getIntOr(SCAN_INDEX, 0);
+        scanRadius = tag.getIntOr(SCAN_RADIUS, scanRadius);
+        drawnSatelliteTier = QuarryTier.values()[Math.floorMod(tag.getIntOr(DRAWN_TIER, 0), QuarryTier.values().length)];
+        beamTarget = tag.read(BEAM_TARGET, BlockPos.CODEC).orElse(null);
+        padCenter = tag.read(PAD_CENTER, BlockPos.CODEC).orElse(null);
+        linkFlashStart = tag.getLongOr(LINK_FLASH, NEVER);
+        orbitDx = tag.getIntOr(ORBIT_DX, 0);
+        orbitDz = tag.getIntOr(ORBIT_DZ, 0);
+        moveFromDx = tag.getIntOr(MOVE_FROM_DX, 0);
+        moveFromDz = tag.getIntOr(MOVE_FROM_DZ, 0);
+        moveStart = tag.getLongOr(MOVE_START, 0L);
+        moveTicks = tag.getIntOr(MOVE_TICKS, 0);
+        arriving = tag.getBooleanOr(ARRIVING, false);
+        transferDx = tag.getIntOr(TRANSFER_DX, 0);
+        transferDz = tag.getIntOr(TRANSFER_DZ, 0);
+        transferRange = tag.getIntOr(TRANSFER_RANGE, 0);
+        flightDx = tag.getIntOr(FLIGHT_DX, 0);
+        flightDz = tag.getIntOr(FLIGHT_DZ, 0);
+        tag.read(MARKED_CENTER, BlockPos.CODEC).ifPresent(pos -> markedCenter = pos);
 
-        if (tag.contains(SCAN_IMAGES)) {
-            scanImages.load(tag.getCompound(SCAN_IMAGES));
-        }
-        if (tag.contains(ASTEROIDS)) {
-            asteroids.load(tag.getCompound(ASTEROIDS));
-        }
+        tag.read(SCAN_IMAGES, CompoundTag.CODEC).ifPresent(scanImages::load);
+        tag.read(ASTEROIDS, CompoundTag.CODEC).ifPresent(asteroids::load);
 
         // full save only
-        if (tag.contains(FLIGHT_ROCKET) || tag.contains(PAYLOAD) || tag.contains(ORBITING)) {
-            flightRocket = ItemStack.parseOptional(registries, tag.getCompound(FLIGHT_ROCKET));
-            payload = ItemStack.parseOptional(registries, tag.getCompound(PAYLOAD));
-            orbiting = ItemStack.parseOptional(registries, tag.getCompound(ORBITING));
+        if (tag.getBooleanOr(FULL_SAVE, false)) {
+            flightRocket = tag.read(FLIGHT_ROCKET, ItemStack.CODEC).orElse(ItemStack.EMPTY);
+            payload = tag.read(PAYLOAD, ItemStack.CODEC).orElse(ItemStack.EMPTY);
+            orbiting = tag.read(ORBITING, ItemStack.CODEC).orElse(ItemStack.EMPTY);
             hasPayload = !payload.isEmpty();
             inOrbit = !orbiting.isEmpty();
         }
@@ -1679,11 +1668,11 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     // Keep the fuel in the item
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
+    protected void applyImplicitComponents(DataComponentGetter components) {
         super.applyImplicitComponents(components);
         SimpleFluidContent stored = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
         if (stored != null) {
-            FUEL.getTank(this).setFluid(stored.copy());
+            fuelTank.setFluid(stored.copy());
         }
     }
 
@@ -1692,7 +1681,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         super.collectImplicitComponents(components);
         // rocket and satellite drop on the ground instead
         components.set(DataComponents.CONTAINER, null);
-        var tank = FUEL.getTank(this);
+        var tank = fuelTank;
         if (!tank.isEmpty()) {
             components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
         }

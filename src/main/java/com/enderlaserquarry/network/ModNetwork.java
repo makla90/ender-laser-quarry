@@ -52,13 +52,13 @@ public final class ModNetwork {
         var controller = menu.getBlockEntity();
         switch (payload.action()) {
             case ADD_CHUNK, REMOVE_CHUNK -> {
-                var error = controller.trySetQueued(new ChunkPos(payload.chunk()), payload.action() == QuarryActionPayload.Action.ADD_CHUNK);
+                var error = controller.trySetQueued(ChunkPos.unpack(payload.chunk()), payload.action() == QuarryActionPayload.Action.ADD_CHUNK);
                 if (error != null) {
                     PlayerMessages.show(player, error);
                 }
             }
             case ADD_BOX, REMOVE_BOX -> {
-                var error = controller.trySetBox(new ChunkPos(payload.chunk()), new ChunkPos(payload.to()),
+                var error = controller.trySetBox(ChunkPos.unpack(payload.chunk()), ChunkPos.unpack(payload.to()),
                     payload.action() == QuarryActionPayload.Action.ADD_BOX);
                 if (error != null) {
                     PlayerMessages.show(player, error);
@@ -85,8 +85,8 @@ public final class ModNetwork {
             case SET_FLOOR_Y -> PlayerMessages.showIfAny(player, controller.trySetFloorY((int) payload.chunk()));
             case ANALYZE_ASTEROID -> PlayerMessages.showIfAny(player, controller.tryAnalyze((int) payload.chunk()));
             case TRANSFER_SATELLITE -> {
-                ChunkPos offset = new ChunkPos(payload.chunk());
-                PlayerMessages.showIfAny(player, controller.tryTransferSatellite(offset.x, offset.z));
+                ChunkPos offset = ChunkPos.unpack(payload.chunk());
+                PlayerMessages.showIfAny(player, controller.tryTransferSatellite(offset.x(), offset.z()));
             }
         }
     }
@@ -101,13 +101,13 @@ public final class ModNetwork {
         LaunchPadBlockEntity pad = controller.getLinkedPad();
         if (pad == null) {
             int radius = controller.getTier().chunkRadius();
-            var snapshot = MinimapSnapshot.capture(null, new ChunkPos(controller.getBlockPos()), radius);
+            var snapshot = MinimapSnapshot.capture(null, ChunkPos.containing(controller.getBlockPos()), radius);
             return new MinimapPayload(controller.getBlockPos(), Optional.empty(), snapshot, 0, false, List.of(), false);
         }
 
         boolean plan = planner && pad.getTransferRange() > 0;
         var snapshot = plan
-            ? MinimapSnapshot.capturePlanner(pad, new ChunkPos(pad.getPadCenter()), Math.min(64, pad.getTransferRange() + controller.getChunkRadius(pad)))
+            ? MinimapSnapshot.capturePlanner(pad, ChunkPos.containing(pad.getPadCenter()), Math.min(64, pad.getTransferRange() + controller.getChunkRadius(pad)))
             : MinimapSnapshot.capture(pad, pad.getOrbitChunk(), controller.getChunkRadius(pad));
         ChunkPos working = controller.isRunning() ? controller.getWorkChunk() : null;
         if (working != null) {
@@ -116,7 +116,7 @@ public final class ModNetwork {
 
         var store = pad.getScanImages();
         List<ScanImageStore.ScanImage> changed = store.changedSince(since,
-            chunk -> snapshot.contains(new ChunkPos(chunk)) && (plan || pad.isChunkScanned(new ChunkPos(chunk))), MinimapPayload.MAX_IMAGES);
+            chunk -> snapshot.contains(ChunkPos.unpack(chunk)) && (plan || pad.isChunkScanned(ChunkPos.unpack(chunk))), MinimapPayload.MAX_IMAGES);
         boolean more = changed.size() == MinimapPayload.MAX_IMAGES;
         int revision = more ? changed.get(changed.size() - 1).revision() : store.revision();
         List<MinimapPayload.ChunkImage> images = changed.stream()

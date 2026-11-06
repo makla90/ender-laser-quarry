@@ -24,13 +24,13 @@ public final class ScanImageStore {
     private int revision;
 
     public byte @Nullable [] get(ChunkPos chunk) {
-        ScanImage image = images.get(chunk.toLong());
+        ScanImage image = images.get(chunk.pack());
         return image == null ? null : image.pixels();
     }
 
     // true if it changed
     public boolean put(ChunkPos chunk, byte[] pixels) {
-        long key = chunk.toLong();
+        long key = chunk.pack();
         ScanImage old = images.get(key);
         if (old != null && Arrays.equals(old.pixels(), pixels)) {
             return false;
@@ -68,8 +68,8 @@ public final class ScanImageStore {
     public void load(CompoundTag tag) {
         images.clear();
         revision = 0;
-        for (String key : tag.getAllKeys()) {
-            put(new ChunkPos(Long.parseLong(key)), tag.getByteArray(key));
+        for (String key : tag.keySet()) {
+            tag.getByteArray(key).ifPresent(pixels -> put(ChunkPos.unpack(Long.parseLong(key)), pixels));
         }
     }
 }

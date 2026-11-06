@@ -7,7 +7,7 @@ import com.enderio.enderio.client.foundation.widgets.RedstoneControlPickerWidget
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
 import com.enderlaserquarry.content.dish.EndergyCapacitors;
 import com.enderlaserquarry.content.dish.SatelliteDishMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -17,9 +17,7 @@ public class SatelliteDishScreen extends MachineScreen<SatelliteDishMenu> {
     private static final int TEXT_COLOR = 0x404040;
 
     public SatelliteDishScreen(SatelliteDishMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        imageWidth = 176;
-        imageHeight = 166;
+        super(menu, playerInventory, title, 176, 166);
         inventoryLabelY = imageHeight - 94;
     }
 
@@ -45,7 +43,7 @@ public class SatelliteDishScreen extends MachineScreen<SatelliteDishMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
         GuiPanels.inset(g, leftPos + 14, topPos + 13, 11, 44);  // energy bar well
         GuiPanels.slot(g, leftPos + 12, topPos + 60);           // capacitor
@@ -54,31 +52,31 @@ public class SatelliteDishScreen extends MachineScreen<SatelliteDishMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        super.renderLabels(g, mouseX, mouseY);
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        super.extractLabels(g, mouseX, mouseY);
 
         var dish = menu.getBlockEntity();
         var obelisk = dish.getObeliskPos();
         int x = 36;
 
-        g.drawString(font, Component.translatable("gui.ender_laser_quarry.dish.obelisk"), x, 19, TEXT_COLOR, false);
-        g.drawString(font, obelisk != null
+        g.text(font, Component.translatable("gui.ender_laser_quarry.dish.obelisk"), x, 19, TEXT_COLOR, false);
+        g.text(font, obelisk != null
                 ? Component.literal(obelisk.getX() + ", " + obelisk.getY() + ", " + obelisk.getZ())
                 : Component.translatable("gui.ender_laser_quarry.dish.not_linked"),
             x + 4, 29, obelisk != null ? 0x1F5FBF : 0xA02020, false);
 
         // straight from the slot, the synced state lags a few ticks
-        if (!EndergyCapacitors.fits(dish.getTier(), dish.getInventory().getStackInSlot(dish.getCapacitorSlotIndex()))) {
-            g.drawString(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor"), x, 40, 0xC02020, false);
-            g.drawString(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor_hint"), x + 4, 51, 0xC02020, false);
+        if (!EndergyCapacitors.fits(dish.getTier(), dish.getCapacitorItem())) {
+            g.text(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor"), x, 40, 0xC02020, false);
+            g.text(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor_hint"), x + 4, 51, 0xC02020, false);
             return;
         }
 
-        g.drawString(font, Component.translatable(dish.isFormed()
+        g.text(font, Component.translatable(dish.isFormed()
             ? "gui.ender_laser_quarry.dish.formed"
             : "gui.ender_laser_quarry.dish.incomplete"), x, 40, dish.isFormed() ? 0x2F8F2F : 0xA02020, false);
 
-        g.drawString(font, Component.translatable(dish.isBeaming()
+        g.text(font, Component.translatable(dish.isBeaming()
             ? "gui.ender_laser_quarry.dish.beaming"
             : "gui.ender_laser_quarry.dish.idle"), x, 51, dish.isBeaming() ? 0x7A2FBF : TEXT_COLOR, false);
     }

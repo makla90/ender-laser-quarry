@@ -5,14 +5,15 @@ import com.enderlaserquarry.content.obelisk.CrystalGlow;
 import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -21,8 +22,8 @@ import net.minecraft.world.phys.Vec3;
 /**
  * The floating crystal, its halo and the beam up to the satellite.
  */
-public class CrystalObeliskRenderer implements BlockEntityRenderer<CrystalObeliskBlockEntity> {
-    private static final ResourceLocation TEXTURE = EnderLaserQuarry.rl("textures/entity/laser_crystal.png");
+public class CrystalObeliskRenderer extends LiveRenderer<CrystalObeliskBlockEntity> {
+    private static final Identifier TEXTURE = EnderLaserQuarry.rl("textures/entity/laser_crystal.png");
 
     // nether star like tint
     private static final int[] SHIMMER = { 0xFFF6D0, 0xE2F6FF, 0xEEE2FF, 0xFFFFFF };
@@ -72,16 +73,16 @@ public class CrystalObeliskRenderer implements BlockEntityRenderer<CrystalObelis
 
         // opaque body, translucent let clouds and held items show through
         model.shards.yRot = -time * 0.05f * (1 + 3 * charge);
-        model.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), LightTexture.FULL_BRIGHT,
+        model.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(TEXTURE)), LightCoordsUtil.FULL_BRIGHT,
             OverlayTexture.NO_OVERLAY, 0xFF000000 | color);
 
         // halo: additive without depth write (eyes), otherwise it hides the crystal
         float halo = 1.35f + 0.15f * charge + 0.4f * shake + 1.2f * flash + 0.05f * Mth.sin(time * 0.2f);
         poseStack.scale(halo, halo, halo);
         float strength = Math.min(1, (40 + 50 * charge + 140 * flash + 30 * heat) / 255f);
-        model.gem.render(poseStack, buffers.getBuffer(RenderType.eyes(TEXTURE)), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-            FastColor.ARGB32.color(255, (int) (FastColor.ARGB32.red(color) * strength), (int) (FastColor.ARGB32.green(color) * strength),
-                (int) (FastColor.ARGB32.blue(color) * strength)));
+        model.gem.render(poseStack, buffers.getBuffer(RenderTypes.eyes(TEXTURE)), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+            ARGB.color(255, (int) (ARGB.red(color) * strength), (int) (ARGB.green(color) * strength),
+                (int) (ARGB.blue(color) * strength)));
         poseStack.popPose();
 
         // beam up to the satellite
@@ -132,7 +133,7 @@ public class CrystalObeliskRenderer implements BlockEntityRenderer<CrystalObelis
     }
 
     @Override
-    public boolean shouldRenderOffScreen(CrystalObeliskBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

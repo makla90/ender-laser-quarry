@@ -12,83 +12,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.VoidingResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
 /**
  * Creative trash can, voids items and fluids. No block entity.
  */
 public class TrashCanBlock extends Block {
-    public static final IItemHandler ITEM_VOID = new IItemHandler() {
-        @Override
-        public int getSlots() {
-            return 1;
-        }
-
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            return ItemStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return ItemStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return ItemStack.EMPTY;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return Integer.MAX_VALUE;
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return true;
-        }
-    };
-
-    public static final IFluidHandler FLUID_VOID = new IFluidHandler() {
-        @Override
-        public int getTanks() {
-            return 1;
-        }
-
-        @Override
-        public @NotNull FluidStack getFluidInTank(int tank) {
-            return FluidStack.EMPTY;
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            return Integer.MAX_VALUE;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-            return true;
-        }
-
-        @Override
-        public int fill(@NotNull FluidStack resource, @NotNull FluidAction action) {
-            return resource.getAmount();
-        }
-
-        @Override
-        public @NotNull FluidStack drain(@NotNull FluidStack resource, @NotNull FluidAction action) {
-            return FluidStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull FluidStack drain(int maxDrain, @NotNull FluidAction action) {
-            return FluidStack.EMPTY;
-        }
-    };
+    public static final ResourceHandler<ItemResource> ITEM_VOID = new VoidingResourceHandler<>(ItemResource.EMPTY);
+    public static final ResourceHandler<FluidResource> FLUID_VOID = new VoidingResourceHandler<>(FluidResource.EMPTY);
 
     public TrashCanBlock(Properties properties) {
         super(properties);
@@ -104,20 +39,18 @@ public class TrashCanBlock extends Block {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(state, level, pos, newState, movedByPiston);
-        if (!newState.is(this)) {
-            level.invalidateCapabilities(pos);
-        }
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        level.invalidateCapabilities(pos);
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             player.openMenu(new SimpleMenuProvider((id, inventory, p) -> new HopperMenu(id, inventory, new VoidContainer()),
                 Component.translatable("block.ender_laser_quarry.trash_can")));
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
     private static class VoidContainer extends SimpleContainer {

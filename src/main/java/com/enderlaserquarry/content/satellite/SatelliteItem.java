@@ -7,6 +7,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -33,10 +35,10 @@ public class SatelliteItem extends Item implements Tiered {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite").withStyle(ChatFormatting.GRAY));
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.satellite").withStyle(ChatFormatting.GRAY));
         int across = tier.chunkRadius() * 2 + 1;
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite.area", across, across).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite.launch").withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.satellite.area", across, across).withStyle(ChatFormatting.GRAY));
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.satellite.launch").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

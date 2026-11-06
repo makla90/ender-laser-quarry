@@ -1,13 +1,13 @@
 package com.enderlaserquarry.content.asteroid;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * An asteroid, made of a biome's blocks. x / y are map units, seed is for the look. Unanalyzed ones can't be mined.
  */
-public record Asteroid(int id, ResourceLocation biome, AsteroidSize size, long total, long remaining, int x, int y, long seed,
+public record Asteroid(int id, Identifier biome, AsteroidSize size, long total, long remaining, int x, int y, long seed,
                        boolean analyzed) {
     private static final String ID = "Id";
     private static final String BIOME = "Biome";
@@ -49,13 +49,13 @@ public record Asteroid(int id, ResourceLocation biome, AsteroidSize size, long t
 
     @Nullable
     public static Asteroid load(CompoundTag tag) {
-        ResourceLocation biome = ResourceLocation.tryParse(tag.getString(BIOME));
+        Identifier biome = Identifier.tryParse(tag.getStringOr(BIOME, ""));
         if (biome == null) {
             return null;
         }
-        AsteroidSize size = tag.contains(SIZE) ? AsteroidSize.byId(tag.getInt(SIZE))
-            : tag.getBoolean(LEGACY_LARGE) ? AsteroidSize.LARGE : AsteroidSize.SMALL;
-        return new Asteroid(tag.getInt(ID), biome, size, tag.getLong(TOTAL), tag.getLong(REMAINING),
-            tag.getInt(X), tag.getInt(Y), tag.getLong(SEED), tag.getBoolean(ANALYZED));
+        AsteroidSize size = tag.contains(SIZE) ? AsteroidSize.byId(tag.getIntOr(SIZE, 0))
+            : tag.getBooleanOr(LEGACY_LARGE, false) ? AsteroidSize.LARGE : AsteroidSize.SMALL;
+        return new Asteroid(tag.getIntOr(ID, 0), biome, size, tag.getLongOr(TOTAL, 0L), tag.getLongOr(REMAINING, 0L),
+            tag.getIntOr(X, 0), tag.getIntOr(Y, 0), tag.getLongOr(SEED, 0L), tag.getBooleanOr(ANALYZED, false));
     }
 }

@@ -23,7 +23,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.energy.EnergyStorage;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import com.enderlaserquarry.content.Transfers;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -99,7 +102,7 @@ public class GroundRadarBlockEntity extends BlockEntity {
         return station != null ? station.getSatellitePad() : null;
     }
 
-    public EnergyStorage getEnergy() {
+    public RadarEnergyStorage getEnergy() {
         return energy;
     }
 
@@ -296,35 +299,29 @@ public class GroundRadarBlockEntity extends BlockEntity {
     // region Serialization
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        if (stationPos != null) {
-            tag.put(STATION, NbtUtils.writeBlockPos(stationPos));
-        }
-        tag.put(ENERGY, energy.serializeNBT(registries));
+    protected void saveAdditional(ValueOutput tag) {
+        super.saveAdditional(tag);
+        tag.storeNullable(STATION, BlockPos.CODEC, stationPos);
+        tag.putChild(ENERGY, energy);
         tag.putBoolean(POWERED, powered);
         tag.putBoolean(SCANNING, scanning);
         tag.putBoolean(SPACE_SCAN, spaceScanning);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        stationPos = NbtUtils.readBlockPos(tag, STATION).orElse(null);
-        if (tag.contains(ENERGY)) {
-            energy.deserializeNBT(registries, tag.get(ENERGY));
-        }
-        powered = tag.getBoolean(POWERED);
-        scanning = tag.getBoolean(SCANNING);
-        spaceScanning = tag.getBoolean(SPACE_SCAN);
+    protected void loadAdditional(ValueInput tag) {
+        super.loadAdditional(tag);
+        stationPos = tag.read(STATION, BlockPos.CODEC).orElse(null);
+        tag.readChild(ENERGY, energy);
+        powered = tag.getBooleanOr(POWERED, false);
+        scanning = tag.getBooleanOr(SCANNING, false);
+        spaceScanning = tag.getBooleanOr(SPACE_SCAN, false);
     }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         // always send all keys, so a cleared station gets synced too
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag, registries);
-        return tag;
+        return saveWithoutMetadata(registries);
     }
 
     @Override
@@ -335,18 +332,26 @@ public class GroundRadarBlockEntity extends BlockEntity {
     // endregion
 
     // receive only
-    private class RadarEnergyStorage extends EnergyStorage {
+    public class RadarEnergyStorage extends SimpleEnergyHandler {
         RadarEnergyStorage() {
             super(QuarryConfig.RADAR_CAPACITY.get(), QuarryConfig.RADAR_MAX_INPUT.get(), 0);
         }
 
         @Override
-        public int receiveEnergy(int toReceive, boolean simulate) {
-            int received = super.receiveEnergy(toReceive, simulate);
-            if (received > 0 && !simulate) {
-                setChanged();
-            }
-            return received;
+        protected void onEnergyChanged(int previousAmount) {
+            setChanged();
+        }
+
+        public int getEnergyStored() {
+            return energy;
+        }
+
+        public int getMaxEnergyStored() {
+            return capacity;
+        }
+
+        public int receiveEnergy(int amount, boolean simulate) {
+            return Transfers.insert(this, amount, simulate);
         }
 
         boolean consume(int amount) {
@@ -354,8 +359,7 @@ public class GroundRadarBlockEntity extends BlockEntity {
                 return false;
             }
             if (amount > 0) {
-                energy -= amount;
-                setChanged();
+                set(energy - amount);
             }
             return true;
         }

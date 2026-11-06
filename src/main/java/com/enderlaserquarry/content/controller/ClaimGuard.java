@@ -13,6 +13,8 @@ import net.neoforged.neoforge.common.util.BlockSnapshot;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
+import net.minecraft.server.players.NameAndId;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -32,13 +34,12 @@ public final class ClaimGuard {
         if (owner == null) {
             return NO_OWNER;
         }
-        var cache = level.getServer().getProfileCache();
-        String name = cache == null ? null : cache.get(owner).map(GameProfile::getName).orElse(null);
+        String name = level.getServer().services().nameToIdCache().get(owner).map(NameAndId::name).orElse(null);
         return new GameProfile(owner, name != null ? name : "[Ender Laser Quarry]");
     }
 
     public static boolean mayBreak(ServerLevel level, BlockPos pos, BlockState state, FakePlayer player) {
-        return !NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)).isCanceled();
+        return !NeoForge.EVENT_BUS.post(new BreakBlockEvent(level, pos, state, player)).isCanceled();
     }
 
     // checks before placing, so nothing has to be rolled back
@@ -52,7 +53,7 @@ public final class ClaimGuard {
     public static boolean mayQueue(ServerLevel level, ChunkPos chunk, FakePlayer player) {
         int x = chunk.getMiddleBlockX();
         int z = chunk.getMiddleBlockZ();
-        LevelChunk loaded = level.getChunkSource().getChunkNow(chunk.x, chunk.z);
+        LevelChunk loaded = level.getChunkSource().getChunkNow(chunk.x(), chunk.z());
         int y = loaded != null ? loaded.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15) - 1 : level.getSeaLevel();
         BlockPos pos = new BlockPos(x, y, z);
         BlockState state = loaded != null ? loaded.getBlockState(pos) : Blocks.STONE.defaultBlockState();

@@ -3,11 +3,11 @@
   "category": "misc",
   "pattern": ["BHB", "GPG", "BUB"],
   "key": {
-    "B": { "item": "enderio:conduit_binder" },
-    "H": { "item": "minecraft:hopper" },
-    "G": { "tag": "c:gears/iron" },
-    "U": { "item": "minecraft:bucket" },
-    "P": { "item": "ender_laser_quarry:launch_pad_plating" }
+    "B": "enderio:conduit_binder",
+    "H": "minecraft:hopper",
+    "G": "#c:gears/iron",
+    "U": "minecraft:bucket",
+    "P": "ender_laser_quarry:launch_pad_plating"
   },
   "result": { "id": "ender_laser_quarry:launch_pad_port", "count": 1 }
 }

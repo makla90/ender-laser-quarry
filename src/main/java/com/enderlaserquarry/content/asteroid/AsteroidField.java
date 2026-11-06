@@ -7,7 +7,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
@@ -31,9 +31,9 @@ public final class AsteroidField {
     private static final int PLACE_ATTEMPTS = 60;
     // main biomes only, datapacks can add more. Empty = all but the void
     public static final TagKey<Biome> ASTEROID_BIOMES = TagKey.create(Registries.BIOME,
-        ResourceLocation.fromNamespaceAndPath("ender_laser_quarry", "asteroid_biomes"));
+        Identifier.fromNamespaceAndPath("ender_laser_quarry", "asteroid_biomes"));
     public static final TagKey<Biome> FREQUENT_BIOMES = TagKey.create(Registries.BIOME,
-        ResourceLocation.fromNamespaceAndPath("ender_laser_quarry", "frequent_asteroid_biomes"));
+        Identifier.fromNamespaceAndPath("ender_laser_quarry", "frequent_asteroid_biomes"));
 
     private final List<Asteroid> asteroids = new ArrayList<>();
     private final Runnable onChanged;
@@ -111,13 +111,13 @@ public final class AsteroidField {
                 continue;
             }
             long total = size.blocks();
-            asteroids.add(new Asteroid(nextId++, biome.unwrapKey().orElseThrow().location(), size, total, total, spot[0], spot[1],
+            asteroids.add(new Asteroid(nextId++, biome.unwrapKey().orElseThrow().identifier(), size, total, total, spot[0], spot[1],
                 random.nextLong(), false));
         }
         onChanged.run();
     }
 
-    public Asteroid debugAdd(ResourceLocation biome, long total) {
+    public Asteroid debugAdd(Identifier biome, long total) {
         Asteroid asteroid = new Asteroid(nextId++, biome, AsteroidSize.SMALL, total, total, MAP_UNITS / 2, MAP_UNITS / 2, 0, false);
         asteroids.add(asteroid);
         onChanged.run();
@@ -127,17 +127,17 @@ public final class AsteroidField {
     // Dimension first (Nether and End have few biomes), then a biome in it
     @Nullable
     private static Holder<Biome> pickBiome(ServerLevel level, RandomSource random) {
-        var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
+        var registry = level.registryAccess().lookupOrThrow(Registries.BIOME);
         List<Holder<Biome>> overworld = new ArrayList<>();
         List<Holder<Biome>> nether = new ArrayList<>();
         List<Holder<Biome>> end = new ArrayList<>();
-        boolean anyListed = registry.getTag(ASTEROID_BIOMES).map(set -> set.size() > 0).orElse(false);
-        registry.holders().forEach(holder -> {
+        boolean anyListed = registry.get(ASTEROID_BIOMES).map(set -> set.size() > 0).orElse(false);
+        registry.listElements().forEach(holder -> {
             if (anyListed ? !holder.is(ASTEROID_BIOMES) : holder.is(Biomes.THE_VOID)) {
                 return;
             }
             // searched before and not found (a modded biome of another dimension)
-            var entry = BiomeSampleData.get(level.getServer()).peek(holder.unwrapKey().orElseThrow().location());
+            var entry = BiomeSampleData.get(level.getServer()).peek(holder.unwrapKey().orElseThrow().identifier());
             if (entry != null && entry.unsampleable()) {
                 return;
             }
@@ -225,9 +225,9 @@ public final class AsteroidField {
     }
 
     public void load(CompoundTag tag) {
-        nextId = Math.max(1, tag.getInt("NextId"));
+        nextId = Math.max(1, tag.getIntOr("NextId", 0));
         asteroids.clear();
-        for (Tag entry : tag.getList("Asteroids", Tag.TAG_COMPOUND)) {
+        for (Tag entry : tag.getListOrEmpty("Asteroids")) {
             Asteroid asteroid = Asteroid.load((CompoundTag) entry);
             if (asteroid != null) {
                 asteroids.add(asteroid);

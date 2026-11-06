@@ -11,7 +11,11 @@ public final class PlayerMessages {
     private static final int ACTION_BAR_MAX_LENGTH = 70;
 
     public static void show(Player player, Component message) {
-        player.displayClientMessage(message, message.getString().length() <= ACTION_BAR_MAX_LENGTH);
+        if (message.getString().length() <= ACTION_BAR_MAX_LENGTH) {
+            player.sendOverlayMessage(message);
+        } else {
+            player.sendSystemMessage(message);
+        }
     }
 
     public static void showIfAny(Player player, @Nullable Component message) {

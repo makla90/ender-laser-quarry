@@ -3,10 +3,10 @@
   "category": "misc",
   "pattern": ["SYS", "BDB", "SYS"],
   "key": {
-    "S": { "item": "minecraft:smooth_stone" },
-    "Y": { "tag": "c:dyes/yellow" },
-    "B": { "tag": "c:dyes/black" },
-    "D": { "tag": "c:ingots/dark_steel" }
+    "S": "minecraft:smooth_stone",
+    "Y": "#c:dyes/yellow",
+    "B": "#c:dyes/black",
+    "D": "#c:ingots/dark_steel"
   },
   "result": { "id": "ender_laser_quarry:launch_pad_plating", "count": 8 }
 }

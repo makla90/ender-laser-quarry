@@ -3,7 +3,7 @@ package com.enderlaserquarry.content.asteroid.sampling;
 import com.enderlaserquarry.EnderLaserQuarry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -30,7 +30,7 @@ public final class SamplingDimensions {
     public static final ResourceKey<Level> END = key("sampling_end");
 
     private static ResourceKey<Level> key(String path) {
-        return ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(EnderLaserQuarry.MOD_ID, path));
+        return ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(EnderLaserQuarry.MOD_ID, path));
     }
 
     public static boolean isSampling(ResourceKey<Level> dimension) {

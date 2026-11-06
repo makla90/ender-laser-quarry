@@ -10,8 +10,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModRecipes {
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, EnderLaserQuarry.MOD_ID);
 
-    public static final DeferredHolder<RecipeSerializer<?>, TierUpgradeRecipe.Serializer> TIER_UPGRADE = SERIALIZERS
-        .register("tier_upgrade", TierUpgradeRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<TierUpgradeRecipe>> TIER_UPGRADE = SERIALIZERS
+        .register("tier_upgrade", () -> TierUpgradeRecipe.SERIALIZER);
 
     private ModRecipes() {
     }

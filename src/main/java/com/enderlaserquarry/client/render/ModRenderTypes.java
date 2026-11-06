@@ -1,59 +1,65 @@
 package com.enderlaserquarry.client.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.Util;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import com.enderlaserquarry.EnderLaserQuarry;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
+import net.neoforged.api.distmarker.Dist;
 
 import java.util.function.Function;
 
 /**
- * Our own render types.
+ * Our own render types: entity cutout pushed towards the camera, for overlays lying right on block faces.
  */
+@EventBusSubscriber(modid = EnderLaserQuarry.MOD_ID, value = Dist.CLIENT)
 public final class ModRenderTypes {
 
-    // entityCutout with polygon offset, for overlays lying right on block faces
-    private static final Function<ResourceLocation, RenderType> CASING = Util.memoize(texture -> RenderType.create(
-        "ender_laser_quarry_casing", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, false,
-        RenderType.CompositeState.builder()
-            .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_SHADER)
-            .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-            .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-            .setLightmapState(RenderStateShard.LIGHTMAP)
-            .setOverlayState(RenderStateShard.OVERLAY)
-            .setLayeringState(RenderStateShard.POLYGON_OFFSET_LAYERING)
-            .createCompositeState(true)));
+    private static RenderPipeline offsetCutout(String name, float scale, float constant) {
+        return RenderPipeline.builder(RenderPipelines.ENTITY_SNIPPET)
+            .withLocation(EnderLaserQuarry.rl("pipeline/" + name))
+            .withShaderDefine("ALPHA_CUTOUT", 0.1F)
+            .withShaderDefine("PER_FACE_LIGHTING")
+            .withSampler("Sampler1")
+            .withCull(false)
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, scale, constant))
+            .build();
+    }
 
-    public static RenderType casing(ResourceLocation texture) {
+    private static final RenderPipeline CASING_PIPELINE = offsetCutout("casing", -1.0f, -10.0f);
+    // twice the offset, to go on top of a casing layer
+    private static final RenderPipeline CASING_OVERLAY_PIPELINE = offsetCutout("casing_overlay", -2.0f, -20.0f);
+
+    @SubscribeEvent
+    public static void registerPipelines(RegisterRenderPipelinesEvent event) {
+        event.registerPipeline(CASING_PIPELINE);
+        event.registerPipeline(CASING_OVERLAY_PIPELINE);
+    }
+
+    private static Function<Identifier, RenderType> type(String name, RenderPipeline pipeline) {
+        return Util.memoize(texture -> RenderType.create("ender_laser_quarry_" + name, RenderSetup.builder(pipeline)
+            .withTexture("Sampler0", texture)
+            .useLightmap()
+            .useOverlay()
+            .createRenderSetup()));
+    }
+
+    private static final Function<Identifier, RenderType> CASING = type("casing", CASING_PIPELINE);
+    private static final Function<Identifier, RenderType> CASING_OVERLAY = type("casing_overlay", CASING_OVERLAY_PIPELINE);
+
+    public static RenderType casing(Identifier texture) {
         return CASING.apply(texture);
     }
 
-    // twice the offset, to go on top of a casing layer
-    private static final RenderStateShard.LayeringStateShard CASING_OVERLAY_LAYERING = new RenderStateShard.LayeringStateShard(
-        "ender_laser_quarry_casing_overlay_layering", () -> {
-            RenderSystem.polygonOffset(-2.0f, -20.0f);
-            RenderSystem.enablePolygonOffset();
-        }, () -> {
-            RenderSystem.polygonOffset(0.0f, 0.0f);
-            RenderSystem.disablePolygonOffset();
-        });
-
-    private static final Function<ResourceLocation, RenderType> CASING_OVERLAY = Util.memoize(texture -> RenderType.create(
-        "ender_laser_quarry_casing_overlay", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, false,
-        RenderType.CompositeState.builder()
-            .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_SHADER)
-            .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-            .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-            .setLightmapState(RenderStateShard.LIGHTMAP)
-            .setOverlayState(RenderStateShard.OVERLAY)
-            .setLayeringState(CASING_OVERLAY_LAYERING)
-            .createCompositeState(true)));
-
     // dish base light strips
-    public static RenderType casingOverlay(ResourceLocation texture) {
+    public static RenderType casingOverlay(Identifier texture) {
         return CASING_OVERLAY.apply(texture);
     }
 

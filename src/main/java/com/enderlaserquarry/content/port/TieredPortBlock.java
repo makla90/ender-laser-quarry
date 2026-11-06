@@ -4,6 +4,9 @@ import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
@@ -38,9 +41,9 @@ public class TieredPortBlock extends StructurePortBlock {
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
-        state = super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
+                                     BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+        state = super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
         if (direction.getAxis().isHorizontal()) {
             state = state.setValue(TIER, tierAround(level, pos));
         }

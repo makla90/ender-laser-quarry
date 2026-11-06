@@ -3,11 +3,11 @@
   "category": "misc",
   "pattern": ["BCB", "DTD", "DED"],
   "key": {
-    "B": { "item": "enderio:dark_steel_bars" },
-    "C": { "item": "minecraft:compass" },
-    "D": { "tag": "c:ingots/dark_steel" },
-    "T": { "item": "enderio:pressurized_fluid_tank" },
-    "E": { "item": "ender_laser_quarry:rocket_engine" }
+    "B": "enderio:dark_steel_bars",
+    "C": "minecraft:compass",
+    "D": "#c:ingots/dark_steel",
+    "T": "enderio:pressurized_fluid_tank",
+    "E": "ender_laser_quarry:rocket_engine"
   },
   "result": { "id": "ender_laser_quarry:rocket", "count": 1 }
 }

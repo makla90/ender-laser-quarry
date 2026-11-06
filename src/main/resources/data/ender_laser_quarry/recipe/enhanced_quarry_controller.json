@@ -3,11 +3,11 @@
   "category": "misc",
   "pattern": ["SZS", "DBD", "SGS"],
   "key": {
-    "S": { "tag": "c:ingots/soularium" },
-    "Z": { "item": "enderio:z_logic_controller" },
-    "D": { "item": "enderio:double_layer_capacitor" },
-    "B": { "item": "ender_laser_quarry:quarry_controller" },
-    "G": { "tag": "c:gears/energized" }
+    "S": "#c:ingots/soularium",
+    "Z": "enderio:z_logic_controller",
+    "D": "enderio:double_layer_capacitor",
+    "B": "ender_laser_quarry:quarry_controller",
+    "G": "#c:gears/energized"
   },
   "result": { "id": "ender_laser_quarry:enhanced_quarry_controller", "count": 1 }
 }

@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 /**
@@ -25,7 +25,7 @@ public final class QuarryFloorOverlay {
         CONTROLLER("quarry_floor_controller"),
         RADAR("quarry_floor_radar");
 
-        private final ResourceLocation[][] sheets = new ResourceLocation[QuarryTier.values().length][CrystalGlow.values().length];
+        private final Identifier[][] sheets = new Identifier[QuarryTier.values().length][CrystalGlow.values().length];
 
         Emblem(String name) {
             for (QuarryTier tier : QuarryTier.values()) {
@@ -75,7 +75,7 @@ public final class QuarryFloorOverlay {
         float v0 = (mask / 4) / 4f;
         float u1 = u0 + 0.25f;
         float v1 = v0 + 0.25f;
-        int light = LevelRenderer.getLightColor(level, pos.above());
+        int light = LevelRenderer.getLightCoords(level, pos.above());
         // counter clockwise from above
         vertex(top, pose, 0, 1, 0, u0, v0, light);
         vertex(top, pose, 0, 1, 1, u0, v1, light);

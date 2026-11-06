@@ -5,7 +5,7 @@ import com.enderlaserquarry.content.obelisk.CrystalObeliskMenu;
 import com.enderlaserquarry.content.obelisk.LaserCrystalItem;
 import com.enderlaserquarry.init.ModItems;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -27,9 +27,7 @@ public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObelisk
     private final ItemStack ghost = new ItemStack(ModItems.LASER_CRYSTAL.get());
 
     public CrystalObeliskScreen(CrystalObeliskMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        imageWidth = 176;
-        imageHeight = 166;
+        super(menu, playerInventory, title, 176, 166);
         // no "Inventory" label: the status lines use that room
         inventoryLabelY = -10_000;
     }
@@ -41,24 +39,24 @@ public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObelisk
     }
 
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
         int x = leftPos + CrystalObeliskMenu.CRYSTAL_X;
         int y = topPos + CrystalObeliskMenu.CRYSTAL_Y;
         GuiPanels.slot(g, x, y);
         if (!menu.getSlot(0).hasItem()) {
-            g.renderFakeItem(ghost, x, y);
-            g.pose().pushPose();
-            g.pose().translate(0, 0, 200);
+            g.fakeItem(ghost, x, y);
+            g.pose().pushMatrix();
+            g.nextStratum();
             g.fill(x, y, x + 16, y + 16, GHOST_COVER);
-            g.pose().popPose();
+            g.pose().popMatrix();
         }
         GuiPanels.playerInventory(g, leftPos + CrystalObeliskMenu.PLAYER_INV_X, topPos + CrystalObeliskMenu.PLAYER_INV_Y);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        super.renderLabels(g, mouseX, mouseY);
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        super.extractLabels(g, mouseX, mouseY);
         MachineState problem = menu.getProblem();
         Component state = problem != null
             ? problem.component().copy().withStyle(ChatFormatting.DARK_RED)
@@ -83,14 +81,14 @@ public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObelisk
         int enchantWidth = imageWidth - CrystalObeliskMenu.CRYSTAL_X - 26;
         for (var entry : enchantments.entrySet()) {
             Component name = Enchantment.getFullname(entry.getKey(), entry.getIntValue());
-            g.drawString(font, font.plainSubstrByWidth(name.getString(), enchantWidth),
+            g.text(font, font.plainSubstrByWidth(name.getString(), enchantWidth),
                 CrystalObeliskMenu.CRYSTAL_X + 22, enchantY, ENCHANT_COLOR, false);
             enchantY += 9;
         }
         if (showCost) {
             Component cost = Component.translatable("gui.ender_laser_quarry.obelisk.enchant_cost",
                 LaserCrystalItem.formatMultiplier(menu.getCostMultiplier()));
-            g.drawString(font, font.plainSubstrByWidth(cost.getString(), enchantWidth),
+            g.text(font, font.plainSubstrByWidth(cost.getString(), enchantWidth),
                 CrystalObeliskMenu.CRYSTAL_X + 22, enchantY, TEXT_COLOR, false);
         }
 
@@ -98,19 +96,17 @@ public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObelisk
         for (Component line : lines) {
             // wrap long problems
             for (var part : font.split(line, imageWidth - 16)) {
-                g.drawString(font, part, 8, y, TEXT_COLOR, false);
+                g.text(font, part, 8, y, TEXT_COLOR, false);
                 y += 9;
             }
         }
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
         if (hoveredSlot == menu.getSlot(0) && !hoveredSlot.hasItem() && menu.getCarried().isEmpty()) {
-            g.renderComponentTooltip(font, List.of(Component.translatable("gui.ender_laser_quarry.obelisk.crystal_hint")), mouseX, mouseY);
-        } else {
-            renderTooltip(g, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, List.of(Component.translatable("gui.ender_laser_quarry.obelisk.crystal_hint")), mouseX, mouseY);
         }
     }
 }

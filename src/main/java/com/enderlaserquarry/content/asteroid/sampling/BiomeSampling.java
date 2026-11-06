@@ -10,7 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BiomeTags;
@@ -56,21 +56,21 @@ public final class BiomeSampling {
     private static final int BACKGROUND_IN_FLIGHT = 2;
 
     private static final class Job {
-        final ResourceLocation biome;
+        final Identifier biome;
         @Nullable
         CompletableFuture<BiomeSpots.Result> search;
         int inFlight;
         // the quick pass is searched first so Analyze doesn't wait for a rare biome's 64 spots
         boolean quickSearched;
 
-        Job(ResourceLocation biome) {
+        Job(Identifier biome) {
             this.biome = biome;
         }
     }
 
     // biomes asked for by Analyze, in order
-    private static final Set<ResourceLocation> URGENT = new LinkedHashSet<>();
-    private static final Map<ResourceLocation, Job> JOBS = new HashMap<>();
+    private static final Set<Identifier> URGENT = new LinkedHashSet<>();
+    private static final Map<Identifier, Job> JOBS = new HashMap<>();
     private static boolean checked;
 
     public static int quickSpots() {
@@ -81,7 +81,7 @@ public final class BiomeSampling {
         return Math.max(quickSpots(), QuarryConfig.SAMPLING_FULL_SPOTS.get());
     }
 
-    public static Status status(MinecraftServer server, ResourceLocation biome) {
+    public static Status status(MinecraftServer server, Identifier biome) {
         BiomeSampleData.Entry entry = BiomeSampleData.get(server).peek(biome);
         int quick = quickSpots();
         int full = fullSpots();
@@ -105,7 +105,7 @@ public final class BiomeSampling {
     }
 
     /** Analyze wants this biome: quick pass first, ahead of background work. */
-    public static void request(MinecraftServer server, ResourceLocation biome) {
+    public static void request(MinecraftServer server, Identifier biome) {
         if (status(server, biome).state() == State.READY) {
             return;
         }
@@ -114,7 +114,7 @@ public final class BiomeSampling {
     }
 
     @Nullable
-    public static Object2LongMap<ResourceLocation> counts(MinecraftServer server, ResourceLocation biome) {
+    public static Object2LongMap<Identifier> counts(MinecraftServer server, Identifier biome) {
         if (status(server, biome).state() != State.READY) {
             return null;
         }
@@ -131,7 +131,7 @@ public final class BiomeSampling {
     public static String fingerprint(MinecraftServer server) {
         String mods = ModList.get().getMods().stream().map(m -> m.getModId() + "@" + m.getVersion()).sorted().collect(Collectors.joining(","));
         String packs = server.getPackRepository().getSelectedIds().stream().sorted().collect(Collectors.joining(","));
-        String text = SharedConstants.getCurrentVersion().getName() + "|" + mods + "|" + packs;
+        String text = SharedConstants.getCurrentVersion().name() + "|" + mods + "|" + packs;
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
@@ -195,7 +195,7 @@ public final class BiomeSampling {
         }
         // urgent jobs get the slots first
         List<Job> order = new ArrayList<>();
-        for (ResourceLocation biome : URGENT) {
+        for (Identifier biome : URGENT) {
             Job job = JOBS.get(biome);
             if (job != null) {
                 order.add(job);
@@ -215,8 +215,8 @@ public final class BiomeSampling {
 
     /** True when the job is finished. */
     private static boolean drive(MinecraftServer server, BiomeSampleData data, Job job, boolean yield) {
-        Holder<Biome> biome = server.registryAccess().registryOrThrow(Registries.BIOME)
-            .getHolder(ResourceKey.create(Registries.BIOME, job.biome)).orElse(null);
+        Holder<Biome> biome = server.registryAccess().lookupOrThrow(Registries.BIOME)
+            .get(ResourceKey.create(Registries.BIOME, job.biome)).orElse(null);
         BiomeSampleData.Entry entry = data.entry(job.biome);
         if (biome == null) {
             entry.searched = true;
@@ -228,7 +228,7 @@ public final class BiomeSampling {
         ServerLevel level = server.getLevel(SamplingDimensions.forSource(source));
         if (level == null) {
             // a world built without datapack dimensions
-            EnderLaserQuarry.LOGGER.warn("Sampling dimension for {} is missing, asteroids of {} can't be analyzed", source.location(), job.biome);
+            EnderLaserQuarry.LOGGER.warn("Sampling dimension for {} is missing, asteroids of {} can't be analyzed", source.identifier(), job.biome);
             entry.searched = true;
             entry.spots.clear();
             data.setDirty();
@@ -243,7 +243,7 @@ public final class BiomeSampling {
             job.search = null;
             boolean second = job.quickSearched;
             for (BlockPos spot : result.spots().getOrDefault(biome, List.of())) {
-                ChunkPos chunk = new ChunkPos(spot);
+                ChunkPos chunk = ChunkPos.containing(spot);
                 // the second search doesn't know the first one's spots
                 boolean near = second && entry.spots.stream().anyMatch(other -> other.getChessboardDistance(chunk) < minChunkGap(source));
                 if (!near && entry.spots.size() < fullSpots()) {
@@ -257,7 +257,7 @@ public final class BiomeSampling {
             job.quickSearched = true;
             data.setDirty();
             if (entry.spots.isEmpty()) {
-                EnderLaserQuarry.LOGGER.info("No ground of biome {} found in {}: its asteroids can't be analyzed", job.biome, source.location());
+                EnderLaserQuarry.LOGGER.info("No ground of biome {} found in {}: its asteroids can't be analyzed", job.biome, source.identifier());
                 return true;
             }
         }
@@ -265,7 +265,7 @@ public final class BiomeSampling {
         if (!entry.searched && entry.spots.size() < (job.quickSearched ? fullSpots() : quickSpots()) && job.search == null
             && entry.done() + job.inFlight >= entry.spots.size()) {
             int count = job.quickSearched ? fullSpots() : quickSpots();
-            long seed = server.getWorldData().worldGenOptions().seed() ^ job.biome.hashCode() * 31L ^ (job.quickSearched ? 0x5EEDL : 0);
+            long seed = server.overworld().getSeed() ^ job.biome.hashCode() * 31L ^ (job.quickSearched ? 0x5EEDL : 0);
             job.search = BiomeSpots.find(level, source == Level.END, Set.of(biome), settings(source, count, seed));
             return false;
         }
@@ -279,7 +279,7 @@ public final class BiomeSampling {
         while (job.inFlight < limit && next < entry.spots.size() && next < fullSpots()) {
             ChunkPos chunk = entry.spots.get(next++);
             job.inFlight++;
-            ResourceLocation id = job.biome;
+            Identifier id = job.biome;
             ChunkSampler.submit(new ChunkSampler.Patch(level.dimension(), chunk, 0, new ChunkSampler.Listener() {
                 @Override
                 public void counted(ChunkSampler.Patch patch, ChunkPos pos, ChunkCounter.Counts counts) {
@@ -312,7 +312,7 @@ public final class BiomeSampling {
         return new BiomeSpots.Settings(count, spacing, range, QuarryConfig.SAMPLING_MAX_PROBES.get(), seed);
     }
 
-    private static void add(MinecraftServer server, ResourceLocation id, Holder<Biome> biome, ChunkCounter.Counts counts) {
+    private static void add(MinecraftServer server, Identifier id, Holder<Biome> biome, ChunkCounter.Counts counts) {
         Object2LongMap<BlockState> states = counts.blocks().get(biome);
         if (states == null) {
             return;
@@ -327,7 +327,7 @@ public final class BiomeSampling {
     }
 
     // measured counts put in by hand
-    public static void debugPut(MinecraftServer server, ResourceLocation biome, Map<ResourceLocation, Long> blocks) {
+    public static void debugPut(MinecraftServer server, Identifier biome, Map<Identifier, Long> blocks) {
         BiomeSampleData data = BiomeSampleData.get(server);
         BiomeSampleData.Entry entry = data.entry(biome);
         entry.blocks.clear();
@@ -346,7 +346,7 @@ public final class BiomeSampling {
         AsteroidComposition.invalidate(biome);
     }
 
-    public static void debugForget(MinecraftServer server, ResourceLocation biome) {
+    public static void debugForget(MinecraftServer server, Identifier biome) {
         BiomeSampleData.get(server).entries().remove(biome);
         URGENT.remove(biome);
         JOBS.remove(biome);
@@ -357,7 +357,7 @@ public final class BiomeSampling {
         return JOBS.isEmpty();
     }
 
-    public static boolean isSampling(ResourceLocation biome) {
+    public static boolean isSampling(Identifier biome) {
         return JOBS.containsKey(biome);
     }
 

@@ -15,9 +15,13 @@ import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.port.PortedMultiblock;
 import com.enderlaserquarry.content.port.StructurePortBlockEntity;
 import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import com.mojang.serialization.Codec;
 import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
 import com.enderlaserquarry.init.ModBlockEntities;
 import com.enderlaserquarry.init.ModBlocks;
@@ -28,7 +32,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.gametest.framework.GameTestServer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
@@ -48,7 +53,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -203,7 +208,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
             // never destroyed, stops at 1 durability
             crystal.setDamageValue(Math.min(crystal.getMaxDamage() - 1, crystal.getDamageValue() + damage));
             if (!wasBroken && LaserCrystalItem.isBroken(crystal)) {
-                level.playSound(null, worldPosition, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 1, 0.8f);
+                level.playSound(null, worldPosition, SoundEvents.ITEM_BREAK.value(), SoundSource.BLOCKS, 1, 0.8f);
             }
         }
         setChanged();
@@ -227,7 +232,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
                 break;
             }
             crystal.setDamageValue(Math.max(0, crystal.getDamageValue() - durability));
-            QuarryControllerBlockEntity.XP.drain(controller, ExperienceUtil.EXP_TO_FLUID, IFluidHandler.FluidAction.EXECUTE);
+            controller.getXpTank().drain(ExperienceUtil.EXP_TO_FLUID, false);
             repaired = true;
         }
         if (repaired) {
@@ -294,57 +299,65 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     }
 
     // GUI only, no capability
-    public IItemHandlerModifiable getCrystalSlot() {
+    public Container getCrystalSlot() {
         return crystalSlot;
     }
 
-    private final IItemHandlerModifiable crystalSlot = new IItemHandlerModifiable() {
+    private final Container crystalSlot = new Container() {
         @Override
-        public int getSlots() {
+        public int getContainerSize() {
             return 1;
         }
 
         @Override
-        public ItemStack getStackInSlot(int slot) {
+        public boolean isEmpty() {
+            return crystal.isEmpty();
+        }
+
+        @Override
+        public ItemStack getItem(int slot) {
             return crystal;
         }
 
         @Override
-        public void setStackInSlot(int slot, ItemStack stack) {
+        public ItemStack removeItem(int slot, int count) {
+            return count <= 0 || crystal.isEmpty() ? ItemStack.EMPTY : removeCrystal();
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            return crystal.isEmpty() ? ItemStack.EMPTY : removeCrystal();
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
             crystal = stack;
             crystalChanged();
         }
 
         @Override
-        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            if (!crystal.isEmpty() || !isItemValid(slot, stack)) {
-                return stack;
-            }
-            ItemStack rest = stack.copy();
-            if (!simulate) {
-                insertCrystal(rest);
-            } else {
-                rest.shrink(1);
-            }
-            return rest;
-        }
-
-        @Override
-        public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (amount <= 0 || crystal.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            return simulate ? crystal.copy() : removeCrystal();
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
+        public int getMaxStackSize() {
             return 1;
         }
 
         @Override
-        public boolean isItemValid(int slot, ItemStack stack) {
+        public boolean canPlaceItem(int slot, ItemStack stack) {
             return stack.getItem() instanceof LaserCrystalItem;
+        }
+
+        @Override
+        public void setChanged() {
+            CrystalObeliskBlockEntity.this.setChanged();
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return Container.stillValidBlockEntity(CrystalObeliskBlockEntity.this, player);
+        }
+
+        @Override
+        public void clearContent() {
+            setItem(0, ItemStack.EMPTY);
         }
     };
 
@@ -361,6 +374,16 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     }
 
     // endregion
+
+    // block broken or replaced
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null) {
+            dropContents();
+            applyFloorGlow(level, pos, CrystalGlow.NONE);
+        }
+    }
 
     public void dropContents() {
         if (level != null && !crystal.isEmpty()) {
@@ -579,19 +602,19 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
 
     // Ports pass everything on to the controller
     @Override
-    public @Nullable IItemHandler getPortItemHandler() {
+    public @Nullable ResourceHandler<ItemResource> getPortItemHandler() {
         QuarryControllerBlockEntity controller = getController();
         return controller == null ? null : MachineBlockEntity.ITEM_HANDLER_PROVIDER.getCapability(controller, null);
     }
 
     @Override
-    public @Nullable IFluidHandler getPortFluidHandler() {
+    public @Nullable ResourceHandler<FluidResource> getPortFluidHandler() {
         QuarryControllerBlockEntity controller = getController();
-        return controller == null ? null : controller.getFluidHandler();
+        return controller == null ? null : controller.getPortFluidHandler();
     }
 
     @Override
-    public @Nullable IEnergyStorage getPortEnergyStorage() {
+    public @Nullable EnergyHandler getPortEnergyStorage() {
         QuarryControllerBlockEntity controller = getController();
         return controller == null ? null : controller.getPortEnergyStorage();
     }
@@ -975,7 +998,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
             // fire
             level.playLocalSound(center.x, center.y, center.z, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.BLOCKS, 2.5f, 1.3f, false);
             level.playLocalSound(center.x, center.y, center.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 2f, 2f, false);
-            level.addParticle(ParticleTypes.FLASH, center.x, center.y, center.z, 0, 0, 0);
+            level.addParticle(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFFFFF), center.x, center.y, center.z, 0, 0, 0);
             for (int i = 0; i < 40; i++) {
                 Vec3 velocity = new Vec3(random.nextGaussian(), random.nextGaussian() * 0.5 + 0.6, random.nextGaussian()).scale(0.25);
                 level.addParticle(ParticleTypes.END_ROD, center.x, center.y, center.z, velocity.x, velocity.y, velocity.z);
@@ -1021,67 +1044,54 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     // region Serialization
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(ValueOutput tag) {
+        super.saveAdditional(tag);
         saveSynced(tag);
         if (!crystal.isEmpty()) {
-            tag.put(CRYSTAL, crystal.save(registries));
+            tag.store(CRYSTAL, ItemStack.CODEC, crystal);
         }
         tag.putInt(WEAR_BLOCKS, wearBlocks);
-        if (controllerPos != null) {
-            tag.put(CONTROLLER_POS, NbtUtils.writeBlockPos(controllerPos));
-        }
-        if (radarPos != null) {
-            tag.put(RADAR_POS, NbtUtils.writeBlockPos(radarPos));
-        }
+        tag.storeNullable(CONTROLLER_POS, BlockPos.CODEC, controllerPos);
+        tag.storeNullable(RADAR_POS, BlockPos.CODEC, radarPos);
         // a running quarry comes back powered up, no second power-up after a reload
         if (powerUpStart != POWERED_DOWN) {
             tag.putLong(POWER_UP_START, powerUpStart);
         }
     }
 
-    private void saveSynced(CompoundTag tag) {
+    private void saveSynced(ValueOutput tag) {
         tag.putBoolean(HAS_CRYSTAL, hasCrystal);
         tag.putBoolean(VOID_CRYSTAL, voidCrystal);
         tag.putBoolean(FORMED, formed);
         tag.putBoolean(BEAMING, beaming);
         tag.putBoolean(HOT, hot);
-        if (satellitePos != null) {
-            tag.put(SATELLITE_POS, NbtUtils.writeBlockPos(satellitePos));
-        }
-        ListTag list = new ListTag();
-        for (BlockPos pos : dishes) {
-            list.add(LongTag.valueOf(pos.asLong()));
-        }
-        tag.put(DISHES, list);
+        tag.storeNullable(SATELLITE_POS, BlockPos.CODEC, satellitePos);
+        tag.store(DISHES, Codec.LONG.listOf(), dishes.stream().map(BlockPos::asLong).toList());
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        hasCrystal = tag.getBoolean(HAS_CRYSTAL);
-        voidCrystal = tag.getBoolean(VOID_CRYSTAL);
-        formed = tag.getBoolean(FORMED);
-        beaming = tag.getBoolean(BEAMING);
-        hot = tag.getBoolean(HOT);
-        satellitePos = NbtUtils.readBlockPos(tag, SATELLITE_POS).orElse(null);
-        if (tag.contains(POWER_UP_START)) {
-            powerUpStart = tag.getLong(POWER_UP_START);
+    protected void loadAdditional(ValueInput tag) {
+        super.loadAdditional(tag);
+        hasCrystal = tag.getBooleanOr(HAS_CRYSTAL, false);
+        voidCrystal = tag.getBooleanOr(VOID_CRYSTAL, false);
+        formed = tag.getBooleanOr(FORMED, false);
+        beaming = tag.getBooleanOr(BEAMING, false);
+        hot = tag.getBooleanOr(HOT, false);
+        satellitePos = tag.read(SATELLITE_POS, BlockPos.CODEC).orElse(null);
+        tag.getLong(POWER_UP_START).ifPresent(start -> {
+            powerUpStart = start;
             resumeGrace = true;
-        }
+        });
         dishes.clear();
         activeDishes = null;
-        for (Tag entry : tag.getList(DISHES, Tag.TAG_LONG)) {
-            dishes.add(BlockPos.of(((LongTag) entry).getAsLong()));
-        }
+        tag.read(DISHES, Codec.LONG.listOf()).ifPresent(list -> list.forEach(pos -> dishes.add(BlockPos.of(pos))));
         // not in the update tag
-        controllerPos = NbtUtils.readBlockPos(tag, CONTROLLER_POS).orElse(controllerPos);
-        if (tag.contains(WEAR_BLOCKS)) {
-            wearBlocks = tag.getInt(WEAR_BLOCKS);
-        }
-        radarPos = NbtUtils.readBlockPos(tag, RADAR_POS).orElse(radarPos);
-        if (tag.contains(CRYSTAL)) {
-            crystal = ItemStack.parseOptional(registries, tag.getCompound(CRYSTAL));
+        controllerPos = tag.read(CONTROLLER_POS, BlockPos.CODEC).orElse(controllerPos);
+        wearBlocks = tag.getIntOr(WEAR_BLOCKS, wearBlocks);
+        radarPos = tag.read(RADAR_POS, BlockPos.CODEC).orElse(radarPos);
+        if (tag.getInt(WEAR_BLOCKS).isPresent()) {
+            // full save
+            crystal = tag.read(CRYSTAL, ItemStack.CODEC).orElse(ItemStack.EMPTY);
             hasCrystal = !crystal.isEmpty();
             voidCrystal = crystal.getItem() instanceof VoidLaserCrystalItem;
         }
@@ -1089,11 +1099,13 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = new CompoundTag();
-        saveSynced(tag);
-        // update tag only, powers up again after a reload
-        tag.putLong(POWER_UP_START, powerUpStart);
-        return tag;
+        try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(problemPath(), EnderLaserQuarry.LOGGER)) {
+            TagValueOutput tag = TagValueOutput.createWithContext(reporter, registries);
+            saveSynced(tag);
+            // update tag only, powers up again after a reload
+            tag.putLong(POWER_UP_START, powerUpStart);
+            return tag.buildResult();
+        }
     }
 
     @Override

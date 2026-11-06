@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
@@ -28,14 +28,14 @@ public record SpaceMapPayload(BlockPos controllerPos, List<AsteroidInfo> asteroi
             Part::new);
     }
 
-    public record AsteroidInfo(int id, int x, int y, AsteroidSize size, ResourceLocation biome, long total, long remaining,
+    public record AsteroidInfo(int id, int x, int y, AsteroidSize size, Identifier biome, long total, long remaining,
                                long seed, boolean analyzed, boolean stale, int samples, int fullSamples, List<Part> parts) {
         public static final StreamCodec<ByteBuf, AsteroidInfo> STREAM_CODEC = StreamCodec.of((buf, info) -> {
             ByteBufCodecs.VAR_INT.encode(buf, info.id());
             ByteBufCodecs.VAR_INT.encode(buf, info.x());
             ByteBufCodecs.VAR_INT.encode(buf, info.y());
             ByteBufCodecs.VAR_INT.encode(buf, info.size().ordinal());
-            ResourceLocation.STREAM_CODEC.encode(buf, info.biome());
+            Identifier.STREAM_CODEC.encode(buf, info.biome());
             ByteBufCodecs.VAR_LONG.encode(buf, info.total());
             ByteBufCodecs.VAR_LONG.encode(buf, info.remaining());
             buf.writeLong(info.seed());
@@ -49,7 +49,7 @@ public record SpaceMapPayload(BlockPos controllerPos, List<AsteroidInfo> asteroi
             ByteBufCodecs.VAR_INT.decode(buf),
             ByteBufCodecs.VAR_INT.decode(buf),
             AsteroidSize.byId(ByteBufCodecs.VAR_INT.decode(buf)),
-            ResourceLocation.STREAM_CODEC.decode(buf),
+            Identifier.STREAM_CODEC.decode(buf),
             ByteBufCodecs.VAR_LONG.decode(buf),
             ByteBufCodecs.VAR_LONG.decode(buf),
             buf.readLong(),

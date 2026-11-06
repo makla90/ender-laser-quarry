@@ -20,13 +20,15 @@ import com.enderlaserquarry.network.SpaceMapPayload;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
@@ -34,7 +36,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -44,7 +46,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> {
-    private static final ResourceLocation MINIMAP_TEXTURE = EnderLaserQuarry.rl("dynamic/quarry_minimap");
+    private static final Identifier MINIMAP_TEXTURE = EnderLaserQuarry.rl("dynamic/quarry_minimap");
 
     private static final int MAP_X = 8;
     private static final int MAP_Y = 18;
@@ -142,9 +144,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     // endregion
 
     public QuarryControllerScreen(QuarryControllerMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        imageWidth = 267;
-        imageHeight = 258;
+        super(menu, playerInventory, title, 267, 258);
         inventoryLabelX = QuarryControllerMenu.PLAYER_INV_X;
         inventoryLabelY = QuarryControllerMenu.PLAYER_INV_Y - 11;
     }
@@ -177,7 +177,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         analyzeButton = addRenderableWidget(Button.builder(Component.translatable("gui.ender_laser_quarry.controller.analyze"),
                 b -> {
                     if (pickedAsteroid >= 0) {
-                        PacketDistributor.sendToServer(QuarryActionPayload.analyzeAsteroid(menu.getBlockEntity().getBlockPos(), pickedAsteroid));
+                        ClientPacketDistributor.sendToServer(QuarryActionPayload.analyzeAsteroid(menu.getBlockEntity().getBlockPos(), pickedAsteroid));
                     }
                 })
             .bounds(leftPos + MAP_X + MAP_SIZE - 54, topPos + MAP_Y + MAP_SIZE - 39, 52, 14)
@@ -190,7 +190,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             .build());
         moveButton = addRenderableWidget(Button.builder(Component.translatable("gui.ender_laser_quarry.orbit.launch"), b -> {
                 if (planned != null) {
-                    PacketDistributor.sendToServer(QuarryActionPayload.transferSatellite(menu.getBlockEntity().getBlockPos(), planned.x, planned.z));
+                    ClientPacketDistributor.sendToServer(QuarryActionPayload.transferSatellite(menu.getBlockEntity().getBlockPos(), planned.x(), planned.z()));
                 }
             })
             .bounds(leftPos + MAP_X + MAP_SIZE - 54, topPos + MAP_Y + MAP_SIZE - 39, 52, 14)
@@ -235,19 +235,19 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
         // depth mode, Enhanced+ only
         depthButton = addRenderableWidget(new Button(leftPos + DEPTH_X, topPos + DEPTH_Y, 20, 20, Component.empty(),
-            b -> PacketDistributor.sendToServer(QuarryActionPayload.setDepthMode(menu.getBlockEntity().getBlockPos(),
+            b -> ClientPacketDistributor.sendToServer(QuarryActionPayload.setDepthMode(menu.getBlockEntity().getBlockPos(),
                 menu.getDepthMode().next())), narration -> narration.get()) {
             @Override
-            protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-                super.renderWidget(g, mouseX, mouseY, partialTick);
-                g.renderItem(menu.getDepthMode().icon(), getX() + 2, getY() + 2);
+            protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+                extractDefaultSprite(g);
+                g.item(menu.getDepthMode().icon(), getX() + 2, getY() + 2);
                 if (menu.getDepthMode() == DepthMode.Y_LEVEL) {
                     // floor Y drawn like an item count
                     String y = Integer.toString(shownFloorY());
-                    g.pose().pushPose();
-                    g.pose().translate(0, 0, 200);
-                    g.drawString(font, y, getX() + getWidth() - 1 - font.width(y), getY() + getHeight() - 9, 0xFFFFFFFF, true);
-                    g.pose().popPose();
+                    g.pose().pushMatrix();
+                    g.nextStratum();
+                    g.text(font, y, getX() + getWidth() - 1 - font.width(y), getY() + getHeight() - 9, 0xFFFFFFFF, true);
+                    g.pose().popMatrix();
                 }
             }
         });
@@ -275,7 +275,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             return;
         }
         var level = menu.getBlockEntity().getLevel();
-        int y = shownFloorY() + direction * (hasShiftDown() ? 10 : 1);
+        int y = shownFloorY() + direction * (Minecraft.getInstance().hasShiftDown() ? 10 : 1);
         if (level != null) {
             y = DepthMode.clampY(level, y);
         }
@@ -284,7 +284,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         }
         pendingFloorY = y;
         pendingFloorTicks = FLOOR_PENDING_TICKS;
-        PacketDistributor.sendToServer(QuarryActionPayload.setFloorY(menu.getBlockEntity().getBlockPos(), y));
+        ClientPacketDistributor.sendToServer(QuarryActionPayload.setFloorY(menu.getBlockEntity().getBlockPos(), y));
     }
 
     private boolean isOverFloorControl(double mouseX, double mouseY) {
@@ -304,8 +304,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         }
 
         @Override
-        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            super.renderWidget(g, mouseX, mouseY, partialTick);
+        protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+            extractDefaultSprite(g);
             int colour = active ? 0xFFFFFFFF : 0xFFA0A0A0;
             int cx = getX() + getWidth() / 2;
             int top = getY() + (getHeight() - 3) / 2;
@@ -324,7 +324,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     private void requestMinimap() {
         ticksUntilRefresh = REFRESH_INTERVAL;
         BlockPos controller = menu.getBlockEntity().getBlockPos();
-        PacketDistributor.sendToServer(planning
+        ClientPacketDistributor.sendToServer(planning
             ? QuarryActionPayload.requestPlanner(controller, imageRevision)
             : QuarryActionPayload.requestMinimap(controller, imageRevision));
     }
@@ -350,8 +350,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
     // dx / dz from the pad's chunk -> world chunk
     private ChunkPos padOffsetChunk(int dx, int dz) {
-        ChunkPos pad = new ChunkPos(padPos);
-        return new ChunkPos(pad.x + dx, pad.z + dz);
+        ChunkPos pad = ChunkPos.containing(padPos);
+        return new ChunkPos(pad.x() + dx, pad.z() + dz);
     }
 
     // the footprint radius: the planner area is reach + footprint around the pad
@@ -387,8 +387,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         if (chunk == null) {
             return null;
         }
-        ChunkPos pad = new ChunkPos(padPos);
-        return new ChunkPos(chunk.x - pad.x, chunk.z - pad.z);
+        ChunkPos pad = ChunkPos.containing(padPos);
+        return new ChunkPos(chunk.x() - pad.x(), chunk.z() - pad.z());
     }
 
     // dev client test: drive the planner without a mouse
@@ -404,7 +404,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
     public void debugLaunch() {
         if (moveButton != null && moveButton.active) {
-            moveButton.onPress();
+            moveButton.onPress(null);
         }
     }
 
@@ -441,7 +441,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         int size = snapshot.sizeInBlocks();
         if (!sameArea || texture == null || texture.getPixels() == null) {
             releaseTexture();
-            texture = new DynamicTexture(size, size, true);
+            texture = new DynamicTexture("ender_laser_quarry_minimap", size, size, true);
             minecraft.getTextureManager().register(MINIMAP_TEXTURE, texture);
             imageRevision = 0;
         }
@@ -449,16 +449,16 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         NativeImage pixels = texture.getPixels();
         var min = snapshot.minChunk();
         for (MinimapPayload.ChunkImage image : payload.images()) {
-            ChunkPos chunk = new ChunkPos(image.chunk());
+            ChunkPos chunk = ChunkPos.unpack(image.chunk());
             if (!snapshot.contains(chunk)) {
                 continue;
             }
-            int originX = (chunk.x - min.x) * 16;
-            int originZ = (chunk.z - min.z) * 16;
+            int originX = (chunk.x() - min.x()) * 16;
+            int originZ = (chunk.z() - min.z()) * 16;
             byte[] data = image.pixels();
             for (int i = 0; i < 256; i++) {
-                // MapColor is ABGR like NativeImage
-                pixels.setPixelRGBA(originX + (i & 15), originZ + (i >> 4), MapColor.getColorFromPackedId(data[i] & 0xFF));
+                // MapColor is ARGB in 26.1
+                pixels.setPixel(originX + (i & 15), originZ + (i >> 4), MapColor.getColorFromPackedId(data[i] & 0xFF));
             }
         }
         texture.upload();
@@ -598,7 +598,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         if (moveButton != null) {
             moveButton.visible = planning && planned != null && !isMoving() && !ioOpen;
             moveButton.active = planned != null && menu.isRocketReady() && menu.hasSatelliteInOrbit() && !running
-                && menu.getPadFuel() >= transferCost(planned.x, planned.z);
+                && menu.getPadFuel() >= transferCost(planned.x(), planned.z());
         }
         if (refreshButton != null) {
             refreshButton.setMessage(Component.translatable(voidMode
@@ -609,7 +609,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     private void send(QuarryActionPayload.Action action) {
-        PacketDistributor.sendToServer(QuarryActionPayload.of(menu.getBlockEntity().getBlockPos(), action));
+        ClientPacketDistributor.sendToServer(QuarryActionPayload.of(menu.getBlockEntity().getBlockPos(), action));
     }
 
     // region Map view (zoom + pan)
@@ -693,7 +693,10 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (menu.isVoidMode()) {
             boolean overButton = analyzeButton != null && analyzeButton.visible && analyzeButton.isMouseOver(mouseX, mouseY);
             SpaceMapPayload.AsteroidInfo asteroid = button == 0 && !overButton ? asteroidAt(mouseX, mouseY) : null;
@@ -703,7 +706,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 return true;
             }
             if (asteroid != null && !menu.isRunning()) {
-                PacketDistributor.sendToServer(QuarryActionPayload.setAsteroidQueued(menu.getBlockEntity().getBlockPos(),
+                ClientPacketDistributor.sendToServer(QuarryActionPayload.setAsteroidQueued(menu.getBlockEntity().getBlockPos(),
                     asteroid.id(), !menu.getAsteroidQueue().contains(asteroid.id())));
                 return true;
             }
@@ -711,7 +714,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 panning = true;
                 return true;
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
         boolean overPlannerButtons = (plannerButton != null && plannerButton.visible && plannerButton.isMouseOver(mouseX, mouseY))
             || (moveButton != null && moveButton.visible && moveButton.isMouseOver(mouseX, mouseY));
@@ -719,8 +722,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             if (button == 0) {
                 ChunkPos offset = offsetAt(mouseX, mouseY);
                 if (offset != null && !isMoving()) {
-                    boolean here = offset.x == menu.getOrbitDx() && offset.z == menu.getOrbitDz();
-                    if (canReach(offset.x, offset.z) && !here) {
+                    boolean here = offset.x() == menu.getOrbitDx() && offset.z() == menu.getOrbitDz();
+                    if (canReach(offset.x(), offset.z()) && !here) {
                         planned = offset.equals(planned) ? null : offset;
                         playUi(SoundEvents.NOTE_BLOCK_CHIME.value(), planned != null ? 1.5f : 1.0f, 0.4f);
                     } else {
@@ -733,7 +736,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 panning = true;
                 return true;
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
         if (!planning && isMapInteractive() && isOverMap(mouseX, mouseY) && !overPlannerButtons) {
             if (button == 0 && !menu.isRunning()) {
@@ -753,11 +756,14 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && dragQueues != null) {
             ChunkPos chunk = chunkAtClamped(mouseX, mouseY);
             if (chunk != null) {
@@ -775,21 +781,24 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             clampView();
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && dragQueues != null) {
             BlockPos controller = menu.getBlockEntity().getBlockPos();
             if (boxStart != null && boxStart.equals(boxEnd)) {
                 // single click toggles one chunk
                 if (snapshot.scanState(boxStart) == MinimapSnapshot.SCANNED) {
-                    PacketDistributor.sendToServer(QuarryActionPayload.setQueued(controller, boxStart, dragQueues));
+                    ClientPacketDistributor.sendToServer(QuarryActionPayload.setQueued(controller, boxStart, dragQueues));
                 }
             } else if (boxStart != null && boxEnd != null && (!dragQueues || boxTotal() <= menu.getMaxChunks())) {
                 // over the limit adds nothing (the preview is red)
-                PacketDistributor.sendToServer(QuarryActionPayload.setBoxQueued(controller, boxStart, boxEnd, dragQueues));
+                ClientPacketDistributor.sendToServer(QuarryActionPayload.setBoxQueued(controller, boxStart, boxEnd, dragQueues));
             }
             dragQueues = null;
             boxStart = null;
@@ -800,7 +809,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             panning = false;
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
@@ -837,8 +846,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         boolean fresh = !queue.isEmpty() && menu.getChunkIndex() >= queue.size();
         Set<ChunkPos> queued = fresh ? Set.of() : new HashSet<>(queue);
         int count = 0;
-        for (int z = Math.min(boxStart.z, boxEnd.z); z <= Math.max(boxStart.z, boxEnd.z); z++) {
-            for (int x = Math.min(boxStart.x, boxEnd.x); x <= Math.max(boxStart.x, boxEnd.x); x++) {
+        for (int z = Math.min(boxStart.z(), boxEnd.z()); z <= Math.max(boxStart.z(), boxEnd.z()); z++) {
+            for (int x = Math.min(boxStart.x(), boxEnd.x()); x <= Math.max(boxStart.x(), boxEnd.x()); x++) {
                 ChunkPos chunk = new ChunkPos(x, z);
                 if (dragQueues ? !queued.contains(chunk) && snapshot.scanState(chunk) == MinimapSnapshot.SCANNED : queued.contains(chunk)) {
                     count++;
@@ -875,7 +884,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         int cx = Mth.clamp(Mth.floor(blockX / 16), 0, chunks - 1);
         int cz = Mth.clamp(Mth.floor(blockZ / 16), 0, chunks - 1);
         var min = snapshot.minChunk();
-        return new ChunkPos(min.x + cx, min.z + cz);
+        return new ChunkPos(min.x() + cx, min.z() + cz);
     }
 
     // endregion
@@ -883,7 +892,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     // region Rendering
 
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
         GuiPanels.inset(g, leftPos + MAP_X - 1, topPos + MAP_Y - 1, MAP_SIZE + 2, MAP_SIZE + 2);
 
@@ -907,7 +916,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         renderMinimap(g, mouseX, mouseY);
     }
 
-    private void renderMinimap(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderMinimap(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         int x0 = leftPos + MAP_X;
         int y0 = topPos + MAP_Y;
 
@@ -920,7 +929,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
         if (menu.isVoidMode()) {
             if (!spaceView.hasData()) {
-                g.drawCenteredString(font, Component.translatable("gui.ender_laser_quarry.controller.loading_map"),
+                g.centeredText(font, Component.translatable("gui.ender_laser_quarry.controller.loading_map"),
                     x0 + MAP_SIZE / 2, y0 + MAP_SIZE / 2 - 4, 0xFFAAAAAA);
                 return;
             }
@@ -933,7 +942,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         }
 
         if (snapshot == null || texture == null) {
-            g.drawCenteredString(font, Component.translatable("gui.ender_laser_quarry.controller.loading_map"),
+            g.centeredText(font, Component.translatable("gui.ender_laser_quarry.controller.loading_map"),
                 x0 + MAP_SIZE / 2, y0 + MAP_SIZE / 2 - 4, 0xFFAAAAAA);
             return;
         }
@@ -943,7 +952,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         int size = snapshot.sizeInBlocks();
         int mapLeft = screenX(0);
         int mapTop = screenY(0);
-        g.blit(MINIMAP_TEXTURE, mapLeft, mapTop, screenX(size) - mapLeft, screenY(size) - mapTop, 0, 0, size, size, size, size);
+        g.blit(RenderPipelines.GUI_TEXTURED, MINIMAP_TEXTURE, mapLeft, mapTop, 0, 0, screenX(size) - mapLeft, screenY(size) - mapTop, size, size, size, size);
 
         int chunks = snapshot.radius() * 2 + 1;
         var min = snapshot.minChunk();
@@ -975,8 +984,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 150.0);
         for (int i = 0; i < queue.size(); i++) {
             ChunkPos selected = queue.get(i);
-            int sx = selected.x - min.x;
-            int sz = selected.z - min.z;
+            int sx = selected.x() - min.x();
+            int sz = selected.z() - min.z();
             if (sx < 0 || sz < 0 || sx >= chunks || sz >= chunks) {
                 continue;
             }
@@ -986,19 +995,19 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             int bottom = screenY((sz + 1) * 16);
             if (i < current) {
                 g.fill(left, top, right, bottom, DONE_FILL);
-                g.renderOutline(left, top, right - left, bottom - top, DONE_EDGE);
+                g.outline(left, top, right - left, bottom - top, DONE_EDGE);
             } else {
                 g.fill(left, top, right, bottom, SELECTED_FILL);
                 int edge = i == current && menu.isRunning()
                     ? ((int) (0x80 + 0x7F * pulse) << 24) | (SELECTED_EDGE & 0xFFFFFF)
                     : SELECTED_EDGE;
-                g.renderOutline(left, top, right - left, bottom - top, edge);
+                g.outline(left, top, right - left, bottom - top, edge);
                 if (i == current) {
-                    g.renderOutline(left + 1, top + 1, right - left - 2, bottom - top - 2, edge);
+                    g.outline(left + 1, top + 1, right - left - 2, bottom - top - 2, edge);
                 }
             }
             if (right - left >= 8) {
-                g.drawCenteredString(font, String.valueOf(i + 1), (left + right) / 2, (top + bottom) / 2 - 4,
+                g.centeredText(font, String.valueOf(i + 1), (left + right) / 2, (top + bottom) / 2 - 4,
                     i < current ? 0xFFAAAAAA : 0xFFFFFFFF);
             }
         }
@@ -1009,8 +1018,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
         ChunkPos hovered = menu.isRunning() || dragQueues != null ? null : chunkAt(mouseX, mouseY);
         if (hovered != null && snapshot.scanState(hovered) == MinimapSnapshot.SCANNED) {
-            int hx = hovered.x - min.x;
-            int hz = hovered.z - min.z;
+            int hx = hovered.x() - min.x();
+            int hz = hovered.z() - min.z();
             g.fill(screenX(hx * 16), screenY(hz * 16), screenX((hx + 1) * 16), screenY((hz + 1) * 16), HOVER);
         }
 
@@ -1024,7 +1033,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
     // region Orbit planner drawing
 
-    private void renderPlanner(GuiGraphics g, int mouseX, int mouseY, ChunkPos min) {
+    private void renderPlanner(GuiGraphicsExtractor g, int mouseX, int mouseY, ChunkPos min) {
         if (padPos == null) {
             return;
         }
@@ -1032,10 +1041,10 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         float t = (now % 100_000) / 1000f;
         int range = menu.getTransferRange();
         int r = footprintRadius();
-        ChunkPos pad = new ChunkPos(padPos);
+        ChunkPos pad = ChunkPos.containing(padPos);
 
         // where the area's middle may go
-        int[] reach = rect(min, pad.x - range, pad.z - range, pad.x + range, pad.z + range);
+        int[] reach = rect(min, pad.x() - range, pad.z() - range, pad.x() + range, pad.z() + range);
         dashedRect(g, reach, REACH_EDGE, t * 8, 4);
 
         // where it is now (gliding along while it flies over)
@@ -1048,24 +1057,24 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             curDx = Mth.lerp(s, fromDx, menu.getOrbitDx());
             curDz = Mth.lerp(s, fromDz, menu.getOrbitDz());
         }
-        double[] centre = chunkCentreScreen(min, pad.x + curDx, pad.z + curDz);
-        int[] area = rect(min, pad.x + curDx - r, pad.z + curDz - r, pad.x + curDx + r, pad.z + curDz + r);
+        double[] centre = chunkCentreScreen(min, pad.x() + curDx, pad.z() + curDz);
+        int[] area = rect(min, pad.x() + curDx - r, pad.z() + curDz - r, pad.x() + curDx + r, pad.z() + curDz + r);
         g.fill(area[0], area[1], area[2], area[3], ORBIT_AREA_FILL);
-        g.renderOutline(area[0], area[1], area[2] - area[0], area[3] - area[1], ORBIT_AREA_EDGE);
-        g.renderOutline(area[0] + 1, area[1] + 1, area[2] - area[0] - 2, area[3] - area[1] - 2, (ORBIT_AREA_EDGE & 0xFFFFFF) | 0x60000000);
+        g.outline(area[0], area[1], area[2] - area[0], area[3] - area[1], ORBIT_AREA_EDGE);
+        g.outline(area[0] + 1, area[1] + 1, area[2] - area[0] - 2, area[3] - area[1] - 2, (ORBIT_AREA_EDGE & 0xFFFFFF) | 0x60000000);
 
         // tether from the pad
-        double[] padScreen = chunkCentreScreen(min, pad.x, pad.z);
+        double[] padScreen = chunkCentreScreen(min, pad.x(), pad.z());
         dottedLine(g, padScreen[0], padScreen[1], centre[0], centre[1], TETHER, 0, 3);
 
         // the flight: path, target and the satellite on its way
         if (state != 0) {
             int tdx = menu.getTransferDx();
             int tdz = menu.getTransferDz();
-            double[] target = chunkCentreScreen(min, pad.x + tdx, pad.z + tdz);
-            double[] start = chunkCentreScreen(min, pad.x + (state == 2 ? fromDx : menu.getOrbitDx()), pad.z + (state == 2 ? fromDz : menu.getOrbitDz()));
+            double[] target = chunkCentreScreen(min, pad.x() + tdx, pad.z() + tdz);
+            double[] start = chunkCentreScreen(min, pad.x() + (state == 2 ? fromDx : menu.getOrbitDx()), pad.z() + (state == 2 ? fromDz : menu.getOrbitDz()));
             dottedLine(g, start[0], start[1], target[0], target[1], TARGET_EDGE, t * 12, 4);
-            int[] goal = rect(min, pad.x + tdx - r, pad.z + tdz - r, pad.x + tdx + r, pad.z + tdz + r);
+            int[] goal = rect(min, pad.x() + tdx - r, pad.z() + tdz - r, pad.x() + tdx + r, pad.z() + tdz + r);
             dashedRect(g, goal, TARGET_EDGE, -t * 10, 3);
             if (state == 1) {
                 // the rocket brings fuel: rings pulse around the satellite
@@ -1080,7 +1089,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 for (int i = 1; i <= 6; i++) {
                     float back = Math.max(0, progress - i * 0.03f);
                     float s = back * back * (3 - 2 * back);
-                    double[] p = chunkCentreScreen(min, pad.x + Mth.lerp(s, fromDx, tdx), pad.z + Mth.lerp(s, fromDz, tdz));
+                    double[] p = chunkCentreScreen(min, pad.x() + Mth.lerp(s, fromDx, tdx), pad.z() + Mth.lerp(s, fromDz, tdz));
                     int alpha = 200 - i * 30;
                     g.fill((int) p[0], (int) p[1], (int) p[0] + 1, (int) p[1] + 1, (alpha << 24) | 0xFFFFFF);
                 }
@@ -1090,10 +1099,10 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         // what a click would do
         ChunkPos hovered = isMoving() ? null : offsetAt(mouseX, mouseY);
         if (hovered != null) {
-            boolean ok = canReach(hovered.x, hovered.z);
-            int[] ghost = rect(min, pad.x + hovered.x - r, pad.z + hovered.z - r, pad.x + hovered.x + r, pad.z + hovered.z + r);
+            boolean ok = canReach(hovered.x(), hovered.z());
+            int[] ghost = rect(min, pad.x() + hovered.x() - r, pad.z() + hovered.z() - r, pad.x() + hovered.x() + r, pad.z() + hovered.z() + r);
             dashedRect(g, ghost, ok ? GHOST_EDGE : GHOST_BAD, t * 6, 2);
-            double[] c = chunkCentreScreen(min, pad.x + hovered.x, pad.z + hovered.z);
+            double[] c = chunkCentreScreen(min, pad.x() + hovered.x(), pad.z() + hovered.z());
             crosshair(g, (int) c[0], (int) c[1], ok ? GHOST_EDGE : GHOST_BAD);
         }
 
@@ -1101,10 +1110,10 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         if (planned != null && state == 0) {
             float pulse = 0.5f + 0.5f * Mth.sin(t * 6);
             int edge = ((int) (0x90 + 0x6F * pulse) << 24) | (TARGET_EDGE & 0xFFFFFF);
-            int[] goal = rect(min, pad.x + planned.x - r, pad.z + planned.z - r, pad.x + planned.x + r, pad.z + planned.z + r);
+            int[] goal = rect(min, pad.x() + planned.x() - r, pad.z() + planned.z() - r, pad.x() + planned.x() + r, pad.z() + planned.z() + r);
             g.fill(goal[0], goal[1], goal[2], goal[3], 0x18FFC23A);
-            g.renderOutline(goal[0], goal[1], goal[2] - goal[0], goal[3] - goal[1], edge);
-            double[] c = chunkCentreScreen(min, pad.x + planned.x, pad.z + planned.z);
+            g.outline(goal[0], goal[1], goal[2] - goal[0], goal[3] - goal[1], edge);
+            double[] c = chunkCentreScreen(min, pad.x() + planned.x(), pad.z() + planned.z());
             dottedLine(g, centre[0], centre[1], c[0], c[1], TARGET_EDGE, t * 12, 4);
             crosshair(g, (int) c[0], (int) c[1], TARGET_EDGE);
         }
@@ -1126,15 +1135,15 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
     // screen rectangle of the chunks from (x1, z1) to (x2, z2), inclusive, fractions allowed
     private int[] rect(ChunkPos min, double x1, double z1, double x2, double z2) {
-        return new int[] { screenX((x1 - min.x) * 16), screenY((z1 - min.z) * 16), screenX((x2 - min.x + 1) * 16), screenY((z2 - min.z + 1) * 16) };
+        return new int[] { screenX((x1 - min.x()) * 16), screenY((z1 - min.z()) * 16), screenX((x2 - min.x() + 1) * 16), screenY((z2 - min.z() + 1) * 16) };
     }
 
     private double[] chunkCentreScreen(ChunkPos min, double x, double z) {
-        return new double[] { screenX((x - min.x) * 16 + 8), screenY((z - min.z) * 16 + 8) };
+        return new double[] { screenX((x - min.x()) * 16 + 8), screenY((z - min.z()) * 16 + 8) };
     }
 
     // marching ants: dash of `dash` px, moving with offset
-    private static void dashedRect(GuiGraphics g, int[] r, int color, float offset, int dash) {
+    private static void dashedRect(GuiGraphicsExtractor g, int[] r, int color, float offset, int dash) {
         int left = r[0];
         int top = r[1];
         int right = r[2] - 1;
@@ -1159,7 +1168,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         }
     }
 
-    private static void dottedLine(GuiGraphics g, double x1, double y1, double x2, double y2, int color, float offset, int spacing) {
+    private static void dottedLine(GuiGraphicsExtractor g, double x1, double y1, double x2, double y2, int color, float offset, int spacing) {
         double length = Math.hypot(x2 - x1, y2 - y1);
         if (length < 1) {
             return;
@@ -1172,14 +1181,14 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         }
     }
 
-    private static void crosshair(GuiGraphics g, int x, int y, int color) {
+    private static void crosshair(GuiGraphicsExtractor g, int x, int y, int color) {
         g.fill(x - 3, y, x - 1, y + 1, color);
         g.fill(x + 2, y, x + 4, y + 1, color);
         g.fill(x, y - 3, x + 1, y - 1, color);
         g.fill(x, y + 2, x + 1, y + 4, color);
     }
 
-    private static void ring(GuiGraphics g, int cx, int cy, int radius, int color) {
+    private static void ring(GuiGraphicsExtractor g, int cx, int cy, int radius, int color) {
         int steps = Math.max(12, radius * 6);
         for (int i = 0; i < steps; i++) {
             double a = i * Math.PI * 2 / steps;
@@ -1190,7 +1199,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     // tiny satellite: body, two solar wings, blinking light; bobs a little
-    private static void satelliteGlyph(GuiGraphics g, int x, int y, float t, boolean moving) {
+    private static void satelliteGlyph(GuiGraphicsExtractor g, int x, int y, float t, boolean moving) {
         int bob = Math.round(Mth.sin(t * 2.5f));
         y += bob;
         g.fill(x - 7, y - 2, x + 8, y + 3, 0xC0000000);
@@ -1217,24 +1226,24 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
     // hatching over unmapped chunks, the one being scanned in green
     // box select preview: outline + count, red when it would go over the queue limit
-    private void renderBox(GuiGraphics g, ChunkPos min) {
-        int left = screenX((Math.min(boxStart.x, boxEnd.x) - min.x) * 16);
-        int top = screenY((Math.min(boxStart.z, boxEnd.z) - min.z) * 16);
-        int right = screenX((Math.max(boxStart.x, boxEnd.x) - min.x + 1) * 16);
-        int bottom = screenY((Math.max(boxStart.z, boxEnd.z) - min.z + 1) * 16);
+    private void renderBox(GuiGraphicsExtractor g, ChunkPos min) {
+        int left = screenX((Math.min(boxStart.x(), boxEnd.x()) - min.x()) * 16);
+        int top = screenY((Math.min(boxStart.z(), boxEnd.z()) - min.z()) * 16);
+        int right = screenX((Math.max(boxStart.x(), boxEnd.x()) - min.x() + 1) * 16);
+        int bottom = screenY((Math.max(boxStart.z(), boxEnd.z()) - min.z() + 1) * 16);
         boolean tooMany = dragQueues && boxTotal() > menu.getMaxChunks();
         int edge = tooMany ? BOX_TOO_MANY : dragQueues ? BOX_ADD : BOX_REMOVE;
         g.fill(left, top, right, bottom, (edge & 0xFFFFFF) | 0x30000000);
-        g.renderOutline(left, top, right - left, bottom - top, edge);
+        g.outline(left, top, right - left, bottom - top, edge);
         String label = dragQueues ? boxTotal() + " / " + menu.getMaxChunks() : "-" + boxCount();
         int width = font.width(label);
         int x = Mth.clamp((left + right - width) / 2, leftPos + MAP_X + 2, leftPos + MAP_X + MAP_SIZE - width - 2);
         int y = Mth.clamp((top + bottom) / 2 - 4, topPos + MAP_Y + 2, topPos + MAP_Y + MAP_SIZE - 10);
         g.fill(x - 2, y - 2, x + width + 1, y + 9, 0xB0000000);
-        g.drawString(font, label, x, y, edge, false);
+        g.text(font, label, x, y, edge, false);
     }
 
-    private void renderScanCoverage(GuiGraphics g, int chunks, ChunkPos min) {
+    private void renderScanCoverage(GuiGraphicsExtractor g, int chunks, ChunkPos min) {
         int x0 = leftPos + MAP_X;
         int y0 = topPos + MAP_Y;
         float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 200.0);
@@ -1248,7 +1257,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 if (right <= x0 || bottom <= y0 || left >= x0 + MAP_SIZE || top >= y0 + MAP_SIZE) {
                     continue;
                 }
-                byte state = snapshot.scanState(new ChunkPos(min.x + cx, min.z + cz));
+                byte state = snapshot.scanState(new ChunkPos(min.x() + cx, min.z() + cz));
                 if (state == MinimapSnapshot.SCANNED) {
                     continue;
                 }
@@ -1264,13 +1273,13 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 if (state == MinimapSnapshot.SCANNING) {
                     int alpha = (int) (0x40 + 0x60 * pulse) << 24;
                     g.fill(left, top, right, bottom, alpha | (SCANNING_FILL & 0xFFFFFF));
-                    g.renderOutline(left, top, right - left, bottom - top, SCANNING_EDGE);
+                    g.outline(left, top, right - left, bottom - top, SCANNING_EDGE);
                 }
             }
         }
     }
 
-    private void marker(GuiGraphics g, BlockPos pos, int color) {
+    private void marker(GuiGraphicsExtractor g, BlockPos pos, int color) {
         if (snapshot == null) {
             return;
         }
@@ -1290,8 +1299,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        super.renderLabels(g, mouseX, mouseY);
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        super.extractLabels(g, mouseX, mouseY);
 
         if (menu.isVoidMode()) {
             renderSpaceLabels(g);
@@ -1311,7 +1320,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         if (!queue.isEmpty()) {
             int shown = Math.min(menu.getChunkIndex() + 1, queue.size());
             var line = Component.translatable("gui.ender_laser_quarry.controller.queue_line", shown, queue.size(), menu.getBlocksPerTick());
-            g.drawString(font, font.plainSubstrByWidth(line.getString(), MAP_SIZE - 4), MAP_X + 2, stripTop + 2, 0xFF9FE8F0, false);
+            g.text(font, font.plainSubstrByWidth(line.getString(), MAP_SIZE - 4), MAP_X + 2, stripTop + 2, 0xFF9FE8F0, false);
         }
 
         Component status;
@@ -1327,13 +1336,13 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         } else if (menu.isRunning()) {
             int y = menu.getCursorY();
             status = y == Integer.MAX_VALUE
-                ? Component.translatable("gui.ender_laser_quarry.controller.locking_on", target.x, target.z)
+                ? Component.translatable("gui.ender_laser_quarry.controller.locking_on", target.x(), target.z())
                 : Component.translatable(menu.isBuildingWall() ? "gui.ender_laser_quarry.controller.walling" : "gui.ender_laser_quarry.controller.mining",
-                    target.x, target.z, y, compact(menu.getBlocksMined()));
+                    target.x(), target.z(), y, compact(menu.getBlocksMined()));
         } else {
             status = Component.translatable("gui.ender_laser_quarry.controller.selected", queue.size(), compact(menu.getBlocksMined()));
         }
-        g.drawString(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, 0xFFFFFFFF, false);
+        g.text(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, 0xFFFFFFFF, false);
 
         if (isMapInteractive()) {
             renderZoomLabel(g, zoom);
@@ -1341,14 +1350,14 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     // two lines: where the satellite is, then what's going on
-    private void renderPlannerLabels(GuiGraphics g) {
+    private void renderPlannerLabels(GuiGraphicsExtractor g) {
         int stripY = MAP_Y + MAP_SIZE - 11;
         int stripTop = stripY - 10;
         g.fill(MAP_X, stripTop, MAP_X + MAP_SIZE, MAP_Y + MAP_SIZE, 0xB0000000);
 
         int state = menu.getTransferState();
         Component where = Component.translatable("gui.ender_laser_quarry.orbit.over", coords(menu.getOrbitDx(), menu.getOrbitDz()));
-        g.drawString(font, font.plainSubstrByWidth(where.getString(), MAP_SIZE - 4), MAP_X + 2, stripTop + 2, 0xFF9FE8F0, false);
+        g.text(font, font.plainSubstrByWidth(where.getString(), MAP_SIZE - 4), MAP_X + 2, stripTop + 2, 0xFF9FE8F0, false);
 
         Component status;
         int color = 0xFFFFFFFF;
@@ -1362,14 +1371,14 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         } else if (!menu.hasSatelliteInOrbit()) {
             status = Component.translatable("gui.ender_laser_quarry.orbit.no_satellite");
         } else if (planned != null) {
-            int cost = transferCost(planned.x, planned.z);
+            int cost = transferCost(planned.x(), planned.z());
             boolean enough = menu.getPadFuel() >= cost;
-            status = Component.translatable("gui.ender_laser_quarry.orbit.target", coords(planned.x, planned.z), FUEL_FORMAT.format(cost));
+            status = Component.translatable("gui.ender_laser_quarry.orbit.target", coords(planned.x(), planned.z()), FUEL_FORMAT.format(cost));
             color = enough ? 0xFFFFC23A : 0xFFFF6A6A;
         } else {
             status = Component.translatable("gui.ender_laser_quarry.orbit.hint");
         }
-        g.drawString(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, color, false);
+        g.text(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, color, false);
 
         if (isMapInteractive()) {
             renderZoomLabel(g, zoom);
@@ -1386,16 +1395,16 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         return count < 1_000_000 ? count / 1000 + "k" : String.format(Locale.ROOT, "%.1fM", count / 1_000_000.0);
     }
 
-    private void renderZoomLabel(GuiGraphics g, double zoom) {
+    private void renderZoomLabel(GuiGraphicsExtractor g, double zoom) {
         if (zoom > 1.001) {
             String label = String.format(Locale.ROOT, "%.1fx", zoom);
             int labelX = MAP_X + MAP_SIZE - font.width(label) - 2;
             g.fill(labelX - 2, MAP_Y, MAP_X + MAP_SIZE, MAP_Y + 11, 0xB0000000);
-            g.drawString(font, label, labelX, MAP_Y + 2, 0xFF9FE8F0, false);
+            g.text(font, label, labelX, MAP_Y + 2, 0xFF9FE8F0, false);
         }
     }
 
-    private void renderSpaceLabels(GuiGraphics g) {
+    private void renderSpaceLabels(GuiGraphicsExtractor g) {
         List<Integer> queue = menu.getAsteroidQueue();
         int stripY = MAP_Y + MAP_SIZE - 11;
         int stripTop = queue.isEmpty() ? stripY : stripY - 10;
@@ -1409,7 +1418,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 }
             }
             var line = Component.translatable("gui.ender_laser_quarry.controller.asteroid_line", queue.size(), menu.getBlocksPerTick());
-            g.drawString(font, font.plainSubstrByWidth(line.getString(), MAP_SIZE - 4), MAP_X + 2, stripTop + 2, 0xFF9FE8F0, false);
+            g.text(font, font.plainSubstrByWidth(line.getString(), MAP_SIZE - 4), MAP_X + 2, stripTop + 2, 0xFF9FE8F0, false);
         }
 
         float scan = menu.getSpaceScanProgress();
@@ -1434,7 +1443,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         } else {
             status = Component.translatable("gui.ender_laser_quarry.controller.asteroids_selected", queue.size());
         }
-        g.drawString(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, 0xFFFFFFFF, false);
+        g.text(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, 0xFFFFFFFF, false);
 
         if (isSpaceInteractive()) {
             renderZoomLabel(g, spaceView.zoom());
@@ -1456,7 +1465,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     // Orbit button: the satellite that's up there (bobbing a little), back button: a map
-    private void renderPlannerIcon(GuiGraphics g) {
+    private void renderPlannerIcon(GuiGraphicsExtractor g) {
         if (plannerButton == null || !plannerButton.visible) {
             return;
         }
@@ -1476,24 +1485,24 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 bob = Mth.sin((minecraft.level.getGameTime() % 80) / 80f * Mth.TWO_PI) * 0.6f;
             }
         }
-        g.pose().pushPose();
-        g.pose().translate(plannerButton.getX() + 3, plannerButton.getY() + 1 + bob, 0);
-        g.pose().scale(PLANNER_ICON_SCALE, PLANNER_ICON_SCALE, 1);
-        g.renderItem(icon, 0, 0);
-        g.pose().popPose();
+        g.pose().pushMatrix();
+        g.pose().translate(plannerButton.getX() + 3, plannerButton.getY() + 1 + bob);
+        g.pose().scale(PLANNER_ICON_SCALE, PLANNER_ICON_SCALE);
+        g.item(icon, 0, 0);
+        g.pose().popMatrix();
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
         renderPlannerIcon(g);
 
         // tooltip for the empty filter slot
         int fx = leftPos + QuarryControllerMenu.FILTER_X;
         int fy = topPos + QuarryControllerMenu.FILTER_Y;
         if (mouseX >= fx && mouseX < fx + 16 && mouseY >= fy && mouseY < fy + 16 && menu.getCarried().isEmpty()
-            && menu.getMachineInventory().getStackInSlot(QuarryControllerBlockEntity.FILTER.getIndex()).isEmpty()) {
-            g.renderComponentTooltip(font, List.of(Component.translatable("gui.ender_laser_quarry.controller.void_filter"),
+            && menu.getMachineInventory().getStack(QuarryControllerBlockEntity.FILTER).isEmpty()) {
+            g.setComponentTooltipForNextFrame(font, List.of(Component.translatable("gui.ender_laser_quarry.controller.void_filter"),
                 Component.translatable("gui.ender_laser_quarry.controller.void_filter.hint").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
             return;
         }
@@ -1516,7 +1525,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                     lines.add(Component.translatable("gui.ender_laser_quarry.depth.floor_hint").withStyle(ChatFormatting.DARK_GRAY));
                 }
             }
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             return;
         }
 
@@ -1535,7 +1544,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             } else if (!menu.isRunning()) {
                 lines.add(Component.translatable("gui.ender_laser_quarry.controller.asteroid_hint").withStyle(ChatFormatting.DARK_GRAY));
             }
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             return;
         }
 
@@ -1554,13 +1563,13 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                     .withStyle(ChatFormatting.AQUA));
                 lines.add(Component.translatable("gui.ender_laser_quarry.orbit.reach", menu.getTransferRange()).withStyle(ChatFormatting.GRAY));
             }
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             return;
         }
         if (moveButton != null && moveButton.visible && moveButton.isHovered() && planned != null) {
             List<Component> lines = new ArrayList<>();
-            lines.add(Component.translatable("gui.ender_laser_quarry.orbit.launch_tooltip", coords(planned.x, planned.z)));
-            int cost = transferCost(planned.x, planned.z);
+            lines.add(Component.translatable("gui.ender_laser_quarry.orbit.launch_tooltip", coords(planned.x(), planned.z())));
+            int cost = transferCost(planned.x(), planned.z());
             lines.add(Component.translatable("gui.ender_laser_quarry.orbit.fuel", FUEL_FORMAT.format(cost), FUEL_FORMAT.format(menu.getPadFuel()))
                 .withStyle(menu.getPadFuel() >= cost ? ChatFormatting.GRAY : ChatFormatting.RED));
             if (!menu.isRocketReady()) {
@@ -1569,30 +1578,30 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             if (menu.isRunning()) {
                 lines.add(Component.translatable("message.ender_laser_quarry.launch.transfer_stop_quarry").withStyle(ChatFormatting.RED));
             }
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             return;
         }
         if (planning) {
             ChunkPos offset = offsetAt(mouseX, mouseY);
             if (offset != null && menu.getCarried().isEmpty()) {
                 List<Component> lines = new ArrayList<>();
-                ChunkPos chunk = padOffsetChunk(offset.x, offset.z);
-                lines.add(Component.translatable("gui.ender_laser_quarry.orbit.spot", coords(offset.x, offset.z)));
-                lines.add(Component.translatable("gui.ender_laser_quarry.orbit.chunk", chunk.x, chunk.z).withStyle(ChatFormatting.DARK_GRAY));
-                boolean here = offset.x == menu.getOrbitDx() && offset.z == menu.getOrbitDz();
+                ChunkPos chunk = padOffsetChunk(offset.x(), offset.z());
+                lines.add(Component.translatable("gui.ender_laser_quarry.orbit.spot", coords(offset.x(), offset.z())));
+                lines.add(Component.translatable("gui.ender_laser_quarry.orbit.chunk", chunk.x(), chunk.z()).withStyle(ChatFormatting.DARK_GRAY));
+                boolean here = offset.x() == menu.getOrbitDx() && offset.z() == menu.getOrbitDz();
                 if (here) {
                     lines.add(Component.translatable("gui.ender_laser_quarry.orbit.here").withStyle(ChatFormatting.AQUA));
-                } else if (!canReach(offset.x, offset.z)) {
+                } else if (!canReach(offset.x(), offset.z())) {
                     lines.add(Component.translatable("gui.ender_laser_quarry.orbit.too_far", menu.getTransferRange()).withStyle(ChatFormatting.RED));
                 } else if (!isMoving()) {
-                    int cost = transferCost(offset.x, offset.z);
+                    int cost = transferCost(offset.x(), offset.z());
                     lines.add(Component.translatable("gui.ender_laser_quarry.orbit.distance",
-                        String.format(Locale.ROOT, "%.1f", transferDistance(offset.x, offset.z))).withStyle(ChatFormatting.GRAY));
+                        String.format(Locale.ROOT, "%.1f", transferDistance(offset.x(), offset.z()))).withStyle(ChatFormatting.GRAY));
                     lines.add(Component.translatable("gui.ender_laser_quarry.orbit.fuel", FUEL_FORMAT.format(cost), FUEL_FORMAT.format(menu.getPadFuel()))
                         .withStyle(menu.getPadFuel() >= cost ? ChatFormatting.GRAY : ChatFormatting.RED));
                     lines.add(Component.translatable("gui.ender_laser_quarry.orbit.click").withStyle(ChatFormatting.DARK_GRAY));
                 }
-                g.renderComponentTooltip(font, lines, mouseX, mouseY);
+                g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             }
             return;
         }
@@ -1600,12 +1609,12 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         ChunkPos hovered = chunkAt(mouseX, mouseY);
         if (hovered != null && menu.getCarried().isEmpty()) {
             if (snapshot.scanState(hovered) != MinimapSnapshot.SCANNED) {
-                g.renderTooltip(font, Component.translatable("gui.ender_laser_quarry.controller.chunk_unscanned", hovered.x, hovered.z), mouseX, mouseY);
+                g.setTooltipForNextFrame(font, Component.translatable("gui.ender_laser_quarry.controller.chunk_unscanned", hovered.x(), hovered.z()), mouseX, mouseY);
                 return;
             }
             List<Component> lines = new ArrayList<>();
             lines.add(Component.translatable("gui.ender_laser_quarry.controller.chunk_tooltip",
-                hovered.x, hovered.z, hovered.getMinBlockX(), hovered.getMinBlockZ()));
+                hovered.x(), hovered.z(), hovered.getMinBlockX(), hovered.getMinBlockZ()));
             int queued = menu.getQueue().indexOf(hovered);
             if (queued >= 0) {
                 lines.add(Component.translatable(queued < menu.getChunkIndex()
@@ -1615,7 +1624,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             if (!menu.isRunning() && dragQueues == null) {
                 lines.add(Component.translatable("gui.ender_laser_quarry.controller.map_hint").withStyle(ChatFormatting.DARK_GRAY));
             }
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
         }
     }
 

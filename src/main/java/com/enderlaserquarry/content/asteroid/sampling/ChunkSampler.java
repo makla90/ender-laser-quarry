@@ -7,7 +7,9 @@ import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkResult;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.TicketType;
+import net.minecraft.server.level.Ticket;
+import net.minecraft.world.level.TicketStorage;
+import com.enderlaserquarry.init.ModTickets;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -33,8 +35,6 @@ import java.util.concurrent.CompletableFuture;
  */
 @EventBusSubscriber(modid = EnderLaserQuarry.MOD_ID)
 public final class ChunkSampler {
-    private static final TicketType<ChunkPos> TICKET = TicketType.create(EnderLaserQuarry.MOD_ID + ":sampling",
-        Comparator.comparingLong(ChunkPos::toLong));
     private static final int LEVEL = ChunkLevel.byStatus(ChunkStatus.FEATURES);
 
     /** Chunks held at once (ring included). */
@@ -84,7 +84,7 @@ public final class ChunkSampler {
             this.listener = listener;
             for (int dz = -radius - 1; dz <= radius + 1; dz++) {
                 for (int dx = -radius - 1; dx <= radius + 1; dx++) {
-                    ChunkPos pos = new ChunkPos(centre.x + dx, centre.z + dz);
+                    ChunkPos pos = new ChunkPos(centre.x() + dx, centre.z() + dz);
                     generated.add(pos);
                     if (Math.abs(dx) <= radius && Math.abs(dz) <= radius) {
                         counted.add(pos);
@@ -186,13 +186,13 @@ public final class ChunkSampler {
             Patch patch = WAITING.poll();
             ServerLevel level = server.getLevel(patch.dimension);
             if (level == null) {
-                EnderLaserQuarry.LOGGER.warn("Sampling dimension {} is missing", patch.dimension.location());
+                EnderLaserQuarry.LOGGER.warn("Sampling dimension {} is missing", patch.dimension.identifier());
                 patch.listener.done(patch);
                 continue;
             }
-            DistanceManager tickets = level.getChunkSource().chunkMap.getDistanceManager();
+            TicketStorage tickets = level.getDataStorage().computeIfAbsent(TicketStorage.TYPE);
             for (ChunkPos pos : patch.generated) {
-                tickets.addTicket(TICKET, pos, LEVEL, pos);
+                tickets.addTicket(new Ticket(ModTickets.SAMPLING.get(), LEVEL), pos);
             }
             patch.futures = new CompletableFuture[patch.generated.size()];
             patch.startNanos = System.nanoTime();
@@ -212,7 +212,7 @@ public final class ChunkSampler {
             if (patch.futures[i] != null) {
                 continue;
             }
-            ChunkHolder holder = chunkMap.getVisibleChunkIfPresent(patch.generated.get(i).toLong());
+            ChunkHolder holder = chunkMap.getVisibleChunkIfPresent(patch.generated.get(i).pack());
             if (holder != null && holder.getTicketLevel() <= LEVEL) {
                 patch.futures[i] = holder.scheduleChunkGenerationTask(ChunkStatus.FEATURES, chunkMap);
             }
@@ -257,9 +257,9 @@ public final class ChunkSampler {
     }
 
     private static void release(ServerLevel level, Patch patch) {
-        DistanceManager tickets = level.getChunkSource().chunkMap.getDistanceManager();
+        TicketStorage tickets = level.getDataStorage().computeIfAbsent(TicketStorage.TYPE);
         for (ChunkPos pos : patch.generated) {
-            tickets.removeTicket(TICKET, pos, LEVEL, pos);
+            tickets.removeTicket(new Ticket(ModTickets.SAMPLING.get(), LEVEL), pos);
         }
     }
 

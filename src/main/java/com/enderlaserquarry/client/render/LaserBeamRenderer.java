@@ -3,7 +3,8 @@ package com.enderlaserquarry.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -30,7 +31,7 @@ public final class LaserBeamRenderer {
         float b = (rgb & 0xFF) / 255f;
         float pulse = 1f + 0.15f * (float) Math.sin(time * 0.4f);
 
-        VertexConsumer consumer = buffers.getBuffer(RenderType.lightning());
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.lightning());
         Matrix4f pose = poseStack.last().pose();
 
         // Outer glow, then white-hot core

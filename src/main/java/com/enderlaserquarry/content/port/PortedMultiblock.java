@@ -1,9 +1,10 @@
 package com.enderlaserquarry.content.port;
 
 import net.minecraft.core.BlockPos;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -14,17 +15,17 @@ import java.util.List;
 public interface PortedMultiblock {
 
     @Nullable
-    default IItemHandler getPortItemHandler() {
+    default ResourceHandler<ItemResource> getPortItemHandler() {
         return null;
     }
 
     @Nullable
-    default IFluidHandler getPortFluidHandler() {
+    default ResourceHandler<FluidResource> getPortFluidHandler() {
         return null;
     }
 
     @Nullable
-    default IEnergyStorage getPortEnergyStorage() {
+    default EnergyHandler getPortEnergyStorage() {
         return null;
     }
 

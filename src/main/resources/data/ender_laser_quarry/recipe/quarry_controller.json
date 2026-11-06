@@ -3,12 +3,12 @@
   "category": "misc",
   "pattern": ["GMG", "CVC", "DTD"],
   "key": {
-    "G": { "tag": "c:gears/dark_steel" },
-    "M": { "item": "minecraft:map" },
-    "C": { "item": "enderio:basic_capacitor" },
-    "V": { "item": "enderio:void_chassis" },
-    "D": { "tag": "c:ingots/dark_steel" },
-    "T": { "item": "ender_laser_quarry:signal_transceiver" }
+    "G": "#c:gears/dark_steel",
+    "M": "minecraft:map",
+    "C": "enderio:basic_capacitor",
+    "V": "enderio:void_chassis",
+    "D": "#c:ingots/dark_steel",
+    "T": "ender_laser_quarry:signal_transceiver"
   },
   "result": { "id": "ender_laser_quarry:quarry_controller", "count": 1 }
 }

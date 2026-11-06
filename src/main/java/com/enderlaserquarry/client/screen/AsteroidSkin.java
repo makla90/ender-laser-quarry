@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -18,10 +18,10 @@ import java.util.Optional;
 final class AsteroidSkin {
     static final AsteroidSkin NONE = new AsteroidSkin();
     private static final int SNOW = 0xF0F6FF;
-    private static final TagKey<Biome> DRY = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("c", "is_dry"));
-    private static final TagKey<Biome> SWAMP = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("c", "is_swamp"));
-    private static final TagKey<Biome> C_OCEAN = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("c", "is_ocean"));
-    private static final Map<ResourceLocation, AsteroidSkin> CACHE = new HashMap<>();
+    private static final TagKey<Biome> DRY = TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath("c", "is_dry"));
+    private static final TagKey<Biome> SWAMP = TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath("c", "is_swamp"));
+    private static final TagKey<Biome> C_OCEAN = TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath("c", "is_ocean"));
+    private static final Map<Identifier, AsteroidSkin> CACHE = new HashMap<>();
 
     private int sea = -1;
     private float seaCover;
@@ -38,7 +38,7 @@ final class AsteroidSkin {
     record Pixel(int color, boolean glow, boolean covered) {
     }
 
-    static AsteroidSkin of(ResourceLocation biome) {
+    static AsteroidSkin of(Identifier biome) {
         return CACHE.computeIfAbsent(biome, AsteroidSkin::make);
     }
 
@@ -93,14 +93,14 @@ final class AsteroidSkin {
         return new Pixel(color, lit, covered);
     }
 
-    private static AsteroidSkin make(ResourceLocation id) {
+    private static AsteroidSkin make(Identifier id) {
         AsteroidSkin skin = new AsteroidSkin();
         Optional<Holder.Reference<Biome>> holder = Optional.empty();
         var level = Minecraft.getInstance().level;
         if (level != null) {
-            holder = level.registryAccess().registryOrThrow(Registries.BIOME).getHolder(ResourceKey.create(Registries.BIOME, id));
+            holder = level.registryAccess().lookupOrThrow(Registries.BIOME).get(ResourceKey.create(Registries.BIOME, id));
         }
-        int water = holder.map(h -> h.value().getSpecialEffects().getWaterColor()).orElse(0x3F76E4);
+        int water = holder.map(h -> h.value().getWaterColor()).orElse(0x3F76E4);
         int foliage = holder.map(h -> h.value().getFoliageColor()).orElse(0x59AE30);
         switch (id.toString()) {
             // their own sand and terracotta already look right

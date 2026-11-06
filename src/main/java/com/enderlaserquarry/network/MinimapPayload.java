@@ -30,7 +30,7 @@ public record MinimapPayload(BlockPos controllerPos, Optional<BlockPos> padPos, 
             ChunkImage::new);
     }
 
-    private static final StreamCodec<ByteBuf, ChunkPos> CHUNK_POS_CODEC = ByteBufCodecs.VAR_LONG.map(ChunkPos::new, ChunkPos::toLong);
+    private static final StreamCodec<ByteBuf, ChunkPos> CHUNK_POS_CODEC = ByteBufCodecs.VAR_LONG.map(ChunkPos::unpack, ChunkPos::pack);
 
     private static final StreamCodec<ByteBuf, MinimapSnapshot> SNAPSHOT_CODEC = StreamCodec.composite(
         CHUNK_POS_CODEC, MinimapSnapshot::center,

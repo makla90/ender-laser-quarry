@@ -7,10 +7,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,17 +23,18 @@ import java.util.Map;
  * change, since the terrain would be different.
  */
 public final class BiomeSampleData extends SavedData {
-    private static final String NAME = "ender_laser_quarry_biome_samples";
+    private static final SavedDataType<BiomeSampleData> TYPE = new SavedDataType<>(Identifier.fromNamespaceAndPath("ender_laser_quarry", "biome_samples"),
+        BiomeSampleData::new, CompoundTag.CODEC.xmap(BiomeSampleData::load, data -> data.save(new CompoundTag())));
 
     public static final class Entry {
-        final Object2LongOpenHashMap<ResourceLocation> blocks = new Object2LongOpenHashMap<>();
+        final Object2LongOpenHashMap<Identifier> blocks = new Object2LongOpenHashMap<>();
         long own;
         // planned spots (chunk), the first `done` are counted
         final List<ChunkPos> spots = new ArrayList<>();
         int done;
         boolean searched;
 
-        public Object2LongMap<ResourceLocation> blocks() {
+        public Object2LongMap<Identifier> blocks() {
             return blocks;
         }
 
@@ -59,21 +61,21 @@ public final class BiomeSampleData extends SavedData {
     }
 
     private String fingerprint = "";
-    private final Map<ResourceLocation, Entry> entries = new HashMap<>();
+    private final Map<Identifier, Entry> entries = new HashMap<>();
 
     public static BiomeSampleData get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(BiomeSampleData::new, BiomeSampleData::load, null), NAME);
+        return server.overworld().getDataStorage().computeIfAbsent(TYPE);
     }
 
-    public Entry entry(ResourceLocation biome) {
+    public Entry entry(Identifier biome) {
         return entries.computeIfAbsent(biome, b -> new Entry());
     }
 
-    public Entry peek(ResourceLocation biome) {
+    public Entry peek(Identifier biome) {
         return entries.get(biome);
     }
 
-    public Map<ResourceLocation, Entry> entries() {
+    public Map<Identifier, Entry> entries() {
         return entries;
     }
 
@@ -98,28 +100,28 @@ public final class BiomeSampleData extends SavedData {
         fingerprint = value;
     }
 
-    public static BiomeSampleData load(CompoundTag tag, HolderLookup.Provider registries) {
+    public static BiomeSampleData load(CompoundTag tag) {
         BiomeSampleData data = new BiomeSampleData();
-        data.fingerprint = tag.getString("Fingerprint");
-        CompoundTag biomes = tag.getCompound("Biomes");
-        for (String key : biomes.getAllKeys()) {
-            ResourceLocation biome = ResourceLocation.tryParse(key);
+        data.fingerprint = tag.getStringOr("Fingerprint", "");
+        CompoundTag biomes = tag.getCompoundOrEmpty("Biomes");
+        for (String key : biomes.keySet()) {
+            Identifier biome = Identifier.tryParse(key);
             if (biome == null) {
                 continue;
             }
-            CompoundTag e = biomes.getCompound(key);
+            CompoundTag e = biomes.getCompoundOrEmpty(key);
             Entry entry = data.entry(biome);
-            entry.own = e.getLong("Own");
-            entry.done = e.getInt("Done");
-            entry.searched = e.getBoolean("Searched");
-            for (long chunk : e.getLongArray("Spots")) {
-                entry.spots.add(new ChunkPos(chunk));
+            entry.own = e.getLongOr("Own", 0L);
+            entry.done = e.getIntOr("Done", 0);
+            entry.searched = e.getBooleanOr("Searched", false);
+            for (long chunk : e.getLongArray("Spots").orElse(new long[0])) {
+                entry.spots.add(ChunkPos.unpack(chunk));
             }
-            for (Tag t : e.getList("Blocks", Tag.TAG_COMPOUND)) {
+            for (Tag t : e.getListOrEmpty("Blocks")) {
                 CompoundTag b = (CompoundTag) t;
-                ResourceLocation block = ResourceLocation.tryParse(b.getString("Id"));
+                Identifier block = Identifier.tryParse(b.getStringOr("Id", ""));
                 if (block != null) {
-                    entry.blocks.put(block, b.getLong("N"));
+                    entry.blocks.put(block, b.getLongOr("N", 0L));
                 }
             }
             entry.done = Math.min(entry.done, entry.spots.size());
@@ -127,8 +129,7 @@ public final class BiomeSampleData extends SavedData {
         return data;
     }
 
-    @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+    public CompoundTag save(CompoundTag tag) {
         tag.putString("Fingerprint", fingerprint);
         CompoundTag biomes = new CompoundTag();
         entries.forEach((biome, entry) -> {
@@ -136,7 +137,7 @@ public final class BiomeSampleData extends SavedData {
             e.putLong("Own", entry.own);
             e.putInt("Done", entry.done);
             e.putBoolean("Searched", entry.searched);
-            e.put("Spots", new LongArrayTag(entry.spots.stream().mapToLong(ChunkPos::toLong).toArray()));
+            e.put("Spots", new LongArrayTag(entry.spots.stream().mapToLong(ChunkPos::pack).toArray()));
             ListTag blocks = new ListTag();
             for (var b : entry.blocks.object2LongEntrySet()) {
                 CompoundTag t = new CompoundTag();

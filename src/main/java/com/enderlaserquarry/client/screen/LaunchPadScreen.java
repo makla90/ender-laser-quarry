@@ -7,7 +7,7 @@ import com.enderlaserquarry.config.QuarryConfig;
 import com.enderlaserquarry.content.launchpad.FlightPhase;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.launchpad.LaunchPadMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -29,9 +29,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     private Button launchButton;
 
     public LaunchPadScreen(LaunchPadMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        imageWidth = 176;
-        imageHeight = 186;
+        super(menu, playerInventory, title, 176, 186);
         inventoryLabelX = LaunchPadMenu.PLAYER_INV_X;
         inventoryLabelY = LaunchPadMenu.PLAYER_INV_Y - 11;
     }
@@ -66,7 +64,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
         GuiPanels.inset(g, leftPos + TANK_X - 1, topPos + TANK_Y - 1, 18, 54);
         GuiPanels.slot(g, leftPos + LaunchPadMenu.ROCKET_X, topPos + LaunchPadMenu.ROCKET_Y);
@@ -76,8 +74,8 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        super.renderLabels(g, mouseX, mouseY);
+    protected void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        super.extractLabels(g, mouseX, mouseY);
 
         LaunchPadBlockEntity pad = menu.getBlockEntity();
         int x = INFO_X + 3;
@@ -136,13 +134,13 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         };
     }
 
-    private void line(GuiGraphics g, Component text, int x, int y, int color) {
-        g.drawString(font, text, x, y, color, false);
+    private void line(GuiGraphicsExtractor g, Component text, int x, int y, int color) {
+        g.text(font, text, x, y, color, false);
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
 
         // Hints for the empty slots (EnderContainerScreen.renderTooltip is final, so draw them here)
         if (hoveredSlot != null && !hoveredSlot.hasItem() && menu.getCarried().isEmpty()) {
@@ -153,7 +151,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
                 key = "satellite_slot";
             }
             if (key != null) {
-                g.renderTooltip(font, Component.translatable("gui.ender_laser_quarry.launch_pad." + key), mouseX, mouseY);
+                g.setTooltipForNextFrame(font, Component.translatable("gui.ender_laser_quarry.launch_pad." + key), mouseX, mouseY);
             }
         }
 
@@ -170,13 +168,13 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
             }
             lines.add(Component.translatable(pad.getTransferRange() > 0 ? "gui.ender_laser_quarry.launch_pad.orbit_hint"
                 : "gui.ender_laser_quarry.orbit.basic").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             return;
         }
 
         // Fuel cost hint on the launch button
         if (isHovering(INFO_X, INFO_Y + INFO_H + 3, INFO_W, 18, mouseX, mouseY) && !menu.getBlockEntity().isFlying()) {
-            g.renderTooltip(font, Component.translatable("gui.ender_laser_quarry.launch_pad.fuel_cost",
+            g.setTooltipForNextFrame(font, Component.translatable("gui.ender_laser_quarry.launch_pad.fuel_cost",
                 QuarryConfig.FUEL_PER_FLIGHT.get()), mouseX, mouseY);
         }
     }

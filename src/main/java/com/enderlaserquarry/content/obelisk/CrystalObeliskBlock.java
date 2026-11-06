@@ -72,15 +72,6 @@ public class CrystalObeliskBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             player.openMenu(obelisk, buf -> buf.writeBlockPos(pos));
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-    }
-
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof CrystalObeliskBlockEntity obelisk) {
-            obelisk.dropContents();
-            CrystalObeliskBlockEntity.applyFloorGlow(level, pos, CrystalGlow.NONE);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
+        return InteractionResult.SUCCESS;
     }
 }

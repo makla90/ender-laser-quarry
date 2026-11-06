@@ -5,6 +5,9 @@ import com.enderlaserquarry.init.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -44,8 +47,8 @@ public class GroundRadarBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
+                                     BlockPos neighborPos, BlockState neighborState, RandomSource random) {
         if (direction.getAxis().isHorizontal()) {
             return state.setValue(RadarFloor.PROPERTY, RadarFloor.around(level, pos));
         }
@@ -83,6 +86,6 @@ public class GroundRadarBlock extends BaseEntityBlock {
                 : Component.translatable("message.ender_laser_quarry.radar.unlinked", energy.getEnergyStored(),
                     energy.getMaxEnergyStored()));
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 }

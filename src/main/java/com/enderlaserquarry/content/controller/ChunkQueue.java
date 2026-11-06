@@ -2,7 +2,9 @@ package com.enderlaserquarry.content.controller;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.ChunkPos;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,11 +52,11 @@ public final class ChunkQueue {
     }
 
     public boolean contains(ChunkPos chunk) {
-        return lookup.contains(chunk.toLong());
+        return lookup.contains(chunk.pack());
     }
 
     public boolean containsBlock(BlockPos pos) {
-        return lookup.contains(ChunkPos.asLong(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())));
+        return lookup.contains(ChunkPos.pack(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())));
     }
 
     public boolean isFinished() {
@@ -62,7 +64,7 @@ public final class ChunkQueue {
     }
 
     public void add(ChunkPos chunk) {
-        if (lookup.add(chunk.toLong())) {
+        if (lookup.add(chunk.pack())) {
             chunks.add(chunk);
         }
     }
@@ -73,7 +75,7 @@ public final class ChunkQueue {
             return false;
         }
         chunks.remove(i);
-        lookup.remove(chunk.toLong());
+        lookup.remove(chunk.pack());
         if (i < index) {
             index--;
         }
@@ -94,22 +96,21 @@ public final class ChunkQueue {
         index = 0;
     }
 
-    public void save(CompoundTag tag) {
-        tag.putLongArray(TARGET_CHUNKS, chunks.stream().mapToLong(ChunkPos::toLong).toArray());
+    public void save(ValueOutput tag) {
+        tag.store(TARGET_CHUNKS, Codec.LONG_STREAM, chunks.stream().mapToLong(ChunkPos::pack));
         tag.putInt(CHUNK_INDEX, index);
     }
 
-    public void load(CompoundTag tag) {
+    public void load(ValueInput tag) {
         chunks.clear();
         lookup.clear();
-        if (tag.contains(TARGET_CHUNKS)) {
-            for (long chunk : tag.getLongArray(TARGET_CHUNKS)) {
-                add(new ChunkPos(chunk));
-            }
-        } else if (tag.contains(TARGET_CHUNK)) {
+        var saved = tag.read(TARGET_CHUNKS, Codec.LONG_STREAM);
+        if (saved.isPresent()) {
+            saved.get().forEach(chunk -> add(ChunkPos.unpack(chunk)));
+        } else {
             // old saves with a single chunk
-            add(new ChunkPos(tag.getLong(TARGET_CHUNK)));
+            tag.getLong(TARGET_CHUNK).ifPresent(chunk -> add(ChunkPos.unpack(chunk)));
         }
-        index = tag.getInt(CHUNK_INDEX);
+        index = tag.getIntOr(CHUNK_INDEX, 0);
     }
 }

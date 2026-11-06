@@ -11,13 +11,13 @@ import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -54,11 +54,11 @@ public final class MultiblockInteractions {
         BlockState coreState = core.getBlockState();
         BlockHitResult hit = event.getHitVec().withPosition(core.getBlockPos());
 
-        ItemInteractionResult itemResult = coreState.useItemOn(event.getItemStack(), event.getLevel(), player, event.getHand(), hit);
+        InteractionResult itemResult = coreState.useItemOn(event.getItemStack(), event.getLevel(), player, event.getHand(), hit);
         InteractionResult result;
         if (itemResult.consumesAction()) {
-            result = itemResult.result();
-        } else if (itemResult == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION && event.getHand() == InteractionHand.MAIN_HAND) {
+            result = itemResult;
+        } else if (itemResult == InteractionResult.TRY_WITH_EMPTY_HAND && event.getHand() == InteractionHand.MAIN_HAND) {
             result = coreState.useWithoutItem(event.getLevel(), player, hit);
         } else {
             return;
@@ -88,25 +88,25 @@ public final class MultiblockInteractions {
         PoweredMachineBlockEntity machine = (PoweredMachineBlockEntity) target;
         int slot = machine.getCapacitorSlotIndex();
         var inventory = machine.getInventory();
-        ItemStack current = inventory.getStackInSlot(slot);
-        if (!inventory.isItemValid(slot, held) || ItemStack.isSameItemSameComponents(current, held)) {
+        ItemStack current = inventory.getStack(slot);
+        if (!inventory.isValid(slot, ItemResource.of(held)) || ItemStack.isSameItemSameComponents(current, held)) {
             return false;
         }
 
         if (!level.isClientSide()) {
             ItemStack old = current.copy();
-            inventory.setStackInSlot(slot, held.copyWithCount(1));
+            inventory.setStack(slot, held.copyWithCount(1));
             held.consume(1, player);
             if (!old.isEmpty()) {
                 player.getInventory().placeItemBackInInventory(old);
             }
             level.playSound(null, machine.getBlockPos(), SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1, 0.8f);
-            if (machine instanceof SatelliteDishBlockEntity dish && !EndergyCapacitors.fits(dish.getTier(), inventory.getStackInSlot(slot))) {
+            if (machine instanceof SatelliteDishBlockEntity dish && !EndergyCapacitors.fits(dish.getTier(), inventory.getStack(slot))) {
                 PlayerMessages.show(player, Component.translatable("message.ender_laser_quarry.dish.wrong_capacitor").withStyle(ChatFormatting.RED));
             }
         }
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         return true;
     }
 
@@ -115,11 +115,11 @@ public final class MultiblockInteractions {
         Player player = event.getEntity();
         ItemStack held = event.getItemStack();
         if (held.isEmpty() || player.isSpectator() || player.isSecondaryUseActive()
-            || FluidUtil.getFluidContained(held).isEmpty()) {
+            || FluidUtil.getFirstStackContained(held).isEmpty()) {
             return false;
         }
         // water into the coolant tank, liquid XP into the XP tank
-        var fluid = FluidUtil.getFluidContained(held).get();
+        var fluid = FluidUtil.getFirstStackContained(held);
         var tank = fluid.is(QuarryControllerBlockEntity.QUARRY_COOLANT) ? QuarryControllerBlockEntity.COOLANT
             : fluid.is(Tags.Fluids.EXPERIENCE) ? QuarryControllerBlockEntity.XP : null;
         if (tank == null) {
@@ -137,11 +137,11 @@ public final class MultiblockInteractions {
             return false;
         }
         if (!level.isClientSide()
-            && !controller.handleFluidItemInteraction(player, event.getHand(), held, controller, tank)) {
+            && !controller.handleFluidItemInteraction(player, event.getHand(), held, controller.getFluidStorage(), tank)) {
             return false;
         }
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         return true;
     }
 

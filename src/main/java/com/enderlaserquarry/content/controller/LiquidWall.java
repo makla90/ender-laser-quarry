@@ -51,7 +51,7 @@ public final class LiquidWall {
     // MIN_VALUE while a neighbour chunk is still loading
     public static int top(ServerLevel level, ChunkPos ring, ChunkQueue queue) {
         var pos = new BlockPos.MutableBlockPos();
-        int top = level.getMinBuildHeight();
+        int top = level.getMinY();
         for (int i = 0; i < COLUMNS; i++) {
             setPos(pos, ring, i, 0);
             LevelChunk chunk = loadedChunk(level, pos);
@@ -143,7 +143,7 @@ public final class LiquidWall {
     }
 
     public static boolean isInChunk(BlockPos pos, @Nullable ChunkPos chunk) {
-        return chunk != null && SectionPos.blockToSectionCoord(pos.getX()) == chunk.x && SectionPos.blockToSectionCoord(pos.getZ()) == chunk.z;
+        return chunk != null && SectionPos.blockToSectionCoord(pos.getX()) == chunk.x() && SectionPos.blockToSectionCoord(pos.getZ()) == chunk.z();
     }
 
     // never loads a chunk

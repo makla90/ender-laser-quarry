@@ -3,12 +3,12 @@
   "category": "misc",
   "pattern": ["GPG", "IVI", "DTD"],
   "key": {
-    "G": { "tag": "c:gears/dark_steel" },
-    "P": { "item": "ender_laser_quarry:parabolic_dish" },
-    "I": { "tag": "c:storage_blocks/iron" },
-    "V": { "item": "enderio:void_chassis" },
-    "D": { "tag": "c:ingots/dark_steel" },
-    "T": { "item": "ender_laser_quarry:signal_transceiver" }
+    "G": "#c:gears/dark_steel",
+    "P": "ender_laser_quarry:parabolic_dish",
+    "I": "#c:storage_blocks/iron",
+    "V": "enderio:void_chassis",
+    "D": "#c:ingots/dark_steel",
+    "T": "ender_laser_quarry:signal_transceiver"
   },
   "result": { "id": "ender_laser_quarry:launch_pad_controller", "count": 1 }
 }

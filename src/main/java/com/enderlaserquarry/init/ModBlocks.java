@@ -65,11 +65,11 @@ public final class ModBlocks {
 
     // Basic keeps the old id
     public static final DeferredBlock<SatelliteDishBlock> SATELLITE_DISH = BLOCKS.registerBlock(
-        "satellite_dish", props -> new SatelliteDishBlock(QuarryTier.BASIC, props), machineProps());
+        "satellite_dish", props -> new SatelliteDishBlock(QuarryTier.BASIC, props), () -> machineProps());
     public static final DeferredBlock<SatelliteDishBlock> ENHANCED_SATELLITE_DISH = BLOCKS.registerBlock(
-        "enhanced_satellite_dish", props -> new SatelliteDishBlock(QuarryTier.ENHANCED, props), machineProps());
+        "enhanced_satellite_dish", props -> new SatelliteDishBlock(QuarryTier.ENHANCED, props), () -> machineProps());
     public static final DeferredBlock<SatelliteDishBlock> ENDER_SATELLITE_DISH = BLOCKS.registerBlock(
-        "ender_satellite_dish", props -> new SatelliteDishBlock(QuarryTier.ENDER, props), machineProps());
+        "ender_satellite_dish", props -> new SatelliteDishBlock(QuarryTier.ENDER, props), () -> machineProps());
 
     public static DeferredBlock<SatelliteDishBlock> dish(QuarryTier tier) {
         return switch (tier) {
@@ -89,11 +89,11 @@ public final class ModBlocks {
 
     // Basic keeps the old id
     public static final DeferredBlock<QuarryControllerBlock> QUARRY_CONTROLLER = BLOCKS.registerBlock(
-        "quarry_controller", props -> new QuarryControllerBlock(QuarryTier.BASIC, props), machineProps());
+        "quarry_controller", props -> new QuarryControllerBlock(QuarryTier.BASIC, props), () -> machineProps());
     public static final DeferredBlock<QuarryControllerBlock> ENHANCED_QUARRY_CONTROLLER = BLOCKS.registerBlock(
-        "enhanced_quarry_controller", props -> new QuarryControllerBlock(QuarryTier.ENHANCED, props), machineProps());
+        "enhanced_quarry_controller", props -> new QuarryControllerBlock(QuarryTier.ENHANCED, props), () -> machineProps());
     public static final DeferredBlock<QuarryControllerBlock> ENDER_QUARRY_CONTROLLER = BLOCKS.registerBlock(
-        "ender_quarry_controller", props -> new QuarryControllerBlock(QuarryTier.ENDER, props), machineProps());
+        "ender_quarry_controller", props -> new QuarryControllerBlock(QuarryTier.ENDER, props), () -> machineProps());
 
     public static DeferredBlock<QuarryControllerBlock> controller(QuarryTier tier) {
         return switch (tier) {
@@ -104,49 +104,49 @@ public final class ModBlocks {
     }
 
     public static final DeferredBlock<LaunchPadBlock> LAUNCH_PAD = BLOCKS.registerBlock(
-        "launch_pad_controller", LaunchPadBlock::new, machineProps());
+        "launch_pad_controller", LaunchPadBlock::new, () -> machineProps());
 
     public static final DeferredBlock<LaunchPadPlatingBlock> LAUNCH_PAD_PLATING = BLOCKS.registerBlock(
-        "launch_pad_plating", LaunchPadPlatingBlock::new, machineProps().strength(3f, 12));
+        "launch_pad_plating", LaunchPadPlatingBlock::new, () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<GroundRadarBlock> GROUND_RADAR = BLOCKS.registerBlock(
-        "ground_radar", GroundRadarBlock::new, machineProps());
+        "ground_radar", GroundRadarBlock::new, () -> machineProps());
 
     public static final DeferredBlock<CrystalObeliskBlock> CRYSTAL_OBELISK = BLOCKS.registerBlock(
-        "crystal_obelisk", CrystalObeliskBlock::new, machineProps().noOcclusion().lightLevel(state -> 5));
+        "crystal_obelisk", CrystalObeliskBlock::new, () -> machineProps().noOcclusion().lightLevel(state -> 5));
 
     public static final DeferredBlock<QuarryPlatingBlock> QUARRY_PLATING = BLOCKS.registerBlock(
-        "laser_quarry_plating", QuarryPlatingBlock::new, machineProps().strength(3f, 12));
+        "laser_quarry_plating", QuarryPlatingBlock::new, () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<StructurePortBlock> LAUNCH_PAD_PORT = BLOCKS.registerBlock(
-        "launch_pad_port", props -> new StructurePortBlock(StructurePortBlock.Structure.LAUNCH_PAD, props), machineProps().strength(3f, 12));
+        "launch_pad_port", props -> new StructurePortBlock(StructurePortBlock.Structure.LAUNCH_PAD, props), () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<QuarryPortBlock> QUARRY_PORT = BLOCKS.registerBlock(
-        "laser_quarry_port", QuarryPortBlock::new, machineProps().strength(3f, 12));
+        "laser_quarry_port", QuarryPortBlock::new, () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<SatelliteDishPlatingBlock> SATELLITE_DISH_PLATING = BLOCKS.registerBlock(
-        "satellite_dish_plating", SatelliteDishPlatingBlock::new, machineProps().strength(3f, 12));
+        "satellite_dish_plating", SatelliteDishPlatingBlock::new, () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<TieredPortBlock> SATELLITE_DISH_PORT = BLOCKS.registerBlock(
-        "satellite_dish_port", props -> new TieredPortBlock(StructurePortBlock.Structure.SATELLITE_DISH, props), machineProps().strength(3f, 12));
+        "satellite_dish_port", props -> new TieredPortBlock(StructurePortBlock.Structure.SATELLITE_DISH, props), () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<SatelliteDishPlatingBlock> ENHANCED_SATELLITE_DISH_PLATING = BLOCKS.registerBlock(
-        "enhanced_satellite_dish_plating", SatelliteDishPlatingBlock::new, machineProps().strength(3f, 12));
+        "enhanced_satellite_dish_plating", SatelliteDishPlatingBlock::new, () -> machineProps().strength(3f, 12));
     public static final DeferredBlock<SatelliteDishPlatingBlock> ENDER_SATELLITE_DISH_PLATING = BLOCKS.registerBlock(
-        "ender_satellite_dish_plating", SatelliteDishPlatingBlock::new, machineProps().strength(3f, 12));
+        "ender_satellite_dish_plating", SatelliteDishPlatingBlock::new, () -> machineProps().strength(3f, 12));
 
     public static final DeferredBlock<QuarryPlatingBlock> ENHANCED_QUARRY_PLATING = BLOCKS.registerBlock(
-        "enhanced_laser_quarry_plating", QuarryPlatingBlock::new, machineProps().strength(3f, 12));
+        "enhanced_laser_quarry_plating", QuarryPlatingBlock::new, () -> machineProps().strength(3f, 12));
     public static final DeferredBlock<QuarryPlatingBlock> ENDER_QUARRY_PLATING = BLOCKS.registerBlock(
-        "ender_laser_quarry_plating", QuarryPlatingBlock::new, machineProps().strength(3f, 12));
+        "ender_laser_quarry_plating", QuarryPlatingBlock::new, () -> machineProps().strength(3f, 12));
 
     // old wall block, kept so walls in existing worlds don't vanish
     public static final DeferredBlock<Block> QUARRY_STRUCTURE = BLOCKS.registerSimpleBlock(
-        "quarry_structure", BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.5f, 6).requiresCorrectToolForDrops());
+        "quarry_structure", () -> BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.5f, 6).requiresCorrectToolForDrops());
 
     // creative only
     public static final DeferredBlock<TrashCanBlock> TRASH_CAN = BLOCKS.registerBlock(
-        "trash_can", TrashCanBlock::new, machineProps());
+        "trash_can", TrashCanBlock::new, () -> machineProps());
 
     private static BlockBehaviour.Properties machineProps() {
         // Same as Ender IO's machines

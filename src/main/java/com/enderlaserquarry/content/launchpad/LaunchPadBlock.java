@@ -4,9 +4,12 @@ import com.enderio.enderio.foundation.block.MachineBlock;
 import com.enderlaserquarry.init.ModBlockEntities;
 import com.enderlaserquarry.content.ConnectedFrameBlock;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -53,8 +56,8 @@ public class LaunchPadBlock extends MachineBlock<LaunchPadBlockEntity> {
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
+                                     BlockPos neighborPos, BlockState neighborState, RandomSource random) {
         if (direction.getAxis().isHorizontal()) {
             return state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(direction), neighborState.is(LaunchPadBlockEntity.FRAME_BLOCKS));
         }
@@ -62,28 +65,18 @@ public class LaunchPadBlock extends MachineBlock<LaunchPadBlockEntity> {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
         // buckets go into the tank like on the Vat
         if (!stack.isEmpty() && level.getBlockEntity(pos) instanceof LaunchPadBlockEntity pad) {
             if (level.isClientSide()) {
-                return ItemInteractionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
-            if (pad.handleFluidItemInteraction(player, hand, stack, pad, LaunchPadBlockEntity.FUEL)) {
+            if (pad.handleFluidItemInteraction(player, hand, stack, pad.getFluidStorage(), LaunchPadBlockEntity.FUEL)) {
                 player.getInventory().setChanged();
-                return ItemInteractionResult.CONSUME;
+                return InteractionResult.CONSUME;
             }
         }
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-    }
-
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof LaunchPadBlockEntity pad) {
-            pad.dropFlightContents();
-            pad.markCenter(null);
-            pad.releaseSelfLoading();
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 }

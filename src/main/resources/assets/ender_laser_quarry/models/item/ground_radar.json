@@ -1,5 +1,4 @@
 {
-  "parent": "minecraft:builtin/entity",
   "gui_light": "side",
   "textures": { "particle": "ender_laser_quarry:block/ground_radar_side" },
   "display": {

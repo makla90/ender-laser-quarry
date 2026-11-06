@@ -12,6 +12,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import java.util.function.Consumer;
+import com.enderlaserquarry.content.TooltipBlockItem;
 import com.enderlaserquarry.init.ModBlockEntities;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
@@ -26,7 +28,7 @@ import java.util.List;
 /**
  * I/O port, goes in place of a plating block.
  */
-public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlock {
+public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlock, TooltipBlockItem.HasTooltip {
 
     // what the port passes: items, fluids, energy
     public enum Structure {
@@ -66,8 +68,8 @@ public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlo
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.port." + structure.name().toLowerCase()).withStyle(ChatFormatting.GRAY));
+    public void appendTooltip(ItemStack stack, Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.port." + structure.name().toLowerCase()).withStyle(ChatFormatting.GRAY));
     }
 
     @Override

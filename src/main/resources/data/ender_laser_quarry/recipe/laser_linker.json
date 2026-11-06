@@ -3,10 +3,10 @@
   "category": "tools",
   "pattern": [" NR", "NCN", "IN "],
   "key": {
-    "N": { "tag": "c:nuggets/conductive_alloy" },
-    "R": { "tag": "c:dusts/redstone" },
-    "C": { "tag": "c:ingots/conductive_alloy" },
-    "I": { "tag": "c:ingots/iron" }
+    "N": "#c:nuggets/conductive_alloy",
+    "R": "#c:dusts/redstone",
+    "C": "#c:ingots/conductive_alloy",
+    "I": "#c:ingots/iron"
   },
   "result": { "id": "ender_laser_quarry:laser_linker", "count": 1 }
 }

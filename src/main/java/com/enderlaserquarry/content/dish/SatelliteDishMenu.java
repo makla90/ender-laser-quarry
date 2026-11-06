@@ -15,7 +15,7 @@ public class SatelliteDishMenu extends PoweredMachineMenu<SatelliteDishBlockEnti
         super(ModMenus.SATELLITE_DISH.get(), containerId, playerInventory, blockEntity);
         usage = addSyncSlot(IntSyncSlot.readOnly(blockEntity::getUsage));
         // Ender IO's synced energy info has no max use
-        maxUsage = addSyncSlot(IntSyncSlot.readOnly(() -> blockEntity.getEnergyStorage().getMaxEnergyUse()));
+        maxUsage = addSyncSlot(IntSyncSlot.readOnly(() -> blockEntity.getMaxEnergyUse()));
         addSlots();
     }
 

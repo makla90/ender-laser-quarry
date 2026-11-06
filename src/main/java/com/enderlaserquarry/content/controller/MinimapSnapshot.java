@@ -27,11 +27,11 @@ public record MinimapSnapshot(ChunkPos center, int radius, byte[] scan) {
     }
 
     public ChunkPos minChunk() {
-        return new ChunkPos(center.x - radius, center.z - radius);
+        return new ChunkPos(center.x() - radius, center.z() - radius);
     }
 
     public boolean contains(ChunkPos chunk) {
-        return Math.abs(chunk.x - center.x) <= radius && Math.abs(chunk.z - center.z) <= radius;
+        return Math.abs(chunk.x() - center.x()) <= radius && Math.abs(chunk.z() - center.z()) <= radius;
     }
 
     public boolean sameArea(@Nullable MinimapSnapshot other) {
@@ -42,8 +42,8 @@ public record MinimapSnapshot(ChunkPos center, int radius, byte[] scan) {
         if (!contains(chunk)) {
             return UNSCANNED;
         }
-        int cx = chunk.x - center.x + radius;
-        int cz = chunk.z - center.z + radius;
+        int cx = chunk.x() - center.x() + radius;
+        int cz = chunk.z() - center.z() + radius;
         return scan[cz * chunksAcross() + cx];
     }
 
@@ -53,7 +53,7 @@ public record MinimapSnapshot(ChunkPos center, int radius, byte[] scan) {
         ChunkPos scanning = pad != null ? pad.getScanningChunk() : null;
         for (int cz = -radius; cz <= radius; cz++) {
             for (int cx = -radius; cx <= radius; cx++) {
-                ChunkPos chunk = new ChunkPos(center.x + cx, center.z + cz);
+                ChunkPos chunk = new ChunkPos(center.x() + cx, center.z() + cz);
                 int index = (cz + radius) * chunks + cx + radius;
                 if (pad != null && pad.isChunkScanned(chunk)) {
                     scan[index] = SCANNED;
@@ -72,7 +72,7 @@ public record MinimapSnapshot(ChunkPos center, int radius, byte[] scan) {
         ChunkPos scanning = pad.getScanningChunk();
         for (int cz = -radius; cz <= radius; cz++) {
             for (int cx = -radius; cx <= radius; cx++) {
-                ChunkPos chunk = new ChunkPos(center.x + cx, center.z + cz);
+                ChunkPos chunk = new ChunkPos(center.x() + cx, center.z() + cz);
                 int index = (cz + radius) * chunks + cx + radius;
                 scan[index] = pad.getScanImages().get(chunk) != null ? SCANNED : chunk.equals(scanning) ? SCANNING : UNSCANNED;
             }

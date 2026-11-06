@@ -6,14 +6,15 @@ import com.enderlaserquarry.content.dish.SatelliteDishBlockEntity;
 import com.enderlaserquarry.content.port.StructurePortBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -21,14 +22,14 @@ import net.minecraft.world.phys.Vec3;
 /**
  * The 3D dish on top of the block and its beam to the crystal.
  */
-public class SatelliteDishRenderer implements BlockEntityRenderer<SatelliteDishBlockEntity> {
+public class SatelliteDishRenderer extends LiveRenderer<SatelliteDishBlockEntity> {
     private static final int COLOR = 0xF4F8FF;
     private static final float BEAM_WIDTH = 0.05f;
-    private static final ResourceLocation[] TEXTURES = {
+    private static final Identifier[] TEXTURES = {
         EnderLaserQuarry.rl("textures/entity/satellite_dish.png"),
         EnderLaserQuarry.rl("textures/entity/enhanced_satellite_dish.png"),
         EnderLaserQuarry.rl("textures/entity/ender_satellite_dish.png")};
-    private static final ResourceLocation BASE_LIGHT_TEXTURE = EnderLaserQuarry.rl("textures/entity/satellite_dish_base_light.png");
+    private static final Identifier BASE_LIGHT_TEXTURE = EnderLaserQuarry.rl("textures/entity/satellite_dish_base_light.png");
     // off, then the capacitor item colours: basic, double layer, octadic, then Endergy's grainy, vivid, crystalline,
     // melodic, stellar, totemic (index from SatelliteDishBlockEntity.getCapacitorTier)
     private static final int[] TIER_COLORS = { 0xFF2A2C30, 0xFFD6DAE0, 0xFFE48F68, 0xFFD3E87D,
@@ -75,7 +76,7 @@ public class SatelliteDishRenderer implements BlockEntityRenderer<SatelliteDishB
     private void renderDish(SatelliteDishBlockEntity dish, float partialTick, float time, PoseStack poseStack,
                             MultiBufferSource buffers) {
         // block is opaque, use the light above
-        int light = LevelRenderer.getLightColor(dish.getLevel(), dish.getBlockPos().above());
+        int light = LevelRenderer.getLightCoords(dish.getLevel(), dish.getBlockPos().above());
         float spool = dish.getSpool(partialTick);
 
         if (dish.isFormed()) {
@@ -92,10 +93,10 @@ public class SatelliteDishRenderer implements BlockEntityRenderer<SatelliteDishB
                 color = lit ? WRONG_CAPACITOR : TIER_COLORS[0];
             } else if (lit) {
                 // dimmer while idle
-                color =FastColor.ARGB32.lerp(0.3f * (1 - spool), color, 0xFF000000);
+                color =ARGB.srgbLerp(0.3f * (1 - spool), color, 0xFF000000);
             }
             DishBaseModel.render(poseStack, buffers.getBuffer(ModRenderTypes.casingOverlay(BASE_LIGHT_TEXTURE)),
-                lit ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, color, ports);
+                lit ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, color, ports);
             poseStack.popPose();
         }
 
@@ -108,29 +109,29 @@ public class SatelliteDishRenderer implements BlockEntityRenderer<SatelliteDishB
         float scale = SatelliteDishBlockEntity.MODEL_SCALE;
         poseStack.scale(scale, scale, scale);
 
-        ResourceLocation texture = texture(dish.getTier());
+        Identifier texture = texture(dish.getTier());
         model.emitter.visible = false;
-        model.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(texture)), light, OverlayTexture.NO_OVERLAY);
+        model.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(texture)), light, OverlayTexture.NO_OVERLAY);
         model.emitter.visible = true;
 
         int emitterColor;
         if (spool > 0) {
             int grey = (int) Mth.lerp(spool, 150, 255);
             int alpha = (int) Mth.lerp(spool, 255, 200 + 55 * Mth.sin(time * 0.5f));
-            emitterColor = FastColor.ARGB32.color(alpha, grey, grey, grey);
+            emitterColor = ARGB.color(alpha, grey, grey, grey);
         } else {
-            emitterColor = FastColor.ARGB32.color(255, dish.isFormed() ? 150 : 70, dish.isFormed() ? 150 : 70, dish.isFormed() ? 150 : 70);
+            emitterColor = ARGB.color(255, dish.isFormed() ? 150 : 70, dish.isFormed() ? 150 : 70, dish.isFormed() ? 150 : 70);
         }
         model.root.translateAndRotate(poseStack);
         model.yoke.translateAndRotate(poseStack);
         model.bowl.translateAndRotate(poseStack);
-        model.emitter.render(poseStack, buffers.getBuffer(RenderType.entityTranslucentEmissive(texture)),
-            spool > 0.3f ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, emitterColor);
+        model.emitter.render(poseStack, buffers.getBuffer(RenderTypes.entityTranslucentEmissive(texture)),
+            spool > 0.3f ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, emitterColor);
 
         poseStack.popPose();
     }
 
-    public static ResourceLocation texture(QuarryTier tier) {
+    public static Identifier texture(QuarryTier tier) {
         return TEXTURES[Math.min(tier.ordinal(), TEXTURES.length - 1)];
     }
 
@@ -147,7 +148,7 @@ public class SatelliteDishRenderer implements BlockEntityRenderer<SatelliteDishB
     }
 
     @Override
-    public boolean shouldRenderOffScreen(SatelliteDishBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

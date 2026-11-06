@@ -3,11 +3,11 @@
   "category": "misc",
   "pattern": [" Q ", "RPR", "CBC"],
   "key": {
-    "Q": { "item": "enderio:fused_quartz" },
-    "R": { "tag": "c:ingots/redstone_alloy" },
-    "P": { "tag": "c:gems/pulsating_crystal" },
-    "C": { "tag": "c:ingots/conductive_alloy" },
-    "B": { "item": "enderio:basic_capacitor" }
+    "Q": "enderio:fused_quartz",
+    "R": "#c:ingots/redstone_alloy",
+    "P": "#c:gems/pulsating_crystal",
+    "C": "#c:ingots/conductive_alloy",
+    "B": "enderio:basic_capacitor"
   },
   "result": { "id": "ender_laser_quarry:laser_emitter", "count": 1 }
 }

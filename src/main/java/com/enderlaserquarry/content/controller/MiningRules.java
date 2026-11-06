@@ -94,7 +94,7 @@ public final class MiningRules {
     }
 
     public static int highestBlock(LevelChunk chunk) {
-        int top = chunk.getMinBuildHeight();
+        int top = chunk.getMinY();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 top = Math.max(top, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z));

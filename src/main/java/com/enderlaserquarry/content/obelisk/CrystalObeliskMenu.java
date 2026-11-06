@@ -13,8 +13,8 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -45,7 +45,7 @@ public class CrystalObeliskMenu extends AbstractContainerMenu {
     public CrystalObeliskMenu(int containerId, Inventory playerInventory, CrystalObeliskBlockEntity obelisk) {
         super(ModMenus.CRYSTAL_OBELISK.get(), containerId);
         access = ContainerLevelAccess.create(obelisk.getLevel(), obelisk.getBlockPos());
-        addSlot(new SlotItemHandler(obelisk.getCrystalSlot(), 0, CRYSTAL_X, CRYSTAL_Y));
+        addSlot(new CrystalSlot(obelisk.getCrystalSlot()));
         addPlayerSlots(playerInventory);
 
         // List.of(...).indexOf(null) throws, so check for null first
@@ -64,17 +64,7 @@ public class CrystalObeliskMenu extends AbstractContainerMenu {
         buf.readBlockPos();
         access = ContainerLevelAccess.NULL;
         // same rules as the server so the client predicts clicks right
-        addSlot(new SlotItemHandler(new ItemStackHandler(1) {
-            @Override
-            public int getSlotLimit(int slot) {
-                return 1;
-            }
-
-            @Override
-            public boolean isItemValid(int slot, ItemStack stack) {
-                return stack.getItem() instanceof LaserCrystalItem;
-            }
-        }, 0, CRYSTAL_X, CRYSTAL_Y));
+        addSlot(new CrystalSlot(new SimpleContainer(1)));
         addPlayerSlots(playerInventory);
 
         problem = addDataSlot(DataSlot.standalone());
@@ -82,6 +72,23 @@ public class CrystalObeliskMenu extends AbstractContainerMenu {
         dishes = addDataSlot(DataSlot.standalone());
         linked = addDataSlot(DataSlot.standalone());
         costPercent = addDataSlot(DataSlot.standalone());
+    }
+
+    // one crystal, nothing else
+    private static class CrystalSlot extends Slot {
+        CrystalSlot(Container container) {
+            super(container, 0, CRYSTAL_X, CRYSTAL_Y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return stack.getItem() instanceof LaserCrystalItem;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
     }
 
     private static DataSlot readOnly(IntSupplier getter) {

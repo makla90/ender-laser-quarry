@@ -29,7 +29,7 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
 
     public LaunchPadMenu(int containerId, Inventory playerInventory, LaunchPadBlockEntity be) {
         super(ModMenus.LAUNCH_PAD.get(), containerId, playerInventory, be);
-        fuelTank = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getFuelTank())));
+        fuelTank = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> be.getFuelTank().info()));
         radarEnergy = addSyncSlot(IntSyncSlot.readOnly(() -> {
             var radar = be.getRadar();
             return radar != null ? radar.getEnergyPercent() : -1;
@@ -46,8 +46,8 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
 
     private void addSlots() {
         var inventory = getMachineInventory();
-        addSlot(new MachineSlot(inventory, LaunchPadBlockEntity.ROCKET.getIndex(), ROCKET_X, ROCKET_Y));
-        addSlot(new MachineSlot(inventory, LaunchPadBlockEntity.SATELLITE.getIndex(), SATELLITE_X, SATELLITE_Y));
+        addSlot(new MachineSlot(inventory, LaunchPadBlockEntity.ROCKET, ROCKET_X, ROCKET_Y));
+        addSlot(new MachineSlot(inventory, LaunchPadBlockEntity.SATELLITE, SATELLITE_X, SATELLITE_Y));
         addPlayerInventorySlots(PLAYER_INV_X, PLAYER_INV_Y);
     }
 

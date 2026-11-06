@@ -1,6 +1,6 @@
 package com.enderlaserquarry.content.asteroid.sampling;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;

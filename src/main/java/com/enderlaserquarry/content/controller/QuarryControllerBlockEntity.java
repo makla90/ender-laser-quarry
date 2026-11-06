@@ -10,25 +10,37 @@ import com.enderio.enderio.api.io.energy.EnergyIOMode;
 import com.enderio.enderio.foundation.block.entity.PoweredMachineBlockEntity;
 import com.enderio.enderio.foundation.block.entity.flags.CapacitorSupport;
 import com.enderio.enderio.foundation.block.entity.MultiConfigurable;
-import com.enderio.enderio.foundation.inventory.MachineInventory;
-import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
-import com.enderio.enderio.foundation.inventory.MultiSlotAccess;
-import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
+import com.enderio.core.common.storage.ExternalResourceStorageView;
+import com.enderio.core.common.storage.FluidStorage;
+import com.enderio.core.common.storage.ItemStorage;
+import com.enderio.core.common.storage.layout.FluidStorageLayout;
+import com.enderio.core.common.storage.layout.ItemStorageLayout;
+import com.enderio.core.common.storage.layout.SimpleSlotAccessRules;
+import com.enderio.core.common.storage.layout.SlotTemplates;
+import com.enderio.core.common.storage.slot.MultiResourceSlotKey;
+import com.enderio.core.common.storage.slot.SingleResourceSlotKey;
+import com.enderio.enderio.foundation.inventory.MachineSlotTemplates;
+import com.enderlaserquarry.content.Tank;
+import com.enderlaserquarry.content.Transfers;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.component.DataComponentGetter;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import com.enderio.enderio.foundation.io.IOConfig;
-import com.enderio.enderio.foundation.attachment.FluidTankUser;
 import com.enderio.enderio.foundation.io.fluid.FluidItemInteractive;
-import com.enderio.enderio.foundation.io.fluid.MachineFluidHandler;
-import com.enderio.enderio.foundation.io.fluid.MachineFluidTank;
-import com.enderio.enderio.foundation.io.fluid.MachineTankLayout;
-import com.enderio.enderio.foundation.io.fluid.TankAccess;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import com.enderio.enderio.foundation.state.MachineState;
 import com.enderlaserquarry.EnderLaserQuarry;
 import com.enderlaserquarry.config.QuarryConfig;
@@ -89,7 +101,7 @@ import java.util.stream.Stream;
  * The quarry controller. Sits on the quarry floor's ring, fires through the obelisk up to the satellite and mines the
  * queued chunks. Also powers the radar.
  */
-public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity implements MultiConfigurable, FluidTankUser, FluidItemInteractive {
+public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity implements MultiConfigurable, FluidItemInteractive {
     // Any capacitor works, values come from the config
     // buffer = bufferTicks of intake, both times level squared; own use times level
     private static final QuadraticScalable ENERGY_CAPACITY = new QuadraticScalable(CapacitorModifier.ENERGY_CAPACITY,
@@ -100,10 +112,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private static final int USAGE_WINDOW = 20;
 
     public static final int OUTPUT_SLOTS = 12;
-    public static final MultiSlotAccess OUTPUT = new MultiSlotAccess();
-    public static final SingleSlotAccess FILTER = new SingleSlotAccess();
-    public static final TankAccess COOLANT = new TankAccess();
-    public static final TankAccess XP = new TankAccess();
+    public static final MultiResourceSlotKey<ItemResource> OUTPUT = new MultiResourceSlotKey<>(OUTPUT_SLOTS);
+    public static final SingleResourceSlotKey<ItemResource> FILTER = new SingleResourceSlotKey<>();
+    public static final SingleResourceSlotKey<ItemResource> CAPACITOR = new SingleResourceSlotKey<>();
+    public static final SingleResourceSlotKey<FluidResource> COOLANT = new SingleResourceSlotKey<>();
+    public static final SingleResourceSlotKey<FluidResource> XP = new SingleResourceSlotKey<>();
     public static final TagKey<Fluid> QUARRY_COOLANT = TagKey.create(Registries.FLUID, EnderLaserQuarry.rl("quarry_coolant"));
 
     // Per tick limits
@@ -131,6 +144,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     private static final String OBELISK_POS = "ObeliskPos";
     private static final String PAD_POS = "PadPos";
+    private static final String FLUIDS = "Fluids";
     private static final long NEVER_LIMITED = Long.MIN_VALUE / 2;
     // antenna in the middle of the top, tip LED centre
     private static final double ANTENNA_TIP_Y = 24.75 / 16;
@@ -183,7 +197,10 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private int analyzeId = -1;
     private int analyzeTicks;
 
-    private final MachineFluidHandler fluidHandler;
+    private final FluidStorage fluidStorage;
+    private final ResourceHandler<FluidResource> externalFluids;
+    private final Tank coolantTank;
+    private final Tank xpTank;
 
     // Not saved
     @Nullable
@@ -221,7 +238,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private int intakeLeft;
     private long outputLimitedTick = NEVER_LIMITED;
     private long intakeLimitedTick = NEVER_LIMITED;
-    private final IEnergyStorage portEnergy = new IntakeStorage();
+    private final IntakeStorage portEnergy = new IntakeStorage();
     @Nullable
     private FakePlayer claimPlayer;
     @Nullable
@@ -229,9 +246,18 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private int claimSkipped;
 
     public QuarryControllerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.QUARRY_CONTROLLER.get(), pos, state, false, CapacitorSupport.REQUIRED, EnergyIOMode.Input,
+        super(ModBlockEntities.QUARRY_CONTROLLER.get(), pos, state, false, CapacitorSupport.REQUIRED, CAPACITOR, EnergyIOMode.Input,
             ENERGY_CAPACITY, ENERGY_USAGE);
-        fluidHandler = createFluidHandler();
+        fluidStorage = new FluidStorage(tankLayout(getTier())) {
+            @Override
+            protected void onContentsChanged(int index, FluidStack previousContents) {
+                super.onContentsChanged(index, previousContents);
+                setChanged();
+            }
+        };
+        externalFluids = new ExternalResourceStorageView<>(fluidStorage);
+        coolantTank = new Tank(fluidStorage, COOLANT);
+        xpTank = new Tank(fluidStorage, XP);
     }
 
     // region Power
@@ -252,21 +278,21 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             return;
         }
         var buffer = getEnergyStorage();
-        int wanted = radar.getEnergy().receiveEnergy(buffer.getEnergyStored(), true);
+        int wanted = radar.getEnergy().receiveEnergy(buffer.getAmountAsInt(), true);
         if (wanted > 0) {
             int fed = radar.getEnergy().receiveEnergy(wanted, false);
-            buffer.setEnergyStored(buffer.getEnergyStored() - fed);
+            buffer.set(buffer.getAmountAsInt() - fed);
             radarFedSum += fed;
         }
     }
 
     private boolean payOwnUsage() {
         var buffer = getEnergyStorage();
-        int usage = buffer.getMaxEnergyUse();
-        if (buffer.getEnergyStored() < usage) {
+        int usage = getMaxEnergyUse();
+        if (buffer.getAmountAsInt() < usage) {
             return false;
         }
-        buffer.setEnergyStored(buffer.getEnergyStored() - usage);
+        buffer.set(buffer.getAmountAsInt() - usage);
         ownUsedSum += usage;
         return true;
     }
@@ -313,13 +339,13 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     }
 
     // what the ports hand on: the buffer, capped at the intake per tick
-    public IEnergyStorage getPortEnergyStorage() {
+    public EnergyHandler getPortEnergyStorage() {
         return portEnergy;
     }
 
-    private class IntakeStorage implements IEnergyStorage {
+    private class IntakeStorage extends SnapshotJournal<Integer> implements EnergyHandler {
         @Override
-        public int receiveEnergy(int maxReceive, boolean simulate) {
+        public int insert(int amount, TransactionContext transaction) {
             if (level == null) {
                 return 0;
             }
@@ -328,42 +354,43 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
                 intakeTick = now;
                 intakeLeft = getEnergyIntake();
             }
-            int offered = Math.min(maxReceive, intakeLeft);
+            int offered = Math.min(amount, intakeLeft);
             var buffer = getEnergyStorage();
-            int taken = buffer.receiveEnergy(offered, simulate);
-            if (!simulate) {
+            int taken = offered <= 0 ? 0 : buffer.insert(offered, transaction);
+            if (taken > 0) {
+                updateSnapshots(transaction);
                 intakeLeft -= taken;
             }
             // more was offered than the capacitor lets in, while the buffer still had room
-            if (maxReceive > offered && taken == offered && buffer.getEnergyStored() < buffer.getMaxEnergyStored()) {
+            if (amount > offered && taken == offered && buffer.getAmountAsLong() < buffer.getCapacityAsLong()) {
                 intakeLimitedTick = now;
             }
             return taken;
         }
 
         @Override
-        public int extractEnergy(int maxExtract, boolean simulate) {
+        public int extract(int amount, TransactionContext transaction) {
             return 0;
         }
 
         @Override
-        public int getEnergyStored() {
-            return getEnergyStorage().getEnergyStored();
+        public long getAmountAsLong() {
+            return getEnergyStorage().getAmountAsLong();
         }
 
         @Override
-        public int getMaxEnergyStored() {
-            return getEnergyStorage().getMaxEnergyStored();
+        public long getCapacityAsLong() {
+            return getEnergyStorage().getCapacityAsLong();
         }
 
         @Override
-        public boolean canExtract() {
-            return false;
+        protected Integer createSnapshot() {
+            return intakeLeft;
         }
 
         @Override
-        public boolean canReceive() {
-            return true;
+        protected void revertToSnapshot(Integer snapshot) {
+            intakeLeft = snapshot;
         }
     }
 
@@ -382,39 +409,29 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     // region Coolant
 
-    @Override
-    public MachineTankLayout getTankLayout() {
-        // Fill only
-        // a fill goes to the first tank that takes the fluid: water -> coolant, liquid XP -> XP
-        QuarryTier tier = getTier();
-        return MachineTankLayout.builder()
-            .tank(COOLANT, tier.coolantTank(), true, false, fluid -> fluid.is(QUARRY_COOLANT))
-            .tank(XP, tier.xpTank(), true, false, fluid -> fluid.is(Tags.Fluids.EXPERIENCE))
+    // Fill only from outside: a fill goes to the first tank that takes the fluid (water -> coolant, liquid XP -> XP)
+    private static FluidStorageLayout tankLayout(QuarryTier tier) {
+        return FluidStorageLayout.builder()
+            .add(COOLANT, SlotTemplates.input(tier.coolantTank()), slot -> slot.filter((i, fluid) -> fluid.is(QUARRY_COOLANT)))
+            .add(XP, SlotTemplates.input(tier.xpTank()), slot -> slot.filter((i, fluid) -> fluid.is(Tags.Fluids.EXPERIENCE)))
             .build();
     }
 
-    @Override
-    public MachineFluidHandler createFluidHandler() {
-        return new MachineFluidHandler(this, getTankLayout()) {
-            @Override
-            protected void onContentsChanged(int slot) {
-                super.onContentsChanged(slot);
-                setChanged();
-            }
-        };
+    public FluidStorage getFluidStorage() {
+        return fluidStorage;
     }
 
-    @Override
-    public MachineFluidHandler getFluidHandler() {
-        return fluidHandler;
+    // what quarry ports see
+    public ResourceHandler<FluidResource> getPortFluidHandler() {
+        return externalFluids;
     }
 
-    public MachineFluidTank getCoolantTank() {
-        return COOLANT.getTank(this);
+    public Tank getCoolantTank() {
+        return coolantTank;
     }
 
-    public MachineFluidTank getXpTank() {
-        return XP.getTank(this);
+    public Tank getXpTank() {
+        return xpTank;
     }
 
     // 1 mB of coolant per coolant.energyPerMb of laser energy
@@ -424,33 +441,33 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         heat = (int) Math.min((long) heat + laserEnergy, (long) perMb * 100);
         int needed = heat / perMb;
         if (needed > 0) {
-            int drained = COOLANT.drain(this, needed, IFluidHandler.FluidAction.EXECUTE).getAmount();
+            int drained = coolantTank.drain(needed, false).getAmount();
             heat -= drained * perMb;
         }
     }
 
     // Keep the coolant in the item
     @Override
-    protected void applyImplicitComponents(DataComponentInput components) {
+    protected void applyImplicitComponents(DataComponentGetter components) {
         super.applyImplicitComponents(components);
         SimpleFluidContent stored = components.get(EIODataComponents.ITEM_FLUID_CONTENT);
         if (stored != null) {
-            COOLANT.getTank(this).setFluid(stored.copy());
+            coolantTank.setFluid(stored.copy());
         }
         SimpleFluidContent xp = components.get(ModDataComponents.XP_FLUID);
         if (xp != null) {
-            XP.getTank(this).setFluid(xp.copy());
+            xpTank.setFluid(xp.copy());
         }
     }
 
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
-        var tank = COOLANT.getTank(this);
+        var tank = coolantTank;
         if (!tank.isEmpty()) {
             components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
         }
-        var xp = XP.getTank(this);
+        var xp = xpTank;
         if (!xp.isEmpty()) {
             components.set(ModDataComponents.XP_FLUID, SimpleFluidContent.copyOf(xp.getFluid()));
         }
@@ -722,10 +739,10 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         if (running) {
             return Component.translatable("message.ender_laser_quarry.controller.stop_first");
         }
-        int minX = Math.min(from.x, to.x);
-        int maxX = Math.max(from.x, to.x);
-        int minZ = Math.min(from.z, to.z);
-        int maxZ = Math.max(from.z, to.z);
+        int minX = Math.min(from.x(), to.x());
+        int maxX = Math.max(from.x(), to.x());
+        int minZ = Math.min(from.z(), to.z());
+        int maxZ = Math.max(from.z(), to.z());
         int maxChunks = getTier().maxChunks();
         if ((long) (maxX - minX + 1) * (maxZ - minZ + 1) > MAX_BOX_CHUNKS) {
             return Component.translatable("message.ender_laser_quarry.controller.box_too_big", maxChunks);
@@ -944,7 +961,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     public boolean isEnclosed(ChunkPos chunk) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                if ((dx != 0 || dz != 0) && !queue.contains(new ChunkPos(chunk.x + dx, chunk.z + dz))) {
+                if ((dx != 0 || dz != 0) && !queue.contains(new ChunkPos(chunk.x() + dx, chunk.z() + dz))) {
                     return false;
                 }
             }
@@ -1092,7 +1109,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
         // chunk loading is async, wait for it
         acquireTicket(serverLevel, workChunk);
-        LevelChunk chunk = serverLevel.getChunkSource().getChunkNow(workChunk.x, workChunk.z);
+        LevelChunk chunk = serverLevel.getChunkSource().getChunkNow(workChunk.x(), workChunk.z());
         if (chunk == null) {
             return;
         }
@@ -1364,7 +1381,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         ChunkPos skipped = queue.current();
         claimSkipped++;
         if (skipped != null) {
-            notifyOwner(Component.translatable("message.ender_laser_quarry.controller.chunk_claimed_skipped", skipped.x, skipped.z));
+            notifyOwner(Component.translatable("message.ender_laser_quarry.controller.chunk_claimed_skipped", skipped.x(), skipped.z()));
         }
         queue.advance();
         resetCursor();
@@ -1417,7 +1434,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             serverLevel.setBlock(pos, Blocks.AIR.defaultBlockState(), MiningRules.SILENT);
             if (getDepthMode().drains()) {
                 LiquidWall.sealEdge(serverLevel, queue, mining, pos, wallPlacer(serverLevel));
-                int bottom = floor != null ? floor.lowest() : serverLevel.getMinBuildHeight();
+                int bottom = floor != null ? floor.lowest() : serverLevel.getMinY();
                 int drained = LiquidWall.drainNeighbours(serverLevel, queue, mining, pos, bottom, wallPlacer(serverLevel));
                 liquidsDeleted += drained;
                 worn += drained;
@@ -1436,7 +1453,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         CrystalObeliskBlockEntity obelisk = getObelisk();
         if (obelisk != null) {
             // no coolant: keeps running, wears faster
-            obelisk.wearCrystal(blocks, COOLANT.isEmpty(this) ? QuarryConfig.UNCOOLED_WEAR_MULTIPLIER.get() : 1);
+            obelisk.wearCrystal(blocks, coolantTank.isEmpty() ? QuarryConfig.UNCOOLED_WEAR_MULTIPLIER.get() : 1);
         }
     }
 
@@ -1450,17 +1467,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     }
 
     private boolean storeDrops(List<ItemStack> drops) {
-        MachineInventory inventory = getInventory();
-        if (inventory == null) {
-            return false;
-        }
-
-        drops =QuarryOutput.applyVoidFilter(drops, FILTER.getItemStack(this));
-        if (!QuarryOutput.fits(inventory, OUTPUT, drops)) {
-            return false;
-        }
-        QuarryOutput.insertAll(inventory, OUTPUT, drops);
-        return true;
+        drops = QuarryOutput.applyVoidFilter(drops, getInventory().getStack(FILTER));
+        return QuarryOutput.insertAll(getInventory(), OUTPUT, drops);
     }
 
     private void finish() {
@@ -1847,13 +1855,13 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
 
         releaseTicket(serverLevel);
-        EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, true, false);
+        EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x(), chunk.z(), true, false);
         ticketedChunk = chunk;
     }
 
     private void releaseTicket(ServerLevel serverLevel) {
         if (ticketedChunk != null) {
-            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, ticketedChunk.x, ticketedChunk.z, false, false);
+            EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, ticketedChunk.x(), ticketedChunk.z(), false, false);
             ticketedChunk = null;
         }
     }
@@ -1913,8 +1921,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
         Set<ChunkPos> centres = new LinkedHashSet<>();
         for (BlockPos part : parts) {
-            ChunkPos chunk = new ChunkPos(part);
-            if (centres.stream().noneMatch(c -> Math.abs(c.x - chunk.x) <= 1 && Math.abs(c.z - chunk.z) <= 1)) {
+            ChunkPos chunk = ChunkPos.containing(part);
+            if (centres.stream().noneMatch(c -> Math.abs(c.x() - chunk.x()) <= 1 && Math.abs(c.z() - chunk.z()) <= 1)) {
                 centres.add(chunk);
             }
         }
@@ -1927,12 +1935,12 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
         for (ChunkPos chunk : baseTickets) {
             if (!wanted.contains(chunk)) {
-                EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, false, false);
+                EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x(), chunk.z(), false, false);
             }
         }
         for (ChunkPos chunk : wanted) {
             if (!baseTickets.contains(chunk)) {
-                EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x, chunk.z, true, false);
+                EnderLaserQuarry.CHUNK_TICKETS.forceChunk(serverLevel, worldPosition, chunk.x(), chunk.z(), true, false);
             }
         }
         baseTickets.clear();
@@ -1970,14 +1978,14 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     // region Machine setup
 
     @Override
-    protected MachineInventoryLayout createInventoryLayout() {
-        return MachineInventoryLayout.builder()
-            .outputSlot(OUTPUT_SLOTS).slotAccess(OUTPUT)
-            .slot(slot -> slot.guiInsert().guiExtract().stackLimit(1)
-                .filter((i, stack) -> stack.getCapability(EnderIOCapabilities.ITEM_FILTER) != null))
-            .slotAccess(FILTER)
+    protected ItemStorageLayout createInventoryLayout() {
+        return ItemStorageLayout.builder()
+            .add(OUTPUT, SlotTemplates.output(64))
+            // GUI only
+            .add(FILTER, slot -> slot.guiRules(new SimpleSlotAccessRules<>(true, true)).externalRules(new SimpleSlotAccessRules<>(false, false))
+                .capacity(1).filter((i, item) -> item.toStack().getCapability(EnderIOCapabilities.ITEM_FILTER) != null))
             // keep last, slot indices are saved
-            .capacitor()
+            .add(CAPACITOR, MachineSlotTemplates.capacitor())
             .build();
     }
 
@@ -2010,19 +2018,15 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     // region Serialization
 
     @Override
-    protected void saveAdditionalSynced(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditionalSynced(tag, registries);
-        if (padPos != null) {
-            tag.put(PAD_POS, NbtUtils.writeBlockPos(padPos));
-        }
+    protected void saveAdditionalSynced(ValueOutput tag) {
+        super.saveAdditionalSynced(tag);
+        tag.storeNullable(PAD_POS, BlockPos.CODEC, padPos);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        if (obeliskPos != null) {
-            tag.put(OBELISK_POS, NbtUtils.writeBlockPos(obeliskPos));
-        }
+    protected void saveAdditional(ValueOutput tag) {
+        super.saveAdditional(tag);
+        tag.storeNullable(OBELISK_POS, BlockPos.CODEC, obeliskPos);
         queue.save(tag);
         tag.putBoolean(RUNNING, running);
         tag.putInt(CURSOR_Y, cursorY);
@@ -2043,44 +2047,42 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         tag.putInt(ANALYZE_ID, analyzeId);
         tag.putInt(ANALYZE_TICKS, analyzeTicks);
         if (ticketedChunk != null) {
-            tag.putLong(TICKET_CHUNK, ticketedChunk.toLong());
+            tag.putLong(TICKET_CHUNK, ticketedChunk.pack());
         }
-        tag.putLongArray(BASE_TICKETS, baseTickets.stream().mapToLong(ChunkPos::toLong).toArray());
-        saveTank(registries, tag);
+        tag.store(BASE_TICKETS, Codec.LONG_STREAM, baseTickets.stream().mapToLong(ChunkPos::pack));
+        tag.putChild(FLUIDS, fluidStorage);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        obeliskPos = NbtUtils.readBlockPos(tag, OBELISK_POS).orElse(null);
-        padPos = NbtUtils.readBlockPos(tag, PAD_POS).orElse(null);
+    protected void loadAdditional(ValueInput tag) {
+        super.loadAdditional(tag);
+        obeliskPos = tag.read(OBELISK_POS, BlockPos.CODEC).orElse(null);
+        padPos = tag.read(PAD_POS, BlockPos.CODEC).orElse(null);
         queue.load(tag);
-        running = tag.getBoolean(RUNNING);
-        cursorY = tag.contains(CURSOR_Y) ? tag.getInt(CURSOR_Y) : Integer.MAX_VALUE;
-        cursorIndex = tag.getInt(CURSOR_INDEX);
-        topResolved = tag.getBoolean(TOP_RESOLVED);
+        running = tag.getBooleanOr(RUNNING, false);
+        cursorY = tag.getIntOr(CURSOR_Y, Integer.MAX_VALUE);
+        cursorIndex = tag.getIntOr(CURSOR_INDEX, 0);
+        topResolved = tag.getBooleanOr(TOP_RESOLVED, false);
         // old saves without the flag
-        wallDone =tag.contains(WALL_DONE) ? tag.getBoolean(WALL_DONE) : topResolved;
-        wallChunkIndex = tag.contains(WALL_CHUNK_INDEX) ? tag.getInt(WALL_CHUNK_INDEX) : queue.index();
-        energyProgress = tag.getInt(ENERGY_PROGRESS);
-        blocksMined = tag.getInt(BLOCKS_MINED);
-        voidWearBlocks = tag.getInt(VOID_WEAR);
-        heat = tag.getInt(HEAT);
-        depthMode = DepthMode.byOrdinal(tag.getInt(DEPTH_MODE));
-        floorY = tag.contains(FLOOR_Y) ? tag.getInt(FLOOR_Y) : null;
+        wallDone = tag.getBooleanOr(WALL_DONE, topResolved);
+        wallChunkIndex = tag.getIntOr(WALL_CHUNK_INDEX, queue.index());
+        energyProgress = tag.getIntOr(ENERGY_PROGRESS, 0);
+        blocksMined = tag.getIntOr(BLOCKS_MINED, 0);
+        voidWearBlocks = tag.getIntOr(VOID_WEAR, 0);
+        heat = tag.getIntOr(HEAT, 0);
+        depthMode = DepthMode.byOrdinal(tag.getIntOr(DEPTH_MODE, 0));
+        floorY = tag.getInt(FLOOR_Y).orElse(null);
         asteroidQueue.clear();
-        for (int id : tag.getIntArray(ASTEROID_QUEUE)) {
+        for (int id : tag.getIntArray(ASTEROID_QUEUE).orElse(new int[0])) {
             asteroidQueue.add(id);
         }
-        spaceScanTicks = tag.getInt(SPACE_SCAN);
-        analyzeId = tag.contains(ANALYZE_ID) ? tag.getInt(ANALYZE_ID) : -1;
-        analyzeTicks = tag.getInt(ANALYZE_TICKS);
-        ticketedChunk = tag.contains(TICKET_CHUNK) ? new ChunkPos(tag.getLong(TICKET_CHUNK)) : null;
+        spaceScanTicks = tag.getIntOr(SPACE_SCAN, 0);
+        analyzeId = tag.getIntOr(ANALYZE_ID, -1);
+        analyzeTicks = tag.getIntOr(ANALYZE_TICKS, 0);
+        ticketedChunk = tag.getLong(TICKET_CHUNK).map(ChunkPos::unpack).orElse(null);
         baseTickets.clear();
-        for (long chunk : tag.getLongArray(BASE_TICKETS)) {
-            baseTickets.add(new ChunkPos(chunk));
-        }
-        loadTank(registries, tag);
+        tag.read(BASE_TICKETS, Codec.LONG_STREAM).ifPresent(chunks -> chunks.forEach(chunk -> baseTickets.add(ChunkPos.unpack(chunk))));
+        tag.readChild(FLUIDS, fluidStorage);
     }
 
     // endregion

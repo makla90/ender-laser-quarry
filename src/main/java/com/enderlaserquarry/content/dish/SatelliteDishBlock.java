@@ -9,13 +9,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import java.util.function.Consumer;
+import com.enderlaserquarry.content.TooltipBlockItem;
 
 import java.util.List;
 
 /**
  * Satellite dish block, one per tier. They share the block entity type.
  */
-public class SatelliteDishBlock extends MachineBlock<SatelliteDishBlockEntity> implements Tiered {
+public class SatelliteDishBlock extends MachineBlock<SatelliteDishBlockEntity> implements Tiered, TooltipBlockItem.HasTooltip {
     private final QuarryTier tier;
 
     public SatelliteDishBlock(QuarryTier tier, Properties properties) {
@@ -29,17 +31,16 @@ public class SatelliteDishBlock extends MachineBlock<SatelliteDishBlockEntity> i
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.speed", SatelliteDishBlockEntity.blocksPerTick(1, tier),
+    public void appendTooltip(ItemStack stack, Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.speed", SatelliteDishBlockEntity.blocksPerTick(1, tier),
             SatelliteDishBlockEntity.blocksPerTick(2, tier), SatelliteDishBlockEntity.blocksPerTick(3, tier)).withStyle(ChatFormatting.GRAY));
         if (EndergyCapacitors.isLoaded()) {
-            tooltip.add((tier == QuarryTier.ENDER
+            tooltip.accept((tier == QuarryTier.ENDER
                 ? Component.translatable("tooltip.ender_laser_quarry.dish.endergy", SatelliteDishBlockEntity.blocksPerTick(5, tier))
                 : Component.translatable("tooltip.ender_laser_quarry.dish.no_endergy")).withStyle(ChatFormatting.GRAY));
         }
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.range", tier.dishRange()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.controller", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.plating", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.range", tier.dishRange()).withStyle(ChatFormatting.GRAY));
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.controller", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.plating", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
     }
 }

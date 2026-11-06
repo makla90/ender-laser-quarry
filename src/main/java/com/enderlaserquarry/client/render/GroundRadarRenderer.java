@@ -5,13 +5,14 @@ import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.launchpad.UplinkStatus;
 import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -19,8 +20,8 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Radar antenna and the uplink to the satellite.
  */
-public class GroundRadarRenderer implements BlockEntityRenderer<GroundRadarBlockEntity> {
-    static final ResourceLocation TEXTURE = EnderLaserQuarry.rl("textures/entity/ground_radar.png");
+public class GroundRadarRenderer extends LiveRenderer<GroundRadarBlockEntity> {
+    static final Identifier TEXTURE = EnderLaserQuarry.rl("textures/entity/ground_radar.png");
 
     private static final int CARRIER = 0x103848;
     private static final int UPLINK = 0x4CE0FF;
@@ -51,15 +52,15 @@ public class GroundRadarRenderer implements BlockEntityRenderer<GroundRadarBlock
         poseStack.translate(0.5, 1.0, 0.5);
 
         model.horn.visible = false;
-        model.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), light, OverlayTexture.NO_OVERLAY);
+        model.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(TEXTURE)), light, OverlayTexture.NO_OVERLAY);
         model.horn.visible = true;
 
         model.root.translateAndRotate(poseStack);
         model.turret.translateAndRotate(poseStack);
         model.antenna.translateAndRotate(poseStack);
         boolean powered = radar.isPowered();
-        model.horn.render(poseStack, buffers.getBuffer(RenderType.entityTranslucentEmissive(TEXTURE)),
-            powered ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, powered ? 0xFFFFFFFF : 0xFF505050);
+        model.horn.render(poseStack, buffers.getBuffer(RenderTypes.entityTranslucentEmissive(TEXTURE)),
+            powered ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, powered ? 0xFFFFFFFF : 0xFF505050);
         poseStack.popPose();
 
         LaunchPadBlockEntity pad = radar.getSatellitePad();
@@ -92,7 +93,7 @@ public class GroundRadarRenderer implements BlockEntityRenderer<GroundRadarBlock
     }
 
     @Override
-    public boolean shouldRenderOffScreen(GroundRadarBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 

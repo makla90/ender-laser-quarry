@@ -3,7 +3,7 @@ package com.enderlaserquarry.content.asteroid;
 import com.enderlaserquarry.content.asteroid.sampling.BiomeSampling;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * What an asteroid of a biome is made of: the biome's ground as measured by BiomeSampling.
  */
 public final class AsteroidComposition {
-    private static final Map<ResourceLocation, AsteroidComposition> CACHE = new ConcurrentHashMap<>();
+    private static final Map<Identifier, AsteroidComposition> CACHE = new ConcurrentHashMap<>();
     private static final double ORE_VEIN = 6;
     private static final double ROCK_VEIN = 24;
     private static final double HOST_VEIN = 48;
@@ -74,12 +74,12 @@ public final class AsteroidComposition {
 
     /** Null until the biome is measured. */
     @Nullable
-    public static AsteroidComposition of(MinecraftServer server, ResourceLocation biome) {
+    public static AsteroidComposition of(MinecraftServer server, Identifier biome) {
         AsteroidComposition cached = CACHE.get(biome);
         if (cached != null) {
             return cached;
         }
-        Object2LongMap<ResourceLocation> counts = BiomeSampling.counts(server, biome);
+        Object2LongMap<Identifier> counts = BiomeSampling.counts(server, biome);
         if (counts == null) {
             return null;
         }
@@ -90,7 +90,7 @@ public final class AsteroidComposition {
         return built;
     }
 
-    public static void invalidate(ResourceLocation biome) {
+    public static void invalidate(Identifier biome) {
         CACHE.remove(biome);
     }
 
@@ -99,7 +99,7 @@ public final class AsteroidComposition {
     }
 
     @Nullable
-    private static AsteroidComposition build(Object2LongMap<ResourceLocation> counts) {
+    private static AsteroidComposition build(Object2LongMap<Identifier> counts) {
         long total = 0;
         for (var e : counts.object2LongEntrySet()) {
             if (BuiltInRegistries.BLOCK.containsKey(e.getKey())) {
@@ -114,7 +114,7 @@ public final class AsteroidComposition {
             if (e.getLongValue() <= 0 || !BuiltInRegistries.BLOCK.containsKey(e.getKey())) {
                 continue;
             }
-            Block block = BuiltInRegistries.BLOCK.get(e.getKey());
+            Block block = BuiltInRegistries.BLOCK.getValue(e.getKey());
             if (block == Blocks.AIR) {
                 continue;
             }
