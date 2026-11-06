@@ -109,7 +109,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     // brief chunk loads for mapping new ground
     private static final TicketType<ChunkPos> SCAN_TICKET = TicketType.create(EnderLaserQuarry.MOD_ID + "_scan",
         Comparator.comparingLong(ChunkPos::toLong), 100);
-    private static final int SCAN_LOAD_WAIT = 200;
+    private static final int SCAN_LOAD_WAIT = 1200;
     private static final int KNOWN_PER_STEP = 32;
 
     // Small radar on top of the controller

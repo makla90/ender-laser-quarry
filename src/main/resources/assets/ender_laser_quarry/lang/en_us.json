@@ -179,7 +179,7 @@
   "message.ender_laser_quarry.controller.chunk_claimed": "That chunk is claimed by another player",
   "message.ender_laser_quarry.controller.box_claimed": "Left out %s chunks claimed by other players",
   "message.ender_laser_quarry.controller.chunk_claimed_skipped": "Laser Quarry: chunk [%s, %s] is claimed by another player now, skipped it",
-  "message.ender_laser_quarry.controller.no_scanner": "Link the Crystal Obelisk to a Launch Pad (Laser Linker) and put its satellite in orbit",
+  "message.ender_laser_quarry.controller.no_scanner": "Link this controller to a Launch Pad Controller (Laser Linker) and put its satellite in orbit",
   "gui.ender_laser_quarry.obelisk.status": "Status: %s",
   "gui.ender_laser_quarry.obelisk.dishes": "Dishes: %s in use, %s linked",
   "gui.ender_laser_quarry.obelisk.satellite": "Satellite: %s",

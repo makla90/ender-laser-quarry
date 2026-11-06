@@ -241,7 +241,7 @@ public final class QuarryConfig {
         VOID_MAX_QUEUED = builder.comment("Asteroids a controller can queue.")
             .defineInRange("maxQueued", 8, 1, 40);
         VOID_NETHER_CHANCE = builder.comment("Share of found asteroids that come from Nether biomes.")
-            .defineInRange("netherChance", 0.25, 0.0, 1.0);
+            .defineInRange("netherChance", 0.15, 0.0, 1.0);
         VOID_END_CHANCE = builder.comment("Share of found asteroids that come from End biomes. The rest is Overworld (and modded dimensions).")
             .defineInRange("endChance", 0.15, 0.0, 1.0);
         VOID_ANALYZE_TICKS = builder.comment("Ticks analyzing an asteroid takes at least (longer while its biome is still being measured).")
