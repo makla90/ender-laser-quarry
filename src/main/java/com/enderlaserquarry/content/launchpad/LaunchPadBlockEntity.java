@@ -31,6 +31,7 @@ import com.enderlaserquarry.content.asteroid.AsteroidField;
 import com.enderlaserquarry.content.controller.QuarryControllerBlockEntity;
 import com.enderlaserquarry.content.controller.MinimapSnapshot;
 import com.enderlaserquarry.content.launchpad.FlightPhase.Mission;
+import com.enderlaserquarry.content.obelisk.CrystalGlow;
 import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.enderlaserquarry.content.port.StructurePortBlockEntity;
 import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
@@ -140,6 +141,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
     private static final String SCAN_INDEX = "ScanIndex";
     private static final String SCAN_RADIUS = "ScanRadius";
     private static final String BEAM_TARGET = "BeamTarget";
+    private static final String BEAM_TIER = "BeamTier";
+    private static final String BEAM_GLOW = "BeamGlow";
     private static final String DRAWN_TIER = "DrawnSatelliteTier";
     private static final String SCAN_IMAGES = "ScanImages";
     private static final String ASTEROIDS = "Asteroids";
@@ -218,6 +221,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
     // block being lasered via our satellite
     @Nullable
     private BlockPos beamTarget;
+    private QuarryTier beamTier = QuarryTier.BASIC;
+    private CrystalGlow beamGlow = CrystalGlow.LASER;
 
     private boolean structureChecked;
 
@@ -1147,11 +1152,27 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         return beamTarget;
     }
 
+    public QuarryTier getBeamTier() {
+        return beamTier;
+    }
+
+    // the crystal on the firing obelisk, picks the beam colours
+    public CrystalGlow getBeamGlow() {
+        return beamGlow;
+    }
+
     public void setBeamTarget(@Nullable BlockPos target) {
-        if (Objects.equals(beamTarget, target)) {
+        setBeamTarget(target, beamTier, beamGlow);
+    }
+
+    // tier = the firing controller's, picks the beam style
+    public void setBeamTarget(@Nullable BlockPos target, QuarryTier tier, CrystalGlow glow) {
+        if (Objects.equals(beamTarget, target) && beamTier == tier && beamGlow == glow) {
             return;
         }
         beamTarget = target == null ? null : target.immutable();
+        beamTier = tier;
+        beamGlow = glow;
         syncToClients();
     }
 
@@ -1600,6 +1621,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         QuarryTier drawn = SatelliteItem.tierOf(!payload.isEmpty() ? payload : orbiting);
         tag.putInt(DRAWN_TIER, drawn == null ? 0 : drawn.ordinal());
         tag.storeNullable(BEAM_TARGET, BlockPos.CODEC, beamTarget);
+        tag.putInt(BEAM_TIER, beamTier.ordinal());
+        tag.putInt(BEAM_GLOW, beamGlow.ordinal());
         tag.storeNullable(PAD_CENTER, BlockPos.CODEC, padCenter);
         tag.putLong(LINK_FLASH, linkFlashStart);
         tag.putInt(ORBIT_DX, orbitDx);
@@ -1636,6 +1659,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         scanRadius = tag.getIntOr(SCAN_RADIUS, scanRadius);
         drawnSatelliteTier = QuarryTier.values()[Math.floorMod(tag.getIntOr(DRAWN_TIER, 0), QuarryTier.values().length)];
         beamTarget = tag.read(BEAM_TARGET, BlockPos.CODEC).orElse(null);
+        beamTier = QuarryTier.values()[Math.floorMod(tag.getIntOr(BEAM_TIER, 0), QuarryTier.values().length)];
+        beamGlow = CrystalGlow.values()[Math.floorMod(tag.getIntOr(BEAM_GLOW, 1), CrystalGlow.values().length)];
         padCenter = tag.read(PAD_CENTER, BlockPos.CODEC).orElse(null);
         linkFlashStart = tag.getLongOr(LINK_FLASH, NEVER);
         orbitDx = tag.getIntOr(ORBIT_DX, 0);

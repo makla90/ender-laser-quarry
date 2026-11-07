@@ -13,11 +13,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
-    private static final int TEXT_COLOR = 0x404040;
-    private static final int GOOD = 0x2F8F2F;
-    private static final int BAD = 0xA02020;
-    private static final int INFO = 0x1F5FBF;
-    private static final int FLIGHT = 0x7A2FBF;
+    private static final int TEXT_COLOR = 0xFF404040;
+    private static final int GOOD = 0xFF2F8F2F;
+    private static final int BAD = 0xFFA02020;
+    private static final int INFO = 0xFF1F5FBF;
+    private static final int FLIGHT = 0xFF7A2FBF;
 
     private static final int TANK_X = 12;
     private static final int TANK_Y = 18;

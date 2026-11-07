@@ -14,7 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 import java.util.List;
 
 public class SatelliteDishScreen extends MachineScreen<SatelliteDishMenu> {
-    private static final int TEXT_COLOR = 0x404040;
+    private static final int TEXT_COLOR = 0xFF404040;
 
     public SatelliteDishScreen(SatelliteDishMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, 166);
@@ -63,21 +63,21 @@ public class SatelliteDishScreen extends MachineScreen<SatelliteDishMenu> {
         g.text(font, obelisk != null
                 ? Component.literal(obelisk.getX() + ", " + obelisk.getY() + ", " + obelisk.getZ())
                 : Component.translatable("gui.ender_laser_quarry.dish.not_linked"),
-            x + 4, 29, obelisk != null ? 0x1F5FBF : 0xA02020, false);
+            x + 4, 29, obelisk != null ? 0xFF1F5FBF : 0xFFA02020, false);
 
         // straight from the slot, the synced state lags a few ticks
         if (!EndergyCapacitors.fits(dish.getTier(), dish.getCapacitorItem())) {
-            g.text(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor"), x, 40, 0xC02020, false);
-            g.text(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor_hint"), x + 4, 51, 0xC02020, false);
+            g.text(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor"), x, 40, 0xFFC02020, false);
+            g.text(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor_hint"), x + 4, 51, 0xFFC02020, false);
             return;
         }
 
         g.text(font, Component.translatable(dish.isFormed()
             ? "gui.ender_laser_quarry.dish.formed"
-            : "gui.ender_laser_quarry.dish.incomplete"), x, 40, dish.isFormed() ? 0x2F8F2F : 0xA02020, false);
+            : "gui.ender_laser_quarry.dish.incomplete"), x, 40, dish.isFormed() ? 0xFF2F8F2F : 0xFFA02020, false);
 
         g.text(font, Component.translatable(dish.isBeaming()
             ? "gui.ender_laser_quarry.dish.beaming"
-            : "gui.ender_laser_quarry.dish.idle"), x, 51, dish.isBeaming() ? 0x7A2FBF : TEXT_COLOR, false);
+            : "gui.ender_laser_quarry.dish.idle"), x, 51, dish.isBeaming() ? 0xFF7A2FBF : TEXT_COLOR, false);
     }
 }

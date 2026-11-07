@@ -48,9 +48,6 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
     private static final int BURN_CORE = 0xF0FAFF;
     private static final float PUFF_INTERVAL = 67;
     private static final float PUFF_TICKS = 5;
-    // nether star colours, from game time so both beams match
-    private static final int[] MINING_BEAM = { 0xB88CFF, 0x8CD8FF, 0xFFE08C, 0xE6B4FF };
-    static final int MINING_PULSE = 0xFFF8EC;
     public static final int VIEW_DISTANCE = 256;
 
     // mini radar -> obelisk
@@ -58,10 +55,6 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
     private static final int LINK_BEAM = 0x1C6C80;
     private static final float PULSE_INTERVAL = 80;
     private static final float PULSE_TRAVEL = 24;
-
-    static int miningBeam(float time) {
-        return CrystalObeliskRenderer.shimmer(MINING_BEAM, time * 0.03f);
-    }
 
     private final RocketModel rocket;
     private final SatelliteModel satellite;
@@ -325,7 +318,8 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         poseStack.popPose();
 
         if (reflecting) {
-            LaserBeamRenderer.render(poseStack, buffers, mirrorPos, targetCentre, miningBeam(time), 0.12f, time);
+            TierBeamRenderer.renderDownlink(poseStack, buffers, mirrorPos, targetCentre, pad.getBeamTier(), pad.getBeamGlow(), time,
+                targetCentre.y < mirrorPos.y);
         }
 
         if (scanning != null) {

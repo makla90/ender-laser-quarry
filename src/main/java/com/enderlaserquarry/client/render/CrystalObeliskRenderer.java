@@ -92,14 +92,16 @@ public class CrystalObeliskRenderer extends LiveRenderer<CrystalObeliskBlockEnti
             if (target != null) {
                 Vec3 from = center.add(0, bob + 0.55, 0);
                 Vec3 to = from.lerp(target.subtract(Vec3.atLowerCornerOf(obelisk.getBlockPos())), uplink);
-                LaserBeamRenderer.render(poseStack, buffers, from, to, LaunchPadRenderer.miningBeam(time), 0.12f * (1 + 1.5f * flash), time);
+                CrystalGlow glow = beamGlow(obelisk);
+                int pulse = TierBeamRenderer.pulse(glow);
+                TierBeamRenderer.renderUplink(poseStack, buffers, from, to, obelisk.getBeamTier(), glow, 0.12f * (1 + 1.5f * flash), time);
                 if (uplink < 1) {
-                    LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, 0.9), to, LaunchPadRenderer.MINING_PULSE, 0.3f, time);
+                    LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, 0.9), to, pulse, 0.3f, time);
                 } else {
                     for (int i = 0; i < PULSES; i++) {
                         float up = frac(time * 0.015f + i / (float) PULSES);
                         LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, up), from.lerp(to, Math.min(1, up + 0.03f)),
-                            LaunchPadRenderer.MINING_PULSE, 0.2f, time);
+                            pulse, 0.2f, time);
                     }
                 }
             }
@@ -115,6 +117,14 @@ public class CrystalObeliskRenderer extends LiveRenderer<CrystalObeliskBlockEnti
 
     private static float frac(float value) {
         return value - Mth.floor(value);
+    }
+
+    private static CrystalGlow beamGlow(CrystalObeliskBlockEntity obelisk) {
+        if (obelisk.hasVoidCrystal()) {
+            return CrystalGlow.VOID;
+        }
+        BlockState state = obelisk.getBlockState();
+        return state.hasProperty(CrystalGlow.PROPERTY) && state.getValue(CrystalGlow.PROPERTY) == CrystalGlow.PULSATING ? CrystalGlow.PULSATING : CrystalGlow.LASER;
     }
 
     private static int[] palette(CrystalObeliskBlockEntity obelisk) {

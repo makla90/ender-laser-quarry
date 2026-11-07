@@ -17,12 +17,12 @@ import java.util.List;
 
 /** Crystal slot in the middle, the obelisk's status under it. */
 public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObeliskMenu> {
-    private static final int TEXT_COLOR = 0x404040;
+    private static final int TEXT_COLOR = 0xFF404040;
     /** Slot face colour, mostly opaque: the crystal shows faintly in the empty slot. */
     private static final int GHOST_COVER = 0xB08B8B8B;
     private static final int STATUS_Y = 44;
     /** Enchantment names, like their tooltip purple, darkened for the light panel. */
-    private static final int ENCHANT_COLOR = 0x7A2FBF;
+    private static final int ENCHANT_COLOR = 0xFF7A2FBF;
 
     private final ItemStack ghost = new ItemStack(ModItems.LASER_CRYSTAL.get());
 
