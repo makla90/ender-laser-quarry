@@ -5,6 +5,9 @@ import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
 import com.enderlaserquarry.init.ModBlockEntities;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -26,6 +29,17 @@ public class QuarryControllerBlock extends MachineBlock<QuarryControllerBlockEnt
     @Override
     public QuarryTier getTier() {
         return tier;
+    }
+
+    // comparator: how full the output slots are, like a chest
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof QuarryControllerBlockEntity controller ? controller.getComparatorSignal() : 0;
     }
 
     @Override

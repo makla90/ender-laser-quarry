@@ -1501,6 +1501,25 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     // region Void mining (asteroids)
 
+    // 0 = output empty, 15 = every slot full
+    public int getComparatorSignal() {
+        MachineInventory inventory = getInventory();
+        if (inventory == null) {
+            return 0;
+        }
+        float fill = 0;
+        boolean any = false;
+        int slots = OUTPUT.getAccesses().size();
+        for (SingleSlotAccess slot : OUTPUT.getAccesses()) {
+            ItemStack stack = slot.getItemStack(inventory);
+            if (!stack.isEmpty()) {
+                fill += stack.getCount() / (float) Math.min(inventory.getSlotLimit(slot.getIndex()), stack.getMaxStackSize());
+                any = true;
+            }
+        }
+        return any ? Mth.floor(fill / slots * 14) + 1 : 0;
+    }
+
     public boolean isVoidMode() {
         CrystalObeliskBlockEntity obelisk = getObelisk();
         return obelisk != null && obelisk.hasVoidCrystal();

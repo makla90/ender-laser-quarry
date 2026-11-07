@@ -56,24 +56,43 @@ public final class SamplingDimensions {
         wipe(event.getServer());
     }
 
-    private static void wipe(MinecraftServer server) {
+    public static void wipe(MinecraftServer server) {
         Path root = server.getWorldPath(LevelResource.ROOT);
         for (ResourceKey<Level> key : new ResourceKey[]{OVERWORLD, NETHER, END}) {
-            Path folder = DimensionType.getStorageFolder(key, root);
-            if (!Files.isDirectory(folder)) {
-                continue;
-            }
-            try (Stream<Path> files = Files.walk(folder)) {
-                files.sorted(Comparator.reverseOrder()).forEach(path -> {
-                    try {
-                        Files.deleteIfExists(path);
-                    } catch (IOException e) {
-                        EnderLaserQuarry.LOGGER.warn("Couldn't delete sampling file {}", path, e);
-                    }
-                });
-            } catch (IOException e) {
-                EnderLaserQuarry.LOGGER.warn("Couldn't clear sampling folder {}", folder, e);
-            }
+            deleteTree(DimensionType.getStorageFolder(key, root));
+        }
+        // other mods keep per-dimension data in their own folders (Astral Sorcery: astralsorcery/DIM_ender_laser_quarry_sampling_overworld)
+        try (Stream<Path> dirs = Files.find(root, 3, (path, attrs) -> attrs.isDirectory() && isSamplingFolder(path))) {
+            dirs.toList().forEach(SamplingDimensions::deleteTree);
+        } catch (IOException e) {
+            EnderLaserQuarry.LOGGER.warn("Couldn't look for sampling leftovers in {}", root, e);
+        }
+    }
+
+    private static boolean isSamplingFolder(Path path) {
+        String name = path.getFileName() == null ? "" : path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+        if (name.contains(EnderLaserQuarry.MOD_ID) && name.contains("sampling")) {
+            return true;
+        }
+        Path parent = path.getParent();
+        return name.startsWith("sampling_") && parent != null && parent.getFileName() != null
+            && parent.getFileName().toString().equals(EnderLaserQuarry.MOD_ID);
+    }
+
+    private static void deleteTree(Path folder) {
+        if (!Files.isDirectory(folder)) {
+            return;
+        }
+        try (Stream<Path> files = Files.walk(folder)) {
+            files.sorted(Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    EnderLaserQuarry.LOGGER.warn("Couldn't delete sampling file {}", path, e);
+                }
+            });
+        } catch (IOException e) {
+            EnderLaserQuarry.LOGGER.warn("Couldn't clear sampling folder {}", folder, e);
         }
     }
 
