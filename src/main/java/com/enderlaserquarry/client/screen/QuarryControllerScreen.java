@@ -1,5 +1,6 @@
 package com.enderlaserquarry.client.screen;
 
+import com.enderlaserquarry.content.QuarryStates;
 import com.enderio.enderio.client.foundation.widgets.ioconfig.IOConfigOverlay;
 import com.enderio.enderio.client.content.machines.gui.screen.base.MachineScreen;
 import com.enderio.enderio.client.content.machines.gui.widget.ActivityWidget;
@@ -1316,7 +1317,11 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
         Component status;
         ChunkPos target = menu.getTargetChunk();
-        if (padPos == null && snapshot != null) {
+        int statusColor = 0xFFFFFFFF;
+        if (menu.getMachineStates().contains(QuarryStates.CRYSTAL_TIER_TOO_LOW)) {
+            status = Component.translatable("gui.ender_laser_quarry.controller.crystal_too_weak");
+            statusColor = 0xFFFF5555;
+        } else if (padPos == null && snapshot != null) {
             status = Component.translatable("gui.ender_laser_quarry.controller.link_hint");
         } else if (snapshot != null && !hasScannedChunk()) {
             status = Component.translatable("gui.ender_laser_quarry.controller.scan_hint");
@@ -1333,7 +1338,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         } else {
             status = Component.translatable("gui.ender_laser_quarry.controller.selected", queue.size(), compact(menu.getBlocksMined()));
         }
-        g.drawString(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, 0xFFFFFFFF, false);
+        g.drawString(font, font.plainSubstrByWidth(status.getString(), MAP_SIZE - 4), MAP_X + 2, stripY + 2, statusColor, false);
 
         if (isMapInteractive()) {
             renderZoomLabel(g, zoom);

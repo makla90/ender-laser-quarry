@@ -78,6 +78,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private static final String FORMED = "Formed";
     private static final String BEAMING = "Beaming";
     private static final String HOT = "RunningHot";
+    private static final String BEAM_TIER = "BeamTier";
     private static final String SATELLITE_POS = "SatellitePos";
     private static final String DISHES = "Dishes";
     private static final String CONTROLLER_POS = "ControllerPos";
@@ -114,6 +115,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private long lastBeamTick = NEVER;
     // synced: worn without coolant lately
     private boolean hot;
+    private QuarryTier beamTier = QuarryTier.BASIC;
     private long lastHotTick = NEVER;
     // linked launch pad, synced for the radar animation
     @Nullable
@@ -580,8 +582,11 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private void updateSatellitePos() {
         LaunchPadBlockEntity pad = getSatellitePad();
         BlockPos now = pad != null ? pad.getBlockPos() : null;
-        if (!Objects.equals(now, satellitePos)) {
+        QuarryControllerBlockEntity controller = getController();
+        QuarryTier tier = controller != null ? controller.getTier() : QuarryTier.BASIC;
+        if (!Objects.equals(now, satellitePos) || tier != beamTier) {
             satellitePos = now;
+            beamTier = tier;
             setChanged();
             syncToClients();
         }
@@ -718,11 +723,16 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         if (isCrystalBroken()) {
             return QuarryStates.CRYSTAL_BROKEN;
         }
-        QuarryControllerBlockEntity controller = getController();
-        if (controller != null && crystal.getItem() instanceof LaserCrystalItem laser && !laser.worksWith(controller.getTier())) {
+        if (isCrystalTierTooLow()) {
             return QuarryStates.CRYSTAL_TIER_TOO_LOW;
         }
         return getActiveDishes().isEmpty() ? QuarryStates.NO_DISHES : null;
+    }
+
+    // e.g. a Pulsating crystal over an Enhanced or Ender controller
+    public boolean isCrystalTierTooLow() {
+        QuarryControllerBlockEntity controller = getController();
+        return hasCrystal && controller != null && crystal.getItem() instanceof LaserCrystalItem laser && !laser.worksWith(controller.getTier());
     }
 
     public boolean hasSky() {
@@ -774,6 +784,11 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     // wearing without coolant
     public boolean isRunningHot() {
         return hot;
+    }
+
+    // the ring controller's tier, picks the uplink beam style
+    public QuarryTier getBeamTier() {
+        return beamTier;
     }
 
     // Called every tick the controller wants to fire. Returns null once powered up.
@@ -1056,6 +1071,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         tag.putBoolean(FORMED, formed);
         tag.putBoolean(BEAMING, beaming);
         tag.putBoolean(HOT, hot);
+        tag.putInt(BEAM_TIER, beamTier.ordinal());
         if (satellitePos != null) {
             tag.put(SATELLITE_POS, NbtUtils.writeBlockPos(satellitePos));
         }
@@ -1074,6 +1090,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         formed = tag.getBoolean(FORMED);
         beaming = tag.getBoolean(BEAMING);
         hot = tag.getBoolean(HOT);
+        beamTier = QuarryTier.values()[Math.floorMod(tag.getInt(BEAM_TIER), QuarryTier.values().length)];
         satellitePos = NbtUtils.readBlockPos(tag, SATELLITE_POS).orElse(null);
         if (tag.contains(POWER_UP_START)) {
             powerUpStart = tag.getLong(POWER_UP_START);

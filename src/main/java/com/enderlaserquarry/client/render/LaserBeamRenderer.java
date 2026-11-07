@@ -40,20 +40,21 @@ public final class LaserBeamRenderer {
 
     private static void prism(VertexConsumer consumer, Matrix4f pose, Vec3 from, Vec3 to, Vec3 u, Vec3 v, float halfWidth,
                               float r, float g, float b, float a) {
-        Vec3[] offsets = {
-            u.add(v).scale(halfWidth),
-            u.subtract(v).scale(halfWidth),
-            u.reverse().subtract(v).scale(halfWidth),
-            v.subtract(u).scale(halfWidth)
-        };
+        cone(consumer, pose, from, to, u, v, halfWidth, halfWidth, r, g, b, a);
+    }
+
+    // square frustum: halfFrom wide at from, halfTo at to
+    static void cone(VertexConsumer consumer, Matrix4f pose, Vec3 from, Vec3 to, Vec3 u, Vec3 v, float halfFrom, float halfTo,
+                     float r, float g, float b, float a) {
+        Vec3[] offsets = { u.add(v), u.subtract(v), u.reverse().subtract(v), v.subtract(u) };
 
         for (int i = 0; i < 4; i++) {
             Vec3 o1 = offsets[i];
             Vec3 o2 = offsets[(i + 1) % 4];
-            Vec3 p1 = from.add(o1);
-            Vec3 p2 = from.add(o2);
-            Vec3 p3 = to.add(o2);
-            Vec3 p4 = to.add(o1);
+            Vec3 p1 = from.add(o1.scale(halfFrom));
+            Vec3 p2 = from.add(o2.scale(halfFrom));
+            Vec3 p3 = to.add(o2.scale(halfTo));
+            Vec3 p4 = to.add(o1.scale(halfTo));
 
             // Both windings, since the render type culls back faces
             quad(consumer, pose, p1, p2, p3, p4, r, g, b, a);
@@ -61,7 +62,7 @@ public final class LaserBeamRenderer {
         }
     }
 
-    private static void quad(VertexConsumer consumer, Matrix4f pose, Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4,
+    static void quad(VertexConsumer consumer, Matrix4f pose, Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4,
                              float r, float g, float b, float a) {
         vertex(consumer, pose, p1, r, g, b, a);
         vertex(consumer, pose, p2, r, g, b, a);

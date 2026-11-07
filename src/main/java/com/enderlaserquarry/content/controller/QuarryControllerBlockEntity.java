@@ -40,6 +40,7 @@ import com.enderlaserquarry.content.asteroid.AsteroidComposition;
 import com.enderlaserquarry.content.asteroid.AsteroidField;
 import com.enderlaserquarry.content.asteroid.sampling.BiomeSampling;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
+import com.enderlaserquarry.content.obelisk.CrystalGlow;
 import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
 import com.enderlaserquarry.init.ModBlockEntities;
@@ -982,7 +983,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         tickChunkLoading(serverLevel);
 
         if (!running) {
-            if (isVoidMode()) {
+            CrystalObeliskBlockEntity obelisk = getObelisk();
+            if (obelisk != null && obelisk.isCrystalTierTooLow()) {
+                // say it before Start is pressed
+                setProblem(QuarryStates.CRYSTAL_TIER_TOO_LOW);
+            } else if (isVoidMode()) {
                 setProblem(asteroidQueue.isEmpty() ? QuarryStates.NO_TARGET : null);
             } else if (queue.isEmpty()) {
                 setProblem(QuarryStates.NO_TARGET);
@@ -1828,7 +1833,10 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
 
         lastBeamUpdate = now;
-        pad.setBeamTarget(target);
+        CrystalObeliskBlockEntity obelisk = getObelisk();
+        BlockState obeliskState = obelisk != null ? obelisk.getBlockState() : null;
+        CrystalGlow glow = obeliskState != null && obeliskState.hasProperty(CrystalGlow.PROPERTY) ? obeliskState.getValue(CrystalGlow.PROPERTY) : CrystalGlow.LASER;
+        pad.setBeamTarget(target, getTier(), glow);
     }
 
     private void clearBeam() {
