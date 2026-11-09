@@ -69,9 +69,6 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> ENDER_SATELLITE_DISH_PLATING = blockItem(ModBlocks.ENDER_SATELLITE_DISH_PLATING);
     public static final DeferredItem<BlockItem> ENHANCED_QUARRY_PLATING = blockItem(ModBlocks.ENHANCED_QUARRY_PLATING);
     public static final DeferredItem<BlockItem> ENDER_QUARRY_PLATING = blockItem(ModBlocks.ENDER_QUARRY_PLATING);
-    public static final DeferredItem<BlockItem> QUARRY_STRUCTURE = blockItem(ModBlocks.QUARRY_STRUCTURE);
-
-    public static final DeferredItem<BlockItem> TRASH_CAN = blockItem(ModBlocks.TRASH_CAN);
 
     public static final DeferredItem<LaserCrystalItem> PULSATING_LASER_CRYSTAL = ITEMS.registerItem("pulsating_laser_crystal",
         props -> new LaserCrystalItem(QuarryTier.BASIC, props), () -> new Item.Properties().durability(LaserCrystalItem.PULSATING_DURABILITY).rarity(Rarity.UNCOMMON));

@@ -47,7 +47,6 @@ public final class ModCreativeTabs {
             output.accept(ModItems.PULSATING_LASER_CRYSTAL.get());
             output.accept(ModItems.LASER_CRYSTAL.get());
             output.accept(ModItems.VOID_LASER_CRYSTAL.get());
-            output.accept(ModItems.TRASH_CAN.get());
         })
         .build());
 

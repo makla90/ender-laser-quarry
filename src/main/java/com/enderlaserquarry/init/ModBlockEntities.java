@@ -12,7 +12,6 @@ import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import com.enderlaserquarry.content.trash.TrashCanBlock;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -46,10 +45,6 @@ public final class ModBlockEntities {
         // multiblock cores have no capabilities, everything goes through the ports
 
         event.registerBlockEntity(Capabilities.Energy.BLOCK, GROUND_RADAR.get(), (radar, side) -> radar.getEnergy());
-
-        // trash can has no BE
-        event.registerBlock(Capabilities.Item.BLOCK, (level, pos, state, be, side) -> TrashCanBlock.ITEM_VOID, ModBlocks.TRASH_CAN.get());
-        event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, be, side) -> TrashCanBlock.FLUID_VOID, ModBlocks.TRASH_CAN.get());
 
         // ports, per side IO mode
         event.registerBlockEntity(Capabilities.Item.BLOCK, STRUCTURE_PORT.get(), StructurePortBlockEntity::getItemHandler);
