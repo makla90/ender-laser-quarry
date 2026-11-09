@@ -50,8 +50,6 @@
   "block.ender_laser_quarry.satellite_dish_port": "Satellite Dish I/O Port",
   "block.ender_laser_quarry.enhanced_satellite_dish_plating": "Enhanced Satellite Dish Plating",
   "block.ender_laser_quarry.ender_satellite_dish_plating": "Ender Satellite Dish Plating",
-  "block.ender_laser_quarry.quarry_structure": "Quarry Structure Block",
-  "block.ender_laser_quarry.trash_can": "Trash Can",
   "tooltip.ender_laser_quarry.port.launch_pad": "Replaces a Launch Pad Plating on the outer ring: pipe in Rocket Fuel, rockets and satellites. Yeta Wrench a side to set it: none / push / pull / both / disabled",
   "tooltip.ender_laser_quarry.port.laser_quarry": "Replaces a Laser Quarry Plating of any tier (it takes that plating's look): power the quarry (the Controller, which feeds the Ground Radar; each Satellite Dish is powered through its own Satellite Dish I/O Port), get the mined items out (the only way: the controller has no IO). Yeta Wrench a side to set it: none / push / pull / both / disabled",
   "tooltip.ender_laser_quarry.port.satellite_dish": "Replaces a Satellite Dish Plating of any tier (it takes that plating's look) around a dish: the only way to power the dish. Yeta Wrench a side to set it: none / push / pull / both / disabled",

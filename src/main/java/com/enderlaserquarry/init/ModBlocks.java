@@ -13,11 +13,9 @@ import com.enderlaserquarry.content.port.QuarryPortBlock;
 import com.enderlaserquarry.content.port.StructurePortBlock;
 import com.enderlaserquarry.content.port.TieredPortBlock;
 import com.enderlaserquarry.content.radar.GroundRadarBlock;
-import com.enderlaserquarry.content.trash.TrashCanBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
@@ -139,14 +137,6 @@ public final class ModBlocks {
         "enhanced_laser_quarry_plating", QuarryPlatingBlock::new, machineProps().strength(3f, 12));
     public static final DeferredBlock<QuarryPlatingBlock> ENDER_QUARRY_PLATING = BLOCKS.registerBlock(
         "ender_laser_quarry_plating", QuarryPlatingBlock::new, machineProps().strength(3f, 12));
-
-    // old wall block, kept so walls in existing worlds don't vanish
-    public static final DeferredBlock<Block> QUARRY_STRUCTURE = BLOCKS.registerSimpleBlock(
-        "quarry_structure", BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.5f, 6).requiresCorrectToolForDrops());
-
-    // creative only
-    public static final DeferredBlock<TrashCanBlock> TRASH_CAN = BLOCKS.registerBlock(
-        "trash_can", TrashCanBlock::new, machineProps());
 
     private static BlockBehaviour.Properties machineProps() {
         // Same as Ender IO's machines

@@ -12,8 +12,6 @@
     "ender_laser_quarry:crystal_obelisk",
     "#ender_laser_quarry:laser_quarry_frame",
     "#ender_laser_quarry:satellite_dish_frame",
-    "ender_laser_quarry:launch_pad_port",
-    "ender_laser_quarry:quarry_structure",
-    "ender_laser_quarry:trash_can"
+    "ender_laser_quarry:launch_pad_port"
   ]
 }
