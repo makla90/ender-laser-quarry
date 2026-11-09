@@ -6,7 +6,8 @@ import com.enderlaserquarry.content.obelisk.LaserCrystalItem;
 import com.enderlaserquarry.init.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.enderio.core.client.gui.screen.EnderContainerScreen;
+import com.enderio.enderio.client.content.machines.gui.widget.ActivityWidget;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.player.Inventory;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Crystal slot in the middle, the obelisk's status under it. */
-public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObeliskMenu> {
+public class CrystalObeliskScreen extends EnderContainerScreen<CrystalObeliskMenu> {
     private static final int TEXT_COLOR = 0x404040;
     /** Slot face colour, mostly opaque: the crystal shows faintly in the empty slot. */
     private static final int GHOST_COVER = 0xB08B8B8B;
@@ -32,12 +33,15 @@ public class CrystalObeliskScreen extends AbstractContainerScreen<CrystalObelisk
         imageHeight = 166;
         // no "Inventory" label: the status lines use that room
         inventoryLabelY = -10_000;
+        shouldRenderLabels = true;
     }
 
     @Override
     protected void init() {
         super.init();
-        titleLabelX = (imageWidth - font.width(title)) / 2;
+        centerAlignTitleLabelX();
+        // Ender IO status icon, left of the crystal (the enchantment lines use the right side)
+        addRenderableWidget(new ActivityWidget(leftPos + 8, topPos + CrystalObeliskMenu.CRYSTAL_Y, menu::getStates));
     }
 
     @Override
