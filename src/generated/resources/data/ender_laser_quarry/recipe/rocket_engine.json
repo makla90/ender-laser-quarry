@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": "minecraft:blast_furnace",
+    "D": "#c:ingots/dark_steel",
+    "F": "minecraft:fire_charge",
+    "I": "enderio:industrial_insulation",
+    "R": "#c:ingots/redstone_alloy"
+  },
+  "pattern": [
+    "DFD",
+    "RBR",
+    "DID"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:rocket_engine"
+  }
+}

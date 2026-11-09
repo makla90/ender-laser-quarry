@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": "enderio:conduit_binder",
+    "G": "#c:gears/iron",
+    "H": "minecraft:hopper",
+    "P": [
+      "ender_laser_quarry:laser_quarry_plating",
+      "ender_laser_quarry:enhanced_laser_quarry_plating",
+      "ender_laser_quarry:ender_laser_quarry_plating"
+    ],
+    "U": "minecraft:bucket"
+  },
+  "pattern": [
+    "BHB",
+    "GPG",
+    "BUB"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:laser_quarry_port"
+  }
+}

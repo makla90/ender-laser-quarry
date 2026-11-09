@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "ender_laser_quarry:item/enhanced_satellite_dish",
+    "model": {
+      "type": "ender_laser_quarry:machine_item",
+      "block": "ender_laser_quarry:enhanced_satellite_dish"
+    }
+  }
+}

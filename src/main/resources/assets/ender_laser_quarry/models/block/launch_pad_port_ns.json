@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "top": "ender_laser_quarry:block/launch_pad_plating_top_ns",
-    "side": "ender_laser_quarry:block/launch_pad_port_side",
-    "bottom": "ender_laser_quarry:block/launch_pad_port_bottom"
-  }
-}

@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "bottom": "ender_laser_quarry:block/quarry_machine_bottom",
+    "front": "ender_laser_quarry:block/launch_pad_front",
+    "side": "ender_laser_quarry:block/launch_pad_side",
+    "top": "ender_laser_quarry:block/launch_pad_controller_top_nsw"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "variants": {
+    "east=false,north=false,south=false,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port"
+    },
+    "east=false,north=false,south=false,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_w"
+    },
+    "east=false,north=false,south=true,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_s"
+    },
+    "east=false,north=false,south=true,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_sw"
+    },
+    "east=false,north=true,south=false,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_n"
+    },
+    "east=false,north=true,south=false,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_nw"
+    },
+    "east=false,north=true,south=true,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_ns"
+    },
+    "east=false,north=true,south=true,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_nsw"
+    },
+    "east=true,north=false,south=false,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_e"
+    },
+    "east=true,north=false,south=false,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_ew"
+    },
+    "east=true,north=false,south=true,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_es"
+    },
+    "east=true,north=false,south=true,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_esw"
+    },
+    "east=true,north=true,south=false,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_ne"
+    },
+    "east=true,north=true,south=false,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_new"
+    },
+    "east=true,north=true,south=true,west=false": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_nes"
+    },
+    "east=true,north=true,south=true,west=true": {
+      "type": "enderio:io_overlay",
+      "model": "ender_laser_quarry:block/launch_pad_port_nesw"
+    }
+  }
+}

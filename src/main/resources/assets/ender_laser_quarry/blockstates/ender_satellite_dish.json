@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "ender_laser_quarry:block/ender_satellite_dish" },
-    "facing=east": { "model": "ender_laser_quarry:block/ender_satellite_dish", "y": 90 },
-    "facing=south": { "model": "ender_laser_quarry:block/ender_satellite_dish", "y": 180 },
-    "facing=west": { "model": "ender_laser_quarry:block/ender_satellite_dish", "y": 270 }
-  }
-}

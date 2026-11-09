@@ -1,0 +1,292 @@
+{
+  "variants": {
+    "east=false,facing=east,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_w",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_s",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_sw",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_n",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nw",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ns",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=east,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nsw",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=false,facing=north,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller"
+    },
+    "east=false,facing=north,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_w"
+    },
+    "east=false,facing=north,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_s"
+    },
+    "east=false,facing=north,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_sw"
+    },
+    "east=false,facing=north,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_n"
+    },
+    "east=false,facing=north,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nw"
+    },
+    "east=false,facing=north,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ns"
+    },
+    "east=false,facing=north,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nsw"
+    },
+    "east=false,facing=south,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_w",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_s",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_sw",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_n",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nw",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ns",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=south,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nsw",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=false,facing=west,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_w",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_s",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_sw",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_n",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nw",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ns",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=false,facing=west,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nsw",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=east,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_e",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ew",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_es",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_esw",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ne",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_new",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nes",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=east,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nesw",
+      "uvlock": true,
+      "y": 90
+    },
+    "east=true,facing=north,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_e"
+    },
+    "east=true,facing=north,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ew"
+    },
+    "east=true,facing=north,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_es"
+    },
+    "east=true,facing=north,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_esw"
+    },
+    "east=true,facing=north,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ne"
+    },
+    "east=true,facing=north,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_new"
+    },
+    "east=true,facing=north,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nes"
+    },
+    "east=true,facing=north,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nesw"
+    },
+    "east=true,facing=south,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_e",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ew",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_es",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_esw",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ne",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_new",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nes",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=south,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nesw",
+      "uvlock": true,
+      "y": 180
+    },
+    "east=true,facing=west,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_e",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ew",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_es",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_esw",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_ne",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_new",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nes",
+      "uvlock": true,
+      "y": 270
+    },
+    "east=true,facing=west,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/launch_pad_controller_nesw",
+      "uvlock": true,
+      "y": 270
+    }
+  }
+}

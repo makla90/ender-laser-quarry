@@ -1,0 +1,4 @@
+// 26.1.2	2026-11-09T13:56:46.7173386	Tags for minecraft:item mod id ender_laser_quarry
+37204b00763cf93890f6ac0ac6a260a4ec758906 data/ender_laser_quarry/tags/item/crystal_repair/basic.json
+974afae224e214fc7a1652c0a72dc2ac5700062a data/ender_laser_quarry/tags/item/crystal_repair/ender.json
+39bb0f7613603bf23d48a476aec7169eff2e42a8 data/ender_laser_quarry/tags/item/crystal_repair/enhanced.json

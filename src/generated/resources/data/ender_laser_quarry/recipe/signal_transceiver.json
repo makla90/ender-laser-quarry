@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": "enderio:basic_capacitor",
+    "C": "#c:ingots/conductive_alloy",
+    "L": "minecraft:lightning_rod",
+    "P": "#c:ingots/pulsating_alloy",
+    "R": "#c:ingots/redstone_alloy"
+  },
+  "pattern": [
+    " L ",
+    "CBC",
+    "RPR"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:signal_transceiver"
+  }
+}

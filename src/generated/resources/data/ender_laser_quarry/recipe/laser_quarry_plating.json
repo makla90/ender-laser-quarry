@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": "#c:ingots/dark_steel",
+    "E": "#c:ender_pearls",
+    "O": "minecraft:obsidian"
+  },
+  "pattern": [
+    "ODO",
+    "DED",
+    "ODO"
+  ],
+  "result": {
+    "count": 8,
+    "id": "ender_laser_quarry:laser_quarry_plating"
+  }
+}

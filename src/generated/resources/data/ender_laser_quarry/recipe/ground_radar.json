@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": "#c:ingots/dark_steel",
+    "G": "#c:gears/dark_steel",
+    "O": "minecraft:observer",
+    "P": "ender_laser_quarry:parabolic_dish",
+    "T": "ender_laser_quarry:signal_transceiver",
+    "V": "enderio:void_chassis"
+  },
+  "pattern": [
+    "GPG",
+    "TVT",
+    "DOD"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:ground_radar"
+  }
+}

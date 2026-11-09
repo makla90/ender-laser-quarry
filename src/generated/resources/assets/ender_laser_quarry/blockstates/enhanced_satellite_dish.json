@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish"
+    },
+    "facing=south": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish",
+      "y": 270
+    }
+  }
+}

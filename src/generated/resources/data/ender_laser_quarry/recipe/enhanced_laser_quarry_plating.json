@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "ender_laser_quarry:laser_quarry_plating",
+    "Q": "#c:glass_blocks/enlighted_fused_quartz",
+    "S": "#c:ingots/soularium"
+  },
+  "pattern": [
+    "PSP",
+    "SQS",
+    "PSP"
+  ],
+  "result": {
+    "count": 4,
+    "id": "ender_laser_quarry:enhanced_laser_quarry_plating"
+  }
+}

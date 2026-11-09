@@ -1,9 +1,0 @@
-{
-  "parent": "minecraft:block/orientable_with_bottom",
-  "textures": {
-    "front": "ender_laser_quarry:block/ender_satellite_dish_front",
-    "side": "ender_laser_quarry:block/ender_satellite_dish_plating_side",
-    "top": "ender_laser_quarry:block/ender_satellite_dish_plating_top_nesw",
-    "bottom": "ender_laser_quarry:block/ender_satellite_dish_bottom"
-  }
-}

@@ -1,0 +1,19 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": "ender_laser_quarry:enhanced_satellite_dish",
+    "C": "#c:gems/vibrant_crystal",
+    "E": "#c:ingots/end_steel",
+    "G": "#c:gears/vibrant",
+    "R": "enderio:ender_resonator"
+  },
+  "pattern": [
+    "EGE",
+    "CBC",
+    "ERE"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:ender_satellite_dish"
+  }
+}

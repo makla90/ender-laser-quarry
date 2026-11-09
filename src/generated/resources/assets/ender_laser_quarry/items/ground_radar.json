@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "ender_laser_quarry:item/ground_radar",
+    "model": {
+      "type": "ender_laser_quarry:machine_item",
+      "block": "ender_laser_quarry:ground_radar"
+    }
+  }
+}

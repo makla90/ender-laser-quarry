@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "ender_laser_quarry:block/laser_quarry_port_bottom",
+    "east": "ender_laser_quarry:block/laser_quarry_port_side_lr",
+    "north": "ender_laser_quarry:block/laser_quarry_port_side_lr",
+    "particle": "ender_laser_quarry:block/laser_quarry_port_side",
+    "south": "ender_laser_quarry:block/laser_quarry_port_side_lr",
+    "up": "ender_laser_quarry:block/laser_quarry_plating_top_nesw_void",
+    "west": "ender_laser_quarry:block/laser_quarry_port_side_lr"
+  }
+}

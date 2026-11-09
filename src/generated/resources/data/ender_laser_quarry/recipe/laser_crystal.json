@@ -1,0 +1,19 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "E": "#c:gems/enticing_crystal",
+    "N": "minecraft:nether_star",
+    "P": "ender_laser_quarry:pulsating_laser_crystal",
+    "Q": "#c:glass_blocks/enlighted_fused_quartz",
+    "S": "#c:ingots/soularium"
+  },
+  "pattern": [
+    "QNQ",
+    "EPE",
+    "QSQ"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:laser_crystal"
+  }
+}

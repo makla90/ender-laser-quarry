@@ -1,0 +1,19 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": "ender_laser_quarry:quarry_controller",
+    "D": "enderio:double_layer_capacitor",
+    "G": "#c:gears/energized",
+    "S": "#c:ingots/soularium",
+    "Z": "enderio:z_logic_controller"
+  },
+  "pattern": [
+    "SZS",
+    "DBD",
+    "SGS"
+  ],
+  "result": {
+    "id": "ender_laser_quarry:enhanced_quarry_controller"
+  }
+}

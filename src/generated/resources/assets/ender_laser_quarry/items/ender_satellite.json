@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "ender_laser_quarry:item/ender_satellite"
+  }
+}
