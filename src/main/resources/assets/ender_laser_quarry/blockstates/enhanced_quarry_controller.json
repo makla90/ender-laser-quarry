@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "ender_laser_quarry:block/enhanced_quarry_controller" },
-    "facing=east": { "model": "ender_laser_quarry:block/enhanced_quarry_controller", "y": 90 },
-    "facing=south": { "model": "ender_laser_quarry:block/enhanced_quarry_controller", "y": 180 },
-    "facing=west": { "model": "ender_laser_quarry:block/enhanced_quarry_controller", "y": 270 }
-  }
-}

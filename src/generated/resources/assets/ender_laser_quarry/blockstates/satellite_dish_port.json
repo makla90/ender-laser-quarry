@@ -1,0 +1,148 @@
+{
+  "variants": {
+    "east=false,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port"
+    },
+    "east=false,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_w"
+    },
+    "east=false,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port"
+    },
+    "east=false,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_w"
+    },
+    "east=false,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port"
+    },
+    "east=false,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_w"
+    },
+    "east=false,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_s"
+    },
+    "east=false,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_sw"
+    },
+    "east=false,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_s"
+    },
+    "east=false,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_sw"
+    },
+    "east=false,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_s"
+    },
+    "east=false,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_sw"
+    },
+    "east=false,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_n"
+    },
+    "east=false,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_nw"
+    },
+    "east=false,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_n"
+    },
+    "east=false,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nw"
+    },
+    "east=false,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_n"
+    },
+    "east=false,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nw"
+    },
+    "east=false,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_ns"
+    },
+    "east=false,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_nsw"
+    },
+    "east=false,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_ns"
+    },
+    "east=false,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nsw"
+    },
+    "east=false,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_ns"
+    },
+    "east=false,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nsw"
+    },
+    "east=true,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_e"
+    },
+    "east=true,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_ew"
+    },
+    "east=true,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_e"
+    },
+    "east=true,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_ew"
+    },
+    "east=true,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_e"
+    },
+    "east=true,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_ew"
+    },
+    "east=true,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_es"
+    },
+    "east=true,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_esw"
+    },
+    "east=true,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_es"
+    },
+    "east=true,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_esw"
+    },
+    "east=true,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_es"
+    },
+    "east=true,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_esw"
+    },
+    "east=true,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_ne"
+    },
+    "east=true,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_new"
+    },
+    "east=true,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_ne"
+    },
+    "east=true,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_new"
+    },
+    "east=true,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_ne"
+    },
+    "east=true,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_new"
+    },
+    "east=true,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_nes"
+    },
+    "east=true,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/satellite_dish_port_nesw"
+    },
+    "east=true,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nes"
+    },
+    "east=true,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nesw"
+    },
+    "east=true,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nes"
+    },
+    "east=true,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nesw"
+    }
+  }
+}

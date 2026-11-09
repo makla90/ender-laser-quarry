@@ -1,4 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": { "layer0": "ender_laser_quarry:item/ender_satellite" }
-}

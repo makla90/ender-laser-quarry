@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "enderio:void_chassis"
+    },
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "G": {
+      "tag": "c:gears/dark_steel"
+    },
+    "L": {
+      "item": "ender_laser_quarry:focusing_lens"
+    },
+    "O": {
+      "item": "minecraft:obsidian"
+    }
+  },
+  "pattern": [
+    " L ",
+    "DGD",
+    "OCO"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:crystal_obelisk"
+  }
+}

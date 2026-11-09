@@ -26,6 +26,16 @@ dependencies {
     gametest.implementationConfigurationName(sourceSets.main.get().output)
 }
 
+// Data generators (src/datagen, like Ender IO): blockstates, models, loot tables, recipes, tags, advancements and lang
+// into src/generated/resources. Run gradlew runData after changing any of them.
+val datagen by sourceSets.creating
+configurations[datagen.implementationConfigurationName].extendsFrom(configurations.implementation.get())
+dependencies {
+    datagen.implementationConfigurationName(sourceSets.main.get().output)
+}
+sourceSets.main.get().resources.srcDir("src/generated/resources")
+sourceSets.main.get().resources.exclude(".cache/**")
+
 repositories {
     // Ender IO + EnderCore
     maven("https://maven.rover656.dev/releases") {
@@ -46,6 +56,18 @@ neoForge {
     parchment {
         minecraftVersion = property("parchment_minecraft_version") as String
         mappingsVersion = property("parchment_mappings_version") as String
+    }
+
+    mods {
+        create(property("mod_id") as String) {
+            sourceSet(sourceSets.main.get())
+            sourceSet(gametest)
+        }
+        // the data run: the mod without the tests and dev tools
+        create("ender_laser_quarry_data") {
+            sourceSet(sourceSets.main.get())
+            sourceSet(datagen)
+        }
     }
 
     runs {
@@ -103,6 +125,19 @@ neoForge {
             gameDirectory = file("run-asteroidsheet")
             systemProperty("ender_laser_quarry.asteroidSheet", "true")
         }
+        create("data") {
+            data()
+            sourceSet = datagen
+            gameDirectory = file("run-data")
+            loadedMods = listOf(mods.getByName("ender_laser_quarry_data"))
+            programArguments.addAll(
+                "--mod", property("mod_id") as String,
+                "--all",
+                // -Delq.dataOut=<dir>: write somewhere else (to compare with the current files first)
+                "--output", file(System.getProperty("elq.dataOut") ?: "src/generated/resources").absolutePath,
+                "--existing", file("src/main/resources").absolutePath,
+            )
+        }
         create("gameTestServer") {
             type = "gameTestServer"
             systemProperty("neoforge.enabledGameTestNamespaces", property("mod_id") as String)
@@ -111,18 +146,16 @@ neoForge {
             systemProperty("forge.logging.markers", "REGISTRIES")
             logLevel = org.slf4j.event.Level.DEBUG
             // Dev runs load the tests and dev tools too (see the gametest source set)
-            sourceSet = gametest
+            if (name != "data") {
+                sourceSet = gametest
+                loadedMods = listOf(mods.getByName(property("mod_id") as String))
+            }
         }
     }
 
-    mods {
-        create(property("mod_id") as String) {
-            sourceSet(sourceSets.main.get())
-            sourceSet(gametest)
-        }
-    }
 
     addModdingDependenciesTo(gametest)
+    addModdingDependenciesTo(datagen)
 }
 
 dependencies {
@@ -184,6 +217,9 @@ val devJar by tasks.registering(Jar::class) {
         include("com/enderlaserquarry/gametest/DemoPowerPlant*.class")
         include("com/enderlaserquarry/gametest/QuarryGameTests*.class")
         include("com/enderlaserquarry/gametest/TestQuarry*.class")
+        include("com/enderlaserquarry/gametest/TrashCan*.class")
+        include("assets/**")
+        include("data/ender_laser_quarry/loot_table/**")
     }
     manifest.from(tasks.jar.get().manifest)
 }

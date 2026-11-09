@@ -1,0 +1,30 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "ender_laser_quarry:satellite_dish"
+    },
+    "E": {
+      "tag": "c:ingots/energetic_alloy"
+    },
+    "G": {
+      "tag": "c:gears/energized"
+    },
+    "Q": {
+      "tag": "c:glass_blocks/enlighted_fused_quartz"
+    },
+    "S": {
+      "tag": "c:ingots/soularium"
+    }
+  },
+  "pattern": [
+    "EGE",
+    "SBS",
+    "EQE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:enhanced_satellite_dish"
+  }
+}

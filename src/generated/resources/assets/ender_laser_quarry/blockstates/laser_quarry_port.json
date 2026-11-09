@@ -1,0 +1,580 @@
+{
+  "variants": {
+    "crystal=laser,east=false,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_laser"
+    },
+    "crystal=laser,east=false,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_w_laser"
+    },
+    "crystal=laser,east=false,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_laser"
+    },
+    "crystal=laser,east=false,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_w_laser"
+    },
+    "crystal=laser,east=false,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_laser"
+    },
+    "crystal=laser,east=false,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_w_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_s_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_sw_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_s_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_sw_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_s_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_sw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_n_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_n_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_n_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ns_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nsw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ns_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nsw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ns_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nsw_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_e_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ew_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_e_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ew_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_e_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ew_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_es_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_esw_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_es_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_esw_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_es_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_esw_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ne_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_new_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ne_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_new_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ne_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_new_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nes_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nesw_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nes_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nesw_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nes_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nesw_laser"
+    },
+    "crystal=none,east=false,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port"
+    },
+    "crystal=none,east=false,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_w"
+    },
+    "crystal=none,east=false,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port"
+    },
+    "crystal=none,east=false,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_w"
+    },
+    "crystal=none,east=false,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port"
+    },
+    "crystal=none,east=false,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_w"
+    },
+    "crystal=none,east=false,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_s"
+    },
+    "crystal=none,east=false,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_sw"
+    },
+    "crystal=none,east=false,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_s"
+    },
+    "crystal=none,east=false,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_sw"
+    },
+    "crystal=none,east=false,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_s"
+    },
+    "crystal=none,east=false,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_sw"
+    },
+    "crystal=none,east=false,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_n"
+    },
+    "crystal=none,east=false,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nw"
+    },
+    "crystal=none,east=false,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_n"
+    },
+    "crystal=none,east=false,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nw"
+    },
+    "crystal=none,east=false,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_n"
+    },
+    "crystal=none,east=false,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nw"
+    },
+    "crystal=none,east=false,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ns"
+    },
+    "crystal=none,east=false,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nsw"
+    },
+    "crystal=none,east=false,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ns"
+    },
+    "crystal=none,east=false,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nsw"
+    },
+    "crystal=none,east=false,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ns"
+    },
+    "crystal=none,east=false,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nsw"
+    },
+    "crystal=none,east=true,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_e"
+    },
+    "crystal=none,east=true,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ew"
+    },
+    "crystal=none,east=true,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_e"
+    },
+    "crystal=none,east=true,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ew"
+    },
+    "crystal=none,east=true,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_e"
+    },
+    "crystal=none,east=true,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ew"
+    },
+    "crystal=none,east=true,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_es"
+    },
+    "crystal=none,east=true,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_esw"
+    },
+    "crystal=none,east=true,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_es"
+    },
+    "crystal=none,east=true,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_esw"
+    },
+    "crystal=none,east=true,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_es"
+    },
+    "crystal=none,east=true,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_esw"
+    },
+    "crystal=none,east=true,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ne"
+    },
+    "crystal=none,east=true,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_new"
+    },
+    "crystal=none,east=true,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ne"
+    },
+    "crystal=none,east=true,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_new"
+    },
+    "crystal=none,east=true,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ne"
+    },
+    "crystal=none,east=true,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_new"
+    },
+    "crystal=none,east=true,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nes"
+    },
+    "crystal=none,east=true,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nesw"
+    },
+    "crystal=none,east=true,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nes"
+    },
+    "crystal=none,east=true,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nesw"
+    },
+    "crystal=none,east=true,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nes"
+    },
+    "crystal=none,east=true,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nesw"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_w_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_w_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_w_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_s_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_sw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_s_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_sw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_s_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_sw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_n_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_n_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_n_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ns_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nsw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ns_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nsw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ns_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nsw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_e_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ew_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_e_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ew_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_e_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ew_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_es_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_esw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_es_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_esw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_es_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_esw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ne_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_new_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ne_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_new_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ne_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_new_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nes_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nesw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nes_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nesw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nes_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nesw_pulsating"
+    },
+    "crystal=void,east=false,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_void"
+    },
+    "crystal=void,east=false,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_w_void"
+    },
+    "crystal=void,east=false,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_void"
+    },
+    "crystal=void,east=false,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_w_void"
+    },
+    "crystal=void,east=false,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_void"
+    },
+    "crystal=void,east=false,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_w_void"
+    },
+    "crystal=void,east=false,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_s_void"
+    },
+    "crystal=void,east=false,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_sw_void"
+    },
+    "crystal=void,east=false,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_s_void"
+    },
+    "crystal=void,east=false,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_sw_void"
+    },
+    "crystal=void,east=false,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_s_void"
+    },
+    "crystal=void,east=false,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_sw_void"
+    },
+    "crystal=void,east=false,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_n_void"
+    },
+    "crystal=void,east=false,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nw_void"
+    },
+    "crystal=void,east=false,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_n_void"
+    },
+    "crystal=void,east=false,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nw_void"
+    },
+    "crystal=void,east=false,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_n_void"
+    },
+    "crystal=void,east=false,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nw_void"
+    },
+    "crystal=void,east=false,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ns_void"
+    },
+    "crystal=void,east=false,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nsw_void"
+    },
+    "crystal=void,east=false,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ns_void"
+    },
+    "crystal=void,east=false,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nsw_void"
+    },
+    "crystal=void,east=false,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ns_void"
+    },
+    "crystal=void,east=false,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nsw_void"
+    },
+    "crystal=void,east=true,north=false,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_e_void"
+    },
+    "crystal=void,east=true,north=false,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ew_void"
+    },
+    "crystal=void,east=true,north=false,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_e_void"
+    },
+    "crystal=void,east=true,north=false,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ew_void"
+    },
+    "crystal=void,east=true,north=false,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_e_void"
+    },
+    "crystal=void,east=true,north=false,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ew_void"
+    },
+    "crystal=void,east=true,north=false,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_es_void"
+    },
+    "crystal=void,east=true,north=false,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_esw_void"
+    },
+    "crystal=void,east=true,north=false,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_es_void"
+    },
+    "crystal=void,east=true,north=false,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_esw_void"
+    },
+    "crystal=void,east=true,north=false,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_es_void"
+    },
+    "crystal=void,east=true,north=false,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_esw_void"
+    },
+    "crystal=void,east=true,north=true,south=false,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_ne_void"
+    },
+    "crystal=void,east=true,north=true,south=false,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_new_void"
+    },
+    "crystal=void,east=true,north=true,south=false,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_ne_void"
+    },
+    "crystal=void,east=true,north=true,south=false,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_new_void"
+    },
+    "crystal=void,east=true,north=true,south=false,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_ne_void"
+    },
+    "crystal=void,east=true,north=true,south=false,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_new_void"
+    },
+    "crystal=void,east=true,north=true,south=true,tier=basic,west=false": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nes_void"
+    },
+    "crystal=void,east=true,north=true,south=true,tier=basic,west=true": {
+      "model": "ender_laser_quarry:block/laser_quarry_port_nesw_void"
+    },
+    "crystal=void,east=true,north=true,south=true,tier=ender,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nes_void"
+    },
+    "crystal=void,east=true,north=true,south=true,tier=ender,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_port_nesw_void"
+    },
+    "crystal=void,east=true,north=true,south=true,tier=enhanced,west=false": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nes_void"
+    },
+    "crystal=void,east=true,north=true,south=true,tier=enhanced,west=true": {
+      "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_nesw_void"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "minecraft:dragon_breath"
+    },
+    "E": {
+      "tag": "c:ingots/end_steel"
+    },
+    "L": {
+      "item": "ender_laser_quarry:laser_crystal"
+    },
+    "P": {
+      "tag": "c:gems/prescient_crystal"
+    }
+  },
+  "pattern": [
+    "PBP",
+    "ELE",
+    "PBP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:void_laser_crystal"
+  }
+}

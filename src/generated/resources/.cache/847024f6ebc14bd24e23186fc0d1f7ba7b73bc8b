@@ -1,0 +1,5 @@
+// 1.21.1	2026-11-09T14:07:42.1465846	Tags for minecraft:block mod id ender_laser_quarry
+85564cc110e786c8973142476df8e087ea305872 data/ender_laser_quarry/tags/block/laser_quarry_frame.json
+1f3d9bc1668a66e07d89f6f11e5f2cc3907cc783 data/ender_laser_quarry/tags/block/launch_pad_frame.json
+f5df4dd314bf810482fb15d0e8d50a339ea44942 data/ender_laser_quarry/tags/block/satellite_dish_frame.json
+b6450b9d02c46ae24f5b32cf64b0553dc2a19b5a data/minecraft/tags/block/mineable/pickaxe.json

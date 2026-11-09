@@ -1,0 +1,196 @@
+{
+  "variants": {
+    "crystal=laser,east=false,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_laser"
+    },
+    "crystal=laser,east=false,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_w_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_s_laser"
+    },
+    "crystal=laser,east=false,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_sw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_n_laser"
+    },
+    "crystal=laser,east=false,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nw_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ns_laser"
+    },
+    "crystal=laser,east=false,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nsw_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_e_laser"
+    },
+    "crystal=laser,east=true,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ew_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_es_laser"
+    },
+    "crystal=laser,east=true,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_esw_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ne_laser"
+    },
+    "crystal=laser,east=true,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_new_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nes_laser"
+    },
+    "crystal=laser,east=true,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nesw_laser"
+    },
+    "crystal=none,east=false,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating"
+    },
+    "crystal=none,east=false,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_w"
+    },
+    "crystal=none,east=false,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_s"
+    },
+    "crystal=none,east=false,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_sw"
+    },
+    "crystal=none,east=false,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_n"
+    },
+    "crystal=none,east=false,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nw"
+    },
+    "crystal=none,east=false,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ns"
+    },
+    "crystal=none,east=false,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nsw"
+    },
+    "crystal=none,east=true,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_e"
+    },
+    "crystal=none,east=true,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ew"
+    },
+    "crystal=none,east=true,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_es"
+    },
+    "crystal=none,east=true,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_esw"
+    },
+    "crystal=none,east=true,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ne"
+    },
+    "crystal=none,east=true,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_new"
+    },
+    "crystal=none,east=true,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nes"
+    },
+    "crystal=none,east=true,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nesw"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_w_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_s_pulsating"
+    },
+    "crystal=pulsating,east=false,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_sw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_n_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nw_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ns_pulsating"
+    },
+    "crystal=pulsating,east=false,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nsw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_e_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ew_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_es_pulsating"
+    },
+    "crystal=pulsating,east=true,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_esw_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ne_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_new_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nes_pulsating"
+    },
+    "crystal=pulsating,east=true,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nesw_pulsating"
+    },
+    "crystal=void,east=false,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_void"
+    },
+    "crystal=void,east=false,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_w_void"
+    },
+    "crystal=void,east=false,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_s_void"
+    },
+    "crystal=void,east=false,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_sw_void"
+    },
+    "crystal=void,east=false,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_n_void"
+    },
+    "crystal=void,east=false,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nw_void"
+    },
+    "crystal=void,east=false,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ns_void"
+    },
+    "crystal=void,east=false,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nsw_void"
+    },
+    "crystal=void,east=true,north=false,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_e_void"
+    },
+    "crystal=void,east=true,north=false,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ew_void"
+    },
+    "crystal=void,east=true,north=false,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_es_void"
+    },
+    "crystal=void,east=true,north=false,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_esw_void"
+    },
+    "crystal=void,east=true,north=true,south=false,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_ne_void"
+    },
+    "crystal=void,east=true,north=true,south=false,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_new_void"
+    },
+    "crystal=void,east=true,north=true,south=true,west=false": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nes_void"
+    },
+    "crystal=void,east=true,north=true,south=true,west=true": {
+      "model": "ender_laser_quarry:block/ender_laser_quarry_plating_nesw_void"
+    }
+  }
+}

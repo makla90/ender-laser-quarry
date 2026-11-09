@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "G": {
+      "tag": "c:gears/iron"
+    },
+    "I": {
+      "tag": "c:ingots/iron"
+    }
+  },
+  "pattern": [
+    "IDI",
+    "DGD",
+    "IDI"
+  ],
+  "result": {
+    "count": 8,
+    "id": "ender_laser_quarry:satellite_dish_plating"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "ender_laser_quarry:block/ender_satellite_dish_bottom",
+    "side": "ender_laser_quarry:block/ender_satellite_dish_plating_side",
+    "top": "ender_laser_quarry:block/ender_satellite_dish_plating_top_sw"
+  }
+}

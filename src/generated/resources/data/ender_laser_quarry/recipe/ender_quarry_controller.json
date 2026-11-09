@@ -1,0 +1,30 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "ender_laser_quarry:enhanced_quarry_controller"
+    },
+    "E": {
+      "tag": "c:ingots/end_steel"
+    },
+    "G": {
+      "tag": "c:gears/vibrant"
+    },
+    "O": {
+      "item": "enderio:octadic_capacitor"
+    },
+    "R": {
+      "item": "enderio:ender_resonator"
+    }
+  },
+  "pattern": [
+    "ERE",
+    "OBO",
+    "EGE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:ender_quarry_controller"
+  }
+}

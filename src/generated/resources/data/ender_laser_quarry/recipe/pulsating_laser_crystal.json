@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "D": {
+      "tag": "c:gems/diamond"
+    },
+    "P": {
+      "tag": "c:gems/pulsating_crystal"
+    }
+  },
+  "pattern": [
+    "APA",
+    "PDP",
+    "APA"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:pulsating_laser_crystal"
+  }
+}

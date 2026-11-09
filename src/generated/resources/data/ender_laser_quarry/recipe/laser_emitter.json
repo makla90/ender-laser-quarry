@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "enderio:basic_capacitor"
+    },
+    "C": {
+      "tag": "c:ingots/conductive_alloy"
+    },
+    "P": {
+      "tag": "c:gems/pulsating_crystal"
+    },
+    "Q": {
+      "item": "enderio:fused_quartz"
+    },
+    "R": {
+      "tag": "c:ingots/redstone_alloy"
+    }
+  },
+  "pattern": [
+    " Q ",
+    "RPR",
+    "CBC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:laser_emitter"
+  }
+}

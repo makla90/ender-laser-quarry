@@ -1,0 +1,30 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "ender_laser_quarry:satellite"
+    },
+    "D": {
+      "item": "minecraft:daylight_detector"
+    },
+    "E": {
+      "tag": "c:ingots/energetic_alloy"
+    },
+    "P": {
+      "item": "enderio:pulsating_photovoltaic_module"
+    },
+    "Z": {
+      "item": "enderio:z_logic_controller"
+    }
+  },
+  "pattern": [
+    "EZE",
+    "PBP",
+    "EDE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:enhanced_satellite"
+  }
+}

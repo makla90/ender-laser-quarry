@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "tag": "c:dyes/black"
+    },
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "S": {
+      "item": "minecraft:smooth_stone"
+    },
+    "Y": {
+      "tag": "c:dyes/yellow"
+    }
+  },
+  "pattern": [
+    "SYS",
+    "BDB",
+    "SYS"
+  ],
+  "result": {
+    "count": 8,
+    "id": "ender_laser_quarry:launch_pad_plating"
+  }
+}
