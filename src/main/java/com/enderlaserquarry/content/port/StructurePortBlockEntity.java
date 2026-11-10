@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * I/O port: passes items, fluids and energy on to the multiblock it belongs to. Looks the core up on every call, so
- * nothing goes stale when the structure changes. IO mode per side like Ender IO machines (Yeta Wrench).
+ * I/O port: passes items, fluids and energy on to the multiblock it belongs to. IO mode per side like Ender IO machines
+ * (Yeta Wrench).
  */
 public class StructurePortBlockEntity extends MachineBlockEntity {
     // Ender IO only pushes every 20 ticks, too slow for a fast quarry
@@ -178,10 +178,14 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
 
     // endregion
 
-    // Conduits ask for every slot, so the multiblock search runs once per tick at most
+    // The multiblock search is remembered until a neighbour changes or the core is gone, and redone every second for
+    // changes further away (a core placed two blocks off, a dish frame broken)
+    private static final int CORE_RECHECK_TICKS = 20;
+    private static final long NEVER = Long.MIN_VALUE / 2;
     @Nullable
     private PortedMultiblock cachedCore;
-    private long coreTick = Long.MIN_VALUE;
+    private long coreTick = NEVER;
+    private int coreLookups;
 
     @Nullable
     private PortedMultiblock core() {
@@ -189,11 +193,21 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
             return null;
         }
         long now = level.getGameTime();
-        if (now != coreTick || (cachedCore instanceof BlockEntity be && be.isRemoved())) {
+        if (now - coreTick >= CORE_RECHECK_TICKS || now < coreTick || (cachedCore instanceof BlockEntity be && be.isRemoved())) {
             cachedCore = MultiblockFrames.findCore(level, worldPosition) instanceof PortedMultiblock core ? core : null;
             coreTick = now;
+            coreLookups++;
         }
         return cachedCore;
+    }
+
+    public void forgetCore() {
+        coreTick = NEVER;
+    }
+
+    // tests: how often the multiblock was searched
+    public int getCoreLookups() {
+        return coreLookups;
     }
 
     // Per tick allowance that refills with the core's rate, rolled back with its transaction

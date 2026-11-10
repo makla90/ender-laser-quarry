@@ -4,6 +4,7 @@ import com.enderlaserquarry.content.QuarryTier;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.EnumMap;
+import java.util.Arrays;
 import java.util.Map;
 
 public final class QuarryConfig {
@@ -74,6 +75,7 @@ public final class QuarryConfig {
     public static final ModConfigSpec.IntValue CONTROLLER_USAGE;
     public static final ModConfigSpec.BooleanValue LOAD_BASE;
     public static final ModConfigSpec.IntValue PROBLEM_TIMEOUT;
+    public static final ModConfigSpec.ConfigValue<String> CLAIM_CHECK_MODE;
     public static final ModConfigSpec.IntValue RADAR_CAPACITY;
     public static final ModConfigSpec.IntValue RADAR_MAX_INPUT;
     public static final ModConfigSpec.IntValue RADAR_UPLINK_USAGE;
@@ -177,6 +179,13 @@ public final class QuarryConfig {
         PROBLEM_TIMEOUT = builder.comment("Seconds a running quarry may be stuck on a problem (no power, output full, no coolant...) before it lets its",
                 "chunks go. It holds them again once it works (a player nearby loads it and the problem is fixed).")
             .defineInRange("problemTimeout", 300, 10, 86_400);
+        builder.pop();
+
+        builder.push("claims");
+        CLAIM_CHECK_MODE = builder.comment("How often the laser asks claim / protection mods (as the controller's owner) before it breaks a block.",
+                "per_section: once per 16x16x16 section, again every 5 seconds. A chunk claimed while it is mined stops within a few seconds.",
+                "per_block: before every block. Strictest, but every mod listening for block breaks runs for each mined block.")
+            .defineInList("claimCheckMode", "per_section", Arrays.asList("per_section", "per_block"));
         builder.pop();
 
         builder.push("ground_radar");

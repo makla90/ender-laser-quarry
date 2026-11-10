@@ -147,6 +147,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private static final String PAD_POS = "PadPos";
     private static final String FLUIDS = "Fluids";
     private static final long NEVER_LIMITED = Long.MIN_VALUE / 2;
+    private static final int OUTPUT_RETRY_TICKS = 20;
     // antenna in the middle of the top, tip LED centre
     private static final double ANTENNA_TIP_Y = 24.75 / 16;
     private static final String RUNNING = "Running";
@@ -245,6 +246,15 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     @Nullable
     private UUID claimPlayerOwner;
     private int claimSkipped;
+    private final ClaimCache breakClaims = new ClaimCache();
+    private final ClaimCache wallClaims = new ClaimCache();
+    @Nullable
+    private Boolean debugPerBlockClaims;
+    // output full: wait for a slot to change (or OUTPUT_RETRY_TICKS) before rolling drops again
+    private long outputFullTick = NEVER_LIMITED;
+    private long outputFullSignature;
+    private boolean outputBlocked;
+    private int outputRetries;
 
     public QuarryControllerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.QUARRY_CONTROLLER.get(), pos, state, false, CapacitorSupport.REQUIRED, CAPACITOR, EnergyIOMode.Input,
@@ -923,6 +933,9 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
 
         running = true;
+        outputFullTick = NEVER_LIMITED;
+        breakClaims.clear();
+        wallClaims.clear();
         setChanged();
     }
 
@@ -1149,6 +1162,9 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             topResolved = true;
         }
 
+        if (waitingForOutput()) {
+            return;
+        }
         int speed = Math.max(1, obelisk.getBlocksPerTick());
         if (withOutputBuffer(() -> fireLaser(serverLevel, chunk, obelisk, pad, speed)) > 0) {
             setChanged();
@@ -1209,7 +1225,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             }
 
             if (!mineBlock(serverLevel, target, state, !wallDone)) {
-                setProblem(isOutputLimited() ? QuarryStates.OUTPUT_LIMITED : MachineState.FULL_OUTPUT);
+                outputFull();
                 return mined;
             }
             energyProgress -= cost;
@@ -1370,16 +1386,54 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         if (claimPlayer == null || claimPlayer.level() != serverLevel || !Objects.equals(claimPlayerOwner, owner)) {
             claimPlayer = ClaimGuard.player(serverLevel, owner);
             claimPlayerOwner = owner;
+            breakClaims.clear();
+            wallClaims.clear();
         }
         return claimPlayer;
     }
 
+    private boolean perBlockClaims() {
+        return debugPerBlockClaims != null ? debugPerBlockClaims : "per_block".equals(QuarryConfig.CLAIM_CHECK_MODE.get());
+    }
+
+    // tests: per_block (true) or per_section (false), null = the config
+    public void debugSetPerBlockClaims(@Nullable Boolean perBlock) {
+        debugPerBlockClaims = perBlock;
+        breakClaims.clear();
+        wallClaims.clear();
+    }
+
     private boolean mayBreak(ServerLevel serverLevel, BlockPos pos, BlockState state) {
-        return ClaimGuard.mayBreak(serverLevel, pos, state, claimPlayer(serverLevel));
+        if (perBlockClaims()) {
+            return ClaimGuard.mayBreak(serverLevel, pos, state, claimPlayer(serverLevel));
+        }
+        long now = serverLevel.getGameTime();
+        int known = breakClaims.lookup(pos, now);
+        if (known >= 0) {
+            return known == 1;
+        }
+        boolean allowed = ClaimGuard.mayBreak(serverLevel, pos, state, claimPlayer(serverLevel));
+        breakClaims.put(pos, now, allowed);
+        return allowed;
     }
 
     private boolean mayWall(ServerLevel serverLevel, BlockPos pos, BlockState replaced) {
-        return (replaced.isAir() || mayBreak(serverLevel, pos, replaced)) && ClaimGuard.mayPlace(serverLevel, pos, claimPlayer(serverLevel));
+        if (perBlockClaims()) {
+            return checkWall(serverLevel, pos, replaced);
+        }
+        long now = serverLevel.getGameTime();
+        int known = wallClaims.lookup(pos, now);
+        if (known >= 0) {
+            return known == 1;
+        }
+        boolean allowed = checkWall(serverLevel, pos, replaced);
+        wallClaims.put(pos, now, allowed);
+        return allowed;
+    }
+
+    private boolean checkWall(ServerLevel serverLevel, BlockPos pos, BlockState replaced) {
+        FakePlayer player = claimPlayer(serverLevel);
+        return (replaced.isAir() || ClaimGuard.mayBreak(serverLevel, pos, replaced, player)) && ClaimGuard.mayPlace(serverLevel, pos, player);
     }
 
     private boolean mayQueue(ChunkPos chunk) {
@@ -1493,7 +1547,47 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             QuarryOutput.Buffer buffer = tickOutput;
             tickOutput = null;
             buffer.flush();
+            if (outputBlocked) {
+                // after the flush, so this tick's own drops don't count as a change
+                outputBlocked = false;
+                outputFullTick = level.getGameTime();
+                outputFullSignature = outputSignature();
+                outputRetries++;
+            }
         }
+    }
+
+    private void outputFull() {
+        outputBlocked = true;
+        setProblem(isOutputLimited() ? QuarryStates.OUTPUT_LIMITED : MachineState.FULL_OUTPUT);
+    }
+
+    // still full and nothing taken out since: skip the claim check and drop roll this tick
+    private boolean waitingForOutput() {
+        if (outputFullTick == NEVER_LIMITED) {
+            return false;
+        }
+        if (level.getGameTime() - outputFullTick < OUTPUT_RETRY_TICKS && outputSignature() == outputFullSignature) {
+            setProblem(isOutputLimited() ? QuarryStates.OUTPUT_LIMITED : MachineState.FULL_OUTPUT);
+            return true;
+        }
+        outputFullTick = NEVER_LIMITED;
+        return false;
+    }
+
+    private long outputSignature() {
+        var inventory = getInventory();
+        long signature = 0;
+        for (int i = 0; i < OUTPUT.count(); i++) {
+            var slot = OUTPUT.slot(i);
+            signature = signature * 31 + inventory.getAmountAsInt(slot) * 7L + inventory.getResource(slot).hashCode();
+        }
+        return signature;
+    }
+
+    // tests: how often a full output was retried
+    public int getOutputRetries() {
+        return outputRetries;
     }
 
     private void finish() {
@@ -1779,6 +1873,9 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             return;
         }
 
+        if (waitingForOutput()) {
+            return;
+        }
         int speed = Math.max(1, obelisk.getBlocksPerTick());
         if (withOutputBuffer(() -> fireVoidLaser(serverLevel, obelisk, pad, field, speed)) > 0) {
             setChanged();
@@ -1829,7 +1926,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
                 break;
             }
             if (!storeDrops(Block.getDrops(state, serverLevel, worldPosition, null, null, miningTool()))) {
-                setProblem(isOutputLimited() ? QuarryStates.OUTPUT_LIMITED : MachineState.FULL_OUTPUT);
+                outputFull();
                 break;
             }
             energyProgress -= cost;
