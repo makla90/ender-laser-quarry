@@ -1,15 +1,6 @@
 {
   "variants": {
-    "floor=basic": {
-      "model": "ender_laser_quarry:block/ground_radar_basic"
-    },
-    "floor=ender": {
-      "model": "ender_laser_quarry:block/ground_radar_ender"
-    },
-    "floor=enhanced": {
-      "model": "ender_laser_quarry:block/ground_radar_enhanced"
-    },
-    "floor=none": {
+    "": {
       "model": "ender_laser_quarry:block/ground_radar"
     }
   }

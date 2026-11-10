@@ -14,7 +14,8 @@ public final class QuarryConfig {
                              ModConfigSpec.IntValue maxBlocksPerTick, ModConfigSpec.IntValue chunkRadius,
                              ModConfigSpec.DoubleValue dishSpeed, ModConfigSpec.IntValue dishRange,
                              ModConfigSpec.IntValue coolantTank, ModConfigSpec.IntValue xpTank,
-                             ModConfigSpec.IntValue linkRange, ModConfigSpec.IntValue transferRange) {
+                             ModConfigSpec.IntValue linkRange, ModConfigSpec.IntValue transferRange,
+                             ModConfigSpec.IntValue launchFuel, ModConfigSpec.IntValue returnFuel) {
     }
 
     private static final Map<QuarryTier, TierValues> TIERS = new EnumMap<>(QuarryTier.class);
@@ -65,7 +66,6 @@ public final class QuarryConfig {
 
     // Launch pad, controller, radar & satellite
     public static final ModConfigSpec.IntValue PAD_TANK_CAPACITY;
-    public static final ModConfigSpec.IntValue FUEL_PER_FLIGHT;
     public static final ModConfigSpec.IntValue FUEL_PER_TRANSFER_CHUNK;
     public static final ModConfigSpec.IntValue ORBIT_ALTITUDE;
     public static final ModConfigSpec.IntValue CONTROLLER_OUTPUT_PER_PORT;
@@ -139,17 +139,21 @@ public final class QuarryConfig {
                     .defineInRange("linkRange", tier.defaultLinkRange(), 1, 4096),
                 builder.comment("Satellite of this tier: how many chunks away from its launch pad an orbit transfer may move it (0 = it stays",
                         "over its pad).")
-                    .defineInRange("transferRange", tier.defaultTransferRange(), 0, 256)));
+                    .defineInRange("transferRange", tier.defaultTransferRange(), 0, 256),
+                builder.comment("Satellite of this tier: rocket fuel in mB to launch it (heavier satellites need more).")
+                    .defineInRange("launchFuel", tier.defaultLaunchFuel(), 0, 1_000_000),
+                builder.comment("Satellite of this tier: rocket fuel in mB for a flight to it while it is up (recovery, orbit transfer:",
+                        "the rocket goes up empty or lightly loaded). An orbit transfer adds fuelPerTransferChunk per chunk.")
+                    .defineInRange("returnFuel", tier.defaultReturnFuel(), 0, 1_000_000)));
             builder.pop();
         }
         builder.pop();
 
         builder.push("launch_pad");
         PAD_TANK_CAPACITY = builder.comment("Rocket fuel tank size of the launch pad, in mB.")
-            .defineInRange("tankCapacity", 8_000, 1_000, 1_000_000);
-        FUEL_PER_FLIGHT = builder.comment("Rocket fuel burned per flight (up to orbit and back down), in mB.")
-            .defineInRange("fuelPerFlight", 1_000, 0, 1_000_000);
-        FUEL_PER_TRANSFER_CHUNK = builder.comment("Orbit transfer: extra rocket fuel per chunk the satellite moves, in mB (on top of fuelPerFlight).")
+            .defineInRange("tankCapacity", 16_000, 1_000, 1_000_000);
+        FUEL_PER_TRANSFER_CHUNK = builder.comment("Orbit transfer: extra rocket fuel per chunk the satellite moves, in mB (on top of the",
+                "satellite tier's returnFuel).")
             .defineInRange("fuelPerTransferChunk", 100, 0, 100_000);
         ORBIT_ALTITUDE = builder.comment("How many blocks above the pad satellites orbit.")
             .defineInRange("orbitAltitude", 150, 24, 512);
@@ -162,8 +166,8 @@ public final class QuarryConfig {
             .defineInRange("outputPerPort", 16, 1, 1_000_000);
         CONTROLLER_FLUID_PER_PORT = builder.comment("mB per tick each Laser Quarry I/O Port can fill into the controller tanks, times L².")
             .defineInRange("fluidPerPort", 100, 1, 1_000_000);
-        CONTROLLER_ENERGY_INTAKE = builder.comment("µI per tick the controller takes in through all its ports together, times L². It powers the controller and",
-                "the ground radar (the dishes have their own ports).")
+        CONTROLLER_ENERGY_INTAKE = builder.comment("µI per tick the controller takes in through all its ports together, times L². It powers the controller (the",
+                "dishes and the launch pad have their own ports).")
             .defineInRange("energyIntake", 60_000, 1, 10_000_000);
         CONTROLLER_BUFFER_TICKS = builder.comment("Energy buffer = this many ticks of intake.")
             .defineInRange("bufferTicks", 20, 1, 1_000);
@@ -189,9 +193,9 @@ public final class QuarryConfig {
         builder.pop();
 
         builder.push("ground_radar");
-        RADAR_CAPACITY = builder.comment("Energy buffer of the ground radar.")
+        RADAR_CAPACITY = builder.comment("Energy buffer of the launch pad, it powers the ground radar on its ring.")
             .defineInRange("capacity", 100_000, 1, Integer.MAX_VALUE);
-        RADAR_MAX_INPUT = builder.comment("Max µI/t (RF/t) the ground radar accepts.")
+        RADAR_MAX_INPUT = builder.comment("Max µI/t (RF/t) the launch pad takes in through its I/O ports.")
             .defineInRange("maxInput", 50_000, 1, Integer.MAX_VALUE);
         RADAR_UPLINK_USAGE = builder.comment("µI/t (RF/t) the radar uses while it keeps an uplink to a satellite in orbit.")
             .defineInRange("uplinkUsage", 20, 0, Integer.MAX_VALUE);
@@ -245,7 +249,7 @@ public final class QuarryConfig {
             .defineInRange("blocksPerChunk", 32_768, 1, 1_000_000);
         VOID_SCAN_TICKS = builder.comment("Ticks a space scan takes (1200 = 1 minute). Without radar power it pauses and goes on later.")
             .defineInRange("scanTicks", 1_200, 1, 72_000);
-        VOID_SCAN_ENERGY = builder.comment("µI a space scan takes from the ground radar, spread over the scan (the controller keeps the radar topped up).")
+        VOID_SCAN_ENERGY = builder.comment("µI a space scan takes from the ground radar, spread over the scan (the launch pad powers the radar).")
             .defineInRange("scanEnergy", 30_000_000, 0, Integer.MAX_VALUE);
         VOID_MAX_QUEUED = builder.comment("Asteroids a controller can queue.")
             .defineInRange("maxQueued", 8, 1, 40);

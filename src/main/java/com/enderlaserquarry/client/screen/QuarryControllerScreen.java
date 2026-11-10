@@ -209,14 +209,9 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         addRenderableOnly(new UsageEnergyWidget(leftPos + QuarryControllerMenu.ENERGY_X, topPos + QuarryControllerMenu.ENERGY_Y, 9,
             QuarryControllerMenu.ENERGY_HEIGHT, menu::getEnergyStorage, menu::isCapacitorInstalled, () -> {
                 int own = menu.getOwnUsage();
-                int radar = menu.getRadarUsage();
                 return List.of(
-                    Component.translatable("gui.ender_laser_quarry.energy.usage", UsageEnergyWidget.FORMAT.format(own + radar))
+                    Component.translatable("gui.ender_laser_quarry.energy.usage", UsageEnergyWidget.FORMAT.format(own))
                         .withStyle(ChatFormatting.AQUA),
-                    Component.translatable("gui.ender_laser_quarry.controller.usage.controller", UsageEnergyWidget.FORMAT.format(own))
-                        .withStyle(ChatFormatting.GRAY),
-                    Component.translatable("gui.ender_laser_quarry.controller.usage.radar", UsageEnergyWidget.FORMAT.format(radar))
-                        .withStyle(ChatFormatting.GRAY),
                     Component.translatable("gui.ender_laser_quarry.controller.intake", UsageEnergyWidget.FORMAT.format(menu.getEnergyIntake()))
                         .withStyle(ChatFormatting.DARK_AQUA),
                     Component.translatable("gui.ender_laser_quarry.controller.port_output", UsageEnergyWidget.FORMAT.format(menu.getPortItemRate()))
@@ -371,7 +366,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     }
 
     private int transferCost(int dx, int dz) {
-        return menu.getFuelPerFlight() + (int) Math.ceil(transferDistance(dx, dz) * menu.getFuelPerChunk());
+        return menu.getTransferBaseFuel() + (int) Math.ceil(transferDistance(dx, dz) * menu.getFuelPerChunk());
     }
 
     private boolean isMoving() {

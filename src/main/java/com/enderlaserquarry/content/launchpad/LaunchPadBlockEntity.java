@@ -6,6 +6,8 @@ import com.enderio.enderio.foundation.block.entity.MachineBlockEntity;
 import com.enderio.enderio.foundation.block.entity.MultiConfigurable;
 import com.enderio.enderio.foundation.inventory.MachineInventoryLayout;
 import com.enderio.enderio.foundation.inventory.SingleSlotAccess;
+import net.neoforged.neoforge.energy.EnergyStorage;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import com.enderio.enderio.api.io.IOMode;
 import com.enderio.enderio.foundation.io.IOConfig;
 import com.enderio.enderio.foundation.io.fluid.FluidItemInteractive;
@@ -24,7 +26,6 @@ import com.enderlaserquarry.content.controller.QuarryControllerBlockEntity;
 import com.enderlaserquarry.content.controller.MinimapSnapshot;
 import com.enderlaserquarry.content.launchpad.FlightPhase.Mission;
 import com.enderlaserquarry.content.obelisk.CrystalGlow;
-import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.enderlaserquarry.content.port.StructurePortBlockEntity;
 import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
 import com.enderlaserquarry.content.satellite.RocketItem;
@@ -79,7 +80,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Launch pad controller. Sits on the ring of the 5x5 pad, launches and recovers the satellite and runs the uplink.
+ * Launch pad controller. Sits on the ring of the 5x5 pad, launches and recovers the satellite and runs the uplink
+ * through the ground radar on the same ring, which it powers.
  * No entities for the flight: phase and start tick are synced and the client works out all positions from them.
  */
 public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTankUser, FluidItemInteractive, MultiConfigurable, PortedMultiblock {
@@ -157,10 +159,13 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private static final String TRANSFER_RANGE = "TransferRange";
     private static final String FLIGHT_DX = "FlightDx";
     private static final String FLIGHT_DZ = "FlightDz";
+    private static final String RADAR_POS = "RadarPos";
+    private static final String ENERGY = "Energy";
     private static final Vec3 UP = new Vec3(0, 1, 0);
     private static final double MAX_ROCKET_TILT = Math.toRadians(55);
 
     private final MachineFluidHandler fluidHandler;
+    private final PadEnergy energy = new PadEnergy();
 
     private boolean platingOk;
     private boolean skyOk;
@@ -179,9 +184,12 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private QuarryTier drawnSatelliteTier = QuarryTier.BASIC;
     private boolean rocketOnPad;
 
-    // The linked obelisk, its radar keeps the uplink
+    // The linked quarry controller
     @Nullable
     private BlockPos stationPos;
+    // the ground radar on our ring, synced
+    @Nullable
+    private BlockPos radarPos;
     private UplinkStatus uplink = UplinkStatus.NO_SATELLITE;
     private int scanIndex;
     // from the satellite tier, kept after recovery
@@ -310,10 +318,17 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         BlockPos center = getPadCenter();
         // heightmap instead of sky light, light updates lag behind
         boolean nowSky = level.getHeight(Heightmap.Types.WORLD_SURFACE, center.getX(), center.getZ()) <= center.getY() + 1;
+        BlockPos nowRadar = findRadar(center);
+        // claimed even while the pad is incomplete
+        if (nowRadar != null && level.getBlockEntity(nowRadar) instanceof GroundRadarBlockEntity radar) {
+            radar.setStation(worldPosition);
+        }
 
-        boolean changed = nowPlating != platingOk || nowSky != skyOk || !Objects.equals(oldCenter, padCenter);
+        boolean changed = nowPlating != platingOk || nowSky != skyOk || !Objects.equals(oldCenter, padCenter)
+            || !Objects.equals(nowRadar, radarPos);
         platingOk = nowPlating;
         skyOk = nowSky;
+        radarPos = nowRadar;
         markCenter(platingOk ? center : null);
 
         // items restored from the dropped block don't fire a slot change
@@ -332,7 +347,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
         setState(QuarryStates.PAD_INCOMPLETE, !platingOk);
         setState(QuarryStates.NO_SKY, !skyOk);
-        setState(MachineState.EMPTY_TANK, phase == FlightPhase.IDLE && getFuel() < QuarryConfig.FUEL_PER_FLIGHT.get());
+        setState(QuarryStates.NO_RADAR, platingOk && radarPos == null);
+        int cost = getLaunchCost();
+        setState(MachineState.EMPTY_TANK, phase == FlightPhase.IDLE && cost > 0 && getFuel() < cost);
 
         if (changed) {
             setChanged();
@@ -370,9 +387,10 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         return bestScore == 25;
     }
 
-    // 25 = complete
+    // 25 = complete. One ground radar anywhere on the ring counts as frame
     private int padScore(BlockPos center) {
         int score = 0;
+        boolean radar = false;
         for (int dx = -RADIUS; dx <= RADIUS; dx++) {
             for (int dz = -RADIUS; dz <= RADIUS; dz++) {
                 BlockPos pos = center.offset(dx, 0, dz);
@@ -382,12 +400,35 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
                 }
                 BlockState state = level.getBlockState(pos);
                 boolean outer = Math.max(Math.abs(dx), Math.abs(dz)) == RADIUS;
-                if (outer ? state.is(FRAME_BLOCKS) : state.is(ModBlocks.LAUNCH_PAD_PLATING.get())) {
+                if (outer && !radar && state.is(ModBlocks.GROUND_RADAR.get())) {
+                    radar = true;
+                    score++;
+                } else if (outer ? state.is(FRAME_BLOCKS) : state.is(ModBlocks.LAUNCH_PAD_PLATING.get())) {
                     score++;
                 }
             }
         }
         return score;
+    }
+
+    // the radar on the ring around center, the one we had first
+    @Nullable
+    private BlockPos findRadar(BlockPos center) {
+        BlockPos found = null;
+        for (int dx = -RADIUS; dx <= RADIUS; dx++) {
+            for (int dz = -RADIUS; dz <= RADIUS; dz++) {
+                BlockPos pos = center.offset(dx, 0, dz);
+                if (Math.max(Math.abs(dx), Math.abs(dz)) == RADIUS && level.getBlockEntity(pos) instanceof GroundRadarBlockEntity) {
+                    if (pos.equals(radarPos)) {
+                        return radarPos;
+                    }
+                    if (found == null) {
+                        found = pos.immutable();
+                    }
+                }
+            }
+        }
+        return found;
     }
 
     // behind the front, until there's plating
@@ -460,6 +501,20 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         return getFluidHandler();
     }
 
+    // powers the radar
+    @Override
+    public @Nullable IEnergyStorage getPortEnergyStorage() {
+        return energy;
+    }
+
+    public PadEnergy getEnergy() {
+        return energy;
+    }
+
+    public int getEnergyPercent() {
+        return energy.getMaxEnergyStored() <= 0 ? 0 : (int) (100L * energy.getEnergyStored() / energy.getMaxEnergyStored());
+    }
+
     // Read from the world, works client side too
     @Override
     public List<BlockPos> findPorts() {
@@ -509,12 +564,18 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             && worldPosition.equals(controller.getPadPos()) ? controller : null;
     }
 
-    // The radar on the ring of the controller's obelisk
+    @Nullable
+    public BlockPos getRadarPos() {
+        return radarPos;
+    }
+
+    // The radar on our ring
     @Nullable
     public GroundRadarBlockEntity getRadar() {
-        QuarryControllerBlockEntity station = getStation();
-        CrystalObeliskBlockEntity obelisk = station != null ? station.getObelisk() : null;
-        return obelisk != null ? obelisk.getRadar() : null;
+        if (level == null || radarPos == null || !level.isLoaded(radarPos)) {
+            return null;
+        }
+        return level.getBlockEntity(radarPos) instanceof GroundRadarBlockEntity radar ? radar : null;
     }
 
     // endregion
@@ -553,9 +614,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             return launchError("satellite_slot_full");
         }
 
-        int cost = QuarryConfig.FUEL_PER_FLIGHT.get();
+        int cost = getLaunchCost();
         if (getFuel() < cost) {
-            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", cost);
+            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", getFuel(), cost);
         }
 
         if (cost > 0) {
@@ -618,7 +679,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
         int cost = getTransferCost(dx, dz);
         if (getFuel() < cost) {
-            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", cost);
+            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", getFuel(), cost);
         }
 
         if (cost > 0) {
@@ -642,7 +703,26 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     }
 
     public int getTransferCost(int dx, int dz) {
-        return QuarryConfig.FUEL_PER_FLIGHT.get() + (int) Math.ceil(getTransferDistance(dx, dz) * QuarryConfig.FUEL_PER_TRANSFER_CHUNK.get());
+        return getTransferBaseCost() + (int) Math.ceil(getTransferDistance(dx, dz) * QuarryConfig.FUEL_PER_TRANSFER_CHUNK.get());
+    }
+
+    // a transfer flies up lightly loaded, like a recovery
+    public int getTransferBaseCost() {
+        QuarryTier tier = getSatelliteTier();
+        return (tier != null ? tier : QuarryTier.BASIC).returnFuel();
+    }
+
+    /**
+     * Rocket fuel the next Launch press burns: the satellite in the slot goes up (its tier's launchFuel), or the one in orbit
+     * comes back (its tier's returnFuel, the rocket goes up empty). -1 = nothing to fly.
+     */
+    public int getLaunchCost() {
+        if (!orbiting.isEmpty()) {
+            QuarryTier tier = getSatelliteTier();
+            return (tier != null ? tier : QuarryTier.BASIC).returnFuel();
+        }
+        QuarryTier tier = SatelliteItem.tierOf(SATELLITE.getItemStack(this));
+        return tier != null ? tier.launchFuel() : -1;
     }
 
     // ticks the satellite needs to fly over
@@ -935,11 +1015,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         if (orbiting.isEmpty()) {
             status = UplinkStatus.NO_SATELLITE;
         } else {
-            QuarryControllerBlockEntity station = getStation();
             GroundRadarBlockEntity radar = getRadar();
-            if (station == null) {
-                status = UplinkStatus.NO_STATION;
-            } else if (radar == null) {
+            if (radar == null) {
                 status = UplinkStatus.NO_RADAR;
             } else if (!radar.consumeUplinkEnergy()) {
                 status = UplinkStatus.NO_POWER;
@@ -1140,7 +1217,12 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         if (isRelocating()) {
             return QuarryStates.SATELLITE_MOVING;
         }
-        return uplink == UplinkStatus.ONLINE ? null : QuarryStates.SATELLITE_OFFLINE;
+        return switch (uplink) {
+            case ONLINE -> null;
+            case NO_RADAR -> QuarryStates.NO_RADAR;
+            case NO_POWER -> QuarryStates.RADAR_NO_POWER;
+            default -> QuarryStates.SATELLITE_OFFLINE;
+        };
     }
 
     @Nullable
@@ -1580,6 +1662,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         saveTank(registries, tag);
+        tag.put(ENERGY, energy.serializeNBT(registries));
         if (!flightRocket.isEmpty()) {
             tag.put(FLIGHT_ROCKET, flightRocket.save(registries));
         }
@@ -1613,6 +1696,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         tag.putBoolean(SKY_OK, skyOk);
         if (stationPos != null) {
             tag.put(STATION_POS, NbtUtils.writeBlockPos(stationPos));
+        }
+        if (radarPos != null) {
+            tag.put(RADAR_POS, NbtUtils.writeBlockPos(radarPos));
         }
         tag.putInt(UPLINK, uplink.ordinal());
         tag.putInt(SCAN_INDEX, scanIndex);
@@ -1648,6 +1734,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         if (tag.contains(MachineNBTKeys.FLUIDS)) {
             loadTank(registries, tag);
         }
+        if (tag.contains(ENERGY)) {
+            energy.deserializeNBT(registries, tag.get(ENERGY));
+        }
 
         phase = FlightPhase.byOrdinal(tag.getInt(PHASE));
         mission = Mission.byOrdinal(tag.getInt(MISSION));
@@ -1659,6 +1748,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         platingOk = tag.getBoolean(PLATING_OK);
         skyOk = tag.getBoolean(SKY_OK);
         stationPos = NbtUtils.readBlockPos(tag, STATION_POS).orElse(null);
+        radarPos = NbtUtils.readBlockPos(tag, RADAR_POS).orElse(null);
         uplink = UplinkStatus.byOrdinal(tag.getInt(UPLINK));
         scanIndex = tag.getInt(SCAN_INDEX);
         scanRadius = tag.contains(SCAN_RADIUS) ? tag.getInt(SCAN_RADIUS) : scanRadius;
@@ -1724,4 +1814,36 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     }
 
     // endregion
+
+    // receive only, the radar spends it
+    public class PadEnergy extends EnergyStorage {
+        PadEnergy() {
+            super(QuarryConfig.RADAR_CAPACITY.get(), QuarryConfig.RADAR_MAX_INPUT.get(), 0);
+        }
+
+        @Override
+        public int receiveEnergy(int toReceive, boolean simulate) {
+            int received = super.receiveEnergy(toReceive, simulate);
+            if (received > 0 && !simulate) {
+                setChanged();
+            }
+            return received;
+        }
+
+        public void set(int amount) {
+            energy = Mth.clamp(amount, 0, capacity);
+            setChanged();
+        }
+
+        public boolean consume(int amount) {
+            if (energy < amount) {
+                return false;
+            }
+            if (amount > 0) {
+                energy -= amount;
+                setChanged();
+            }
+            return true;
+        }
+    }
 }

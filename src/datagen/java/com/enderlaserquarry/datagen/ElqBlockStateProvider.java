@@ -6,7 +6,6 @@ import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.launchpad.LaunchPadPlatingBlock;
 import com.enderlaserquarry.content.obelisk.CrystalGlow;
 import com.enderlaserquarry.content.port.TieredPortBlock;
-import com.enderlaserquarry.content.radar.RadarFloor;
 import com.enderlaserquarry.init.ModBlocks;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
@@ -153,14 +152,8 @@ public class ElqBlockStateProvider extends BlockStateProvider {
     }
 
     private void groundRadar() {
-        states(ModBlocks.GROUND_RADAR.get(), state -> {
-            RadarFloor floor = state.getValue(RadarFloor.PROPERTY);
-            String name = floor == RadarFloor.NONE ? "ground_radar" : "ground_radar_" + floor.getSerializedName();
-            String side = floor == RadarFloor.NONE ? "ground_radar_side"
-                : (floor == RadarFloor.BASIC ? "" : floor.getSerializedName() + "_") + "ground_radar_side_tier";
-            return model(name, () -> bottomTop(models().withExistingParent(name, mcLoc("block/cube_bottom_top")),
-                "ground_radar_top", side, "quarry_machine_bottom"));
-        });
+        states(ModBlocks.GROUND_RADAR.get(), state -> model("ground_radar", () -> bottomTop(
+            models().withExistingParent("ground_radar", mcLoc("block/cube_bottom_top")), "ground_radar_top", "ground_radar_side", "quarry_machine_bottom")));
     }
 
     private void obelisk() {

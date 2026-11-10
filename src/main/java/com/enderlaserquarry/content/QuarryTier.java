@@ -9,9 +9,9 @@ import net.minecraft.util.StringRepresentable;
  * Basic / Enhanced / Ender. Values come from the config (tiers.*), defaults are here.
  */
 public enum QuarryTier implements StringRepresentable {
-    BASIC("basic", ChatFormatting.GRAY, 9, 2, 8, 6, 1.0, 24, 4_000, 2_000, 128, 0),
-    ENHANCED("enhanced", ChatFormatting.GOLD, 49, 4, 32, 10, 1.5, 32, 8_000, 4_000, 256, 10),
-    ENDER("ender", ChatFormatting.GREEN, 289, 8, 400, 16, 2.0, 48, 16_000, 8_000, 512, 24);
+    BASIC("basic", ChatFormatting.GRAY, 9, 2, 8, 6, 1.0, 24, 4_000, 2_000, 128, 0, 1_000, 500),
+    ENHANCED("enhanced", ChatFormatting.GOLD, 49, 4, 32, 10, 1.5, 32, 8_000, 4_000, 256, 10, 2_000, 1_000),
+    ENDER("ender", ChatFormatting.GREEN, 289, 8, 400, 16, 2.0, 48, 16_000, 8_000, 512, 24, 4_000, 2_000);
 
     private final String id;
     private final ChatFormatting color;
@@ -25,9 +25,12 @@ public enum QuarryTier implements StringRepresentable {
     private final int defaultXpTank;
     private final int defaultLinkRange;
     private final int defaultTransferRange;
+    private final int defaultLaunchFuel;
+    private final int defaultReturnFuel;
 
     QuarryTier(String id, ChatFormatting color, int maxChunks, int maxDishes, int maxBlocksPerTick, int chunkRadius,
-               double dishSpeed, int dishRange, int coolantTank, int xpTank, int linkRange, int transferRange) {
+               double dishSpeed, int dishRange, int coolantTank, int xpTank, int linkRange, int transferRange,
+               int launchFuel, int returnFuel) {
         this.id = id;
         this.color = color;
         this.defaultMaxChunks = maxChunks;
@@ -40,6 +43,8 @@ public enum QuarryTier implements StringRepresentable {
         this.defaultXpTank = xpTank;
         this.defaultLinkRange = linkRange;
         this.defaultTransferRange = transferRange;
+        this.defaultLaunchFuel = launchFuel;
+        this.defaultReturnFuel = returnFuel;
     }
 
     public String id() {
@@ -101,6 +106,24 @@ public enum QuarryTier implements StringRepresentable {
     // how many chunks a satellite of this tier may be moved away from its launch pad (orbit transfer)
     public int transferRange() {
         return QuarryConfig.tier(this).transferRange().get();
+    }
+
+    // rocket fuel to take a satellite of this tier up
+    public int launchFuel() {
+        return QuarryConfig.tier(this).launchFuel().get();
+    }
+
+    // rocket fuel for a flight to a satellite of this tier already up (recover, orbit transfer)
+    public int returnFuel() {
+        return QuarryConfig.tier(this).returnFuel().get();
+    }
+
+    public int defaultLaunchFuel() {
+        return defaultLaunchFuel;
+    }
+
+    public int defaultReturnFuel() {
+        return defaultReturnFuel;
     }
 
     public int defaultTransferRange() {

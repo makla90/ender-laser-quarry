@@ -88,7 +88,7 @@ import java.util.stream.Stream;
 
 /**
  * The quarry controller. Sits on the quarry floor's ring, fires through the obelisk up to the satellite and mines the
- * queued chunks. Also powers the radar.
+ * queued chunks.
  */
 public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity implements MultiConfigurable, FluidTankUser, FluidItemInteractive {
     // Any capacitor works, values come from the config
@@ -124,7 +124,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     private static final List<MachineState> PROBLEM_STATES = Stream.concat(Stream.of(QuarryStates.NOT_IN_QUARRY, QuarryStates.NO_LAUNCH_PAD,
         QuarryStates.PAD_OUT_OF_RANGE, QuarryStates.NO_SATELLITE, QuarryStates.SATELLITE_OFFLINE, QuarryStates.SATELLITE_MOVING, QuarryStates.OBELISK_NO_SKY,
-        QuarryStates.OBELISK_INCOMPLETE, QuarryStates.NO_CRYSTAL, QuarryStates.CRYSTAL_BROKEN, QuarryStates.CRYSTAL_TIER_TOO_LOW, QuarryStates.NO_DISHES, QuarryStates.NO_RADAR, QuarryStates.NO_CONTROLLER,
+        QuarryStates.OBELISK_INCOMPLETE, QuarryStates.NO_CRYSTAL, QuarryStates.CRYSTAL_BROKEN, QuarryStates.CRYSTAL_TIER_TOO_LOW, QuarryStates.NO_DISHES, QuarryStates.NO_RADAR, QuarryStates.RADAR_NO_POWER, QuarryStates.NO_CONTROLLER,
         QuarryStates.TARGET_OUT_OF_RANGE, QuarryStates.NO_TARGET, QuarryStates.OUTPUT_LIMITED, QuarryStates.INTAKE_LIMITED, QuarryStates.FINISHED, QuarryStates.POWERING_UP,
         QuarryStates.VOID_NEEDS_ENDER, QuarryStates.ASTEROID_UNMEASURED,
         MachineState.NO_CAPACITOR, MachineState.NO_POWER, MachineState.FULL_OUTPUT),
@@ -214,9 +214,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private int particlesThisTick;
     // Usage for the GUI, averaged over USAGE_WINDOW
     private int ownUsedSum;
-    private int radarFedSum;
     private int ownUsage;
-    private int radarUsage;
     private long liquidsAndBlocksWorn;
     private long liquidsDeleted;
     private long intakeTick = NEVER_LIMITED;
@@ -248,26 +246,6 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     public int getOwnUsage() {
         return ownUsage;
-    }
-
-    public int getRadarUsage() {
-        return radarUsage;
-    }
-
-    // The radar keeps the uplink, so it gets fed even when we're not mining
-    private void feedRadar() {
-        CrystalObeliskBlockEntity obelisk = getObelisk();
-        GroundRadarBlockEntity radar = obelisk == null ? null : obelisk.getRadar();
-        if (radar == null || !isCapacitorInstalled()) {
-            return;
-        }
-        var buffer = getEnergyStorage();
-        int wanted = radar.getEnergy().receiveEnergy(buffer.getEnergyStored(), true);
-        if (wanted > 0) {
-            int fed = radar.getEnergy().receiveEnergy(wanted, false);
-            buffer.setEnergyStored(buffer.getEnergyStored() - fed);
-            radarFedSum += fed;
-        }
     }
 
     private boolean payOwnUsage() {
@@ -382,9 +360,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private void updateUsage() {
         if (level.getGameTime() % USAGE_WINDOW == 0) {
             ownUsage = ownUsedSum / USAGE_WINDOW;
-            radarUsage = radarFedSum / USAGE_WINDOW;
             ownUsedSum = 0;
-            radarFedSum = 0;
         }
     }
 
@@ -586,7 +562,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             case 6 -> Math.round((pad.isArriving() ? pad.getRelocationProgress(0) : pad.getTransferFlightProgress()) * 1000);
             case 7 -> pad.getFuel();
             case 8 -> pad.isRocketReady() ? 1 : 0;
-            case 9 -> QuarryConfig.FUEL_PER_FLIGHT.get();
+            case 9 -> pad.getTransferBaseCost();
             case 10 -> QuarryConfig.FUEL_PER_TRANSFER_CHUNK.get();
             case 11 -> pad.hasSatelliteInOrbit() ? 1 : 0;
             default -> 0;
@@ -988,7 +964,6 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             return;
         }
 
-        feedRadar();
         updateUsage();
         tickSpaceScan(serverLevel);
         tickAnalyze(serverLevel);
@@ -1705,13 +1680,13 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         return null;
     }
 
-    // The radar pays the scan bit by bit, without power it waits
+    // The radar on the pad pays the scan bit by bit, without power it waits
     private void tickSpaceScan(ServerLevel serverLevel) {
         if (spaceScanTicks <= 0) {
             return;
         }
-        CrystalObeliskBlockEntity obelisk = getObelisk();
-        GroundRadarBlockEntity radar = obelisk != null ? obelisk.getRadar() : null;
+        LaunchPadBlockEntity scanPad = getLinkedPad();
+        GroundRadarBlockEntity radar = scanPad != null ? scanPad.getRadar() : null;
         int perTick = Mth.ceil((double) QuarryConfig.VOID_SCAN_ENERGY.get() / QuarryConfig.VOID_SCAN_TICKS.get());
         if (radar == null || getVoidProblem() != null || !radar.consumeScanEnergy(perTick)) {
             scanStalled = true;
@@ -1800,8 +1775,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
         int total = QuarryConfig.VOID_ANALYZE_TICKS.get();
         if (analyzeTicks < total) {
-            CrystalObeliskBlockEntity obelisk = getObelisk();
-            GroundRadarBlockEntity radar = obelisk != null ? obelisk.getRadar() : null;
+            GroundRadarBlockEntity radar = pad.getRadar();
             int perTick = Mth.ceil((double) QuarryConfig.VOID_ANALYZE_ENERGY.get() / total);
             if (radar == null || getVoidProblem() != null || !radar.consumeScanEnergy(perTick)) {
                 analyzeStalled = true;

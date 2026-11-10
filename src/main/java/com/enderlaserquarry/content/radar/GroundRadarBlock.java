@@ -23,33 +23,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Ground radar, goes on the quarry floor ring. Sides take the colour of the plating tier around it.
+ * Ground radar, goes on the launch pad ring.
  */
 public class GroundRadarBlock extends BaseEntityBlock {
     public static final MapCodec<GroundRadarBlock> CODEC = simpleCodec(GroundRadarBlock::new);
 
     public GroundRadarBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(RadarFloor.PROPERTY, RadarFloor.NONE));
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(RadarFloor.PROPERTY);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(RadarFloor.PROPERTY, RadarFloor.around(context.getLevel(), context.getClickedPos()));
-    }
-
-    @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
-        if (direction.getAxis().isHorizontal()) {
-            return state.setValue(RadarFloor.PROPERTY, RadarFloor.around(level, pos));
-        }
-        return state;
     }
 
     @Override
@@ -75,13 +55,12 @@ public class GroundRadarBlock extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof GroundRadarBlockEntity radar) {
-            var energy = radar.getEnergy();
-            var station = radar.getStationPos();
+            var pad = radar.getSatellitePad();
+            var station = pad != null ? pad.getBlockPos() : null;
             PlayerMessages.show(player, station != null
                 ? Component.translatable("message.ender_laser_quarry.radar.linked", station.getX(), station.getY(), station.getZ(),
-                    energy.getEnergyStored(), energy.getMaxEnergyStored())
-                : Component.translatable("message.ender_laser_quarry.radar.unlinked", energy.getEnergyStored(),
-                    energy.getMaxEnergyStored()));
+                    pad.getEnergy().getEnergyStored(), pad.getEnergy().getMaxEnergyStored())
+                : Component.translatable("message.ender_laser_quarry.radar.unlinked"));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

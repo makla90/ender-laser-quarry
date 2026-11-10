@@ -26,14 +26,14 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
 
     private final FluidStorageSyncSlot fuelTank;
     private final IntSyncSlot radarEnergy;
+    // mB the next launch burns, -1 = nothing to fly (common config isn't synced)
+    private final IntSyncSlot launchCost;
 
     public LaunchPadMenu(int containerId, Inventory playerInventory, LaunchPadBlockEntity be) {
         super(ModMenus.LAUNCH_PAD.get(), containerId, playerInventory, be);
         fuelTank = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getFuelTank())));
-        radarEnergy = addSyncSlot(IntSyncSlot.readOnly(() -> {
-            var radar = be.getRadar();
-            return radar != null ? radar.getEnergyPercent() : -1;
-        }));
+        radarEnergy = addSyncSlot(IntSyncSlot.readOnly(() -> be.getRadar() != null ? be.getEnergyPercent() : -1));
+        launchCost = addSyncSlot(IntSyncSlot.readOnly(be::getLaunchCost));
         addSlots();
     }
 
@@ -41,6 +41,7 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
         super(ModMenus.LAUNCH_PAD.get(), containerId, playerInventory, buf, ModBlockEntities.LAUNCH_PAD.get());
         fuelTank = addSyncSlot(FluidStorageSyncSlot.standalone());
         radarEnergy = addSyncSlot(IntSyncSlot.standalone());
+        launchCost = addSyncSlot(IntSyncSlot.standalone());
         addSlots();
     }
 
@@ -70,5 +71,9 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
     // percent, -1 = no radar
     public int getRadarEnergy() {
         return radarEnergy.get();
+    }
+
+    public int getLaunchCost() {
+        return launchCost.get();
     }
 }
