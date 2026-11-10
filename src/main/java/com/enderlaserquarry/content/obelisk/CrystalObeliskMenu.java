@@ -30,7 +30,7 @@ public class CrystalObeliskMenu extends BaseBlockEntityMenu<CrystalObeliskBlockE
     public static final int PLAYER_INV_Y = 84;
 
     // synced as an index, -1 = ready
-    private static final List<MachineState> PROBLEMS = Stream.concat(Stream.of(QuarryStates.OBELISK_INCOMPLETE, QuarryStates.NO_RADAR,
+    private static final List<MachineState> PROBLEMS = Stream.concat(Stream.of(QuarryStates.OBELISK_INCOMPLETE,
         QuarryStates.NO_CONTROLLER, QuarryStates.NO_CRYSTAL, QuarryStates.CRYSTAL_BROKEN, QuarryStates.CRYSTAL_TIER_TOO_LOW, QuarryStates.NO_DISHES), QuarryStates.allQuarryNeedsPlating().stream()).toList();
 
     private final IntSyncSlot problem;

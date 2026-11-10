@@ -29,7 +29,6 @@ public class QuarryPlatingBlock extends ConnectedFrameBlock {
     }
 
     public static boolean isQuarryFloor(BlockState state) {
-        return state.is(CrystalObeliskBlockEntity.FRAME_BLOCKS) || state.getBlock() instanceof QuarryControllerBlock
-            || state.is(ModBlocks.GROUND_RADAR.get());
+        return state.is(CrystalObeliskBlockEntity.FRAME_BLOCKS) || state.getBlock() instanceof QuarryControllerBlock;
     }
 }

@@ -44,8 +44,6 @@ public final class ModBlockEntities {
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         // multiblock cores have no capabilities, everything goes through the ports
 
-        event.registerBlockEntity(Capabilities.Energy.BLOCK, GROUND_RADAR.get(), (radar, side) -> radar.getEnergy());
-
         // ports, per side IO mode
         event.registerBlockEntity(Capabilities.Item.BLOCK, STRUCTURE_PORT.get(), StructurePortBlockEntity::getItemHandler);
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, STRUCTURE_PORT.get(), StructurePortBlockEntity::getFluidHandler);

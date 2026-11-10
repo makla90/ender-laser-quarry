@@ -3,7 +3,6 @@ package com.enderlaserquarry.client.screen;
 import com.enderio.enderio.client.content.machines.gui.screen.base.MachineScreen;
 import com.enderio.enderio.client.content.machines.gui.widget.ActivityWidget;
 import com.enderio.enderio.client.foundation.widgets.FluidStackWidget;
-import com.enderlaserquarry.config.QuarryConfig;
 import com.enderlaserquarry.content.launchpad.FlightPhase;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.launchpad.LaunchPadMenu;
@@ -25,6 +24,8 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     private static final int INFO_Y = 16;
     private static final int INFO_W = 92;
     private static final int INFO_H = 58;
+
+    private static final java.text.NumberFormat FORMAT = java.text.NumberFormat.getIntegerInstance(java.util.Locale.ROOT);
 
     private Button launchButton;
 
@@ -58,9 +59,21 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         super.containerTick();
         var pad = menu.getBlockEntity();
         launchButton.active = !pad.isFlying();
+        int cost = menu.getLaunchCost();
+        if (!pad.isFlying() && cost > 0 && fuel() < cost) {
+            // too little fuel: the button says how much it takes
+            launchButton.setMessage(Component.translatable("gui.ender_laser_quarry.launch_pad.need_fuel", FORMAT.format(cost))
+                .withStyle(net.minecraft.ChatFormatting.RED));
+            return;
+        }
         launchButton.setMessage(Component.translatable(pad.isFlying()
             ? "gui.ender_laser_quarry.launch_pad.in_flight"
             : pad.hasSatelliteInOrbit() ? "gui.ender_laser_quarry.launch_pad.recover" : "gui.ender_laser_quarry.launch_pad.launch"));
+    }
+
+    private int fuel() {
+        var tank = menu.getFuelTank();
+        return tank == null ? 0 : tank.contents().getAmount();
     }
 
     @Override
@@ -85,7 +98,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         String padKey = !pad.isPlatingComplete() ? "incomplete" : !pad.hasSky() ? "no_sky" : "ready";
         line(g, Component.translatable("gui.ender_laser_quarry.launch_pad.pad." + padKey), x, y, padKey.equals("ready") ? GOOD : BAD);
 
-        // Ground station (the linked quarry) radar energy + uplink
+        // Radar on the ring (pad energy) + uplink
         int radar = menu.getRadarEnergy();
         line(g, radar < 0
             ? Component.translatable("gui.ender_laser_quarry.launch_pad.radar_missing")
@@ -173,9 +186,15 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         }
 
         // Fuel cost hint on the launch button
-        if (isHovering(INFO_X, INFO_Y + INFO_H + 3, INFO_W, 18, mouseX, mouseY) && !menu.getBlockEntity().isFlying()) {
-            g.setTooltipForNextFrame(font, Component.translatable("gui.ender_laser_quarry.launch_pad.fuel_cost",
-                QuarryConfig.FUEL_PER_FLIGHT.get()), mouseX, mouseY);
+        int cost = menu.getLaunchCost();
+        if (isHovering(INFO_X, INFO_Y + INFO_H + 3, INFO_W, 18, mouseX, mouseY) && !menu.getBlockEntity().isFlying() && cost >= 0) {
+            var lines = new java.util.ArrayList<Component>();
+            lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.fuel_cost", FORMAT.format(cost)));
+            if (fuel() < cost) {
+                lines.add(Component.translatable("message.ender_laser_quarry.launch.no_fuel", FORMAT.format(fuel()), FORMAT.format(cost))
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+            }
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
         }
     }
 }

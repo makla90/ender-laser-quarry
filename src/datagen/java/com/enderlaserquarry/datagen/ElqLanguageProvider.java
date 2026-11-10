@@ -102,8 +102,8 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("block.ender_laser_quarry.ender_satellite_dish_plating", "Ender Satellite Dish Plating");
 
-        add("tooltip.ender_laser_quarry.port.launch_pad", "Replaces a Launch Pad Plating on the outer ring: pipe in Rocket Fuel, rockets and satellites. Yeta Wrench a side to set it: none / push / pull / both / disabled");
-        add("tooltip.ender_laser_quarry.port.laser_quarry", "Replaces a Laser Quarry Plating of any tier (it takes that plating's look): power the quarry (the Controller, which feeds the Ground Radar; each Satellite Dish is powered through its own Satellite Dish I/O Port), get the mined items out (the only way: the controller has no IO). Yeta Wrench a side to set it: none / push / pull / both / disabled");
+        add("tooltip.ender_laser_quarry.port.launch_pad", "Replaces a Launch Pad Plating on the outer ring: pipe in Rocket Fuel, rockets and satellites, and power for the Ground Radar on the ring. Yeta Wrench a side to set it: none / push / pull / both / disabled");
+        add("tooltip.ender_laser_quarry.port.laser_quarry", "Replaces a Laser Quarry Plating of any tier (it takes that plating's look): power the quarry (the Controller; each Satellite Dish is powered through its own Satellite Dish I/O Port), get the mined items out (the only way: the controller has no IO). Yeta Wrench a side to set it: none / push / pull / both / disabled");
         add("tooltip.ender_laser_quarry.port.satellite_dish", "Replaces a Satellite Dish Plating of any tier (it takes that plating's look) around a dish: the only way to power the dish. Yeta Wrench a side to set it: none / push / pull / both / disabled");
 
         add("item.ender_laser_quarry.pulsating_laser_crystal", "Pulsating Laser Crystal");
@@ -132,7 +132,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("message.ender_laser_quarry.launch.no_rocket", "Insert a Rocket");
         add("message.ender_laser_quarry.launch.no_satellite", "Insert a satellite to launch");
         add("message.ender_laser_quarry.launch.satellite_slot_full", "Empty the satellite slot to recover the satellite");
-        add("message.ender_laser_quarry.launch.no_fuel", "Not enough Rocket Fuel (needs %s mB)");
+        add("message.ender_laser_quarry.launch.no_fuel", "Not enough Rocket Fuel (%s / %s mB)");
         add("message.ender_laser_quarry.launch.transfer_no_satellite", "No satellite in orbit to move");
         add("message.ender_laser_quarry.launch.transfer_tier", "A %s Satellite stays over its Launch Pad");
         add("message.ender_laser_quarry.launch.transfer_too_far", "Too far: this satellite can go at most %s chunks from its Launch Pad");
@@ -141,18 +141,18 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("message.ender_laser_quarry.transfer.arrived", "Satellite in position over X %s, Z %s: mapping %sx%s chunks");
 
-        add("message.ender_laser_quarry.radar.linked", "Part of the quarry at %s, %s, %s | %s / %s µI");
-        add("message.ender_laser_quarry.radar.unlinked", "Not on a quarry ring | %s / %s µI");
+        add("message.ender_laser_quarry.radar.linked", "Part of the launch pad at %s, %s, %s | %s / %s µI");
+        add("message.ender_laser_quarry.radar.unlinked", "Not on a launch pad ring");
 
         add("gui.ender_laser_quarry.status.pad_incomplete", "Needs a 5x5 Launch Pad: plating in the middle 3x3, plating or I/O ports on the outer ring with this controller");
-        add("gui.ender_laser_quarry.status.no_radar", "Needs a Ground Radar on the outer ring");
+        add("gui.ender_laser_quarry.status.no_radar", "Needs a Ground Radar on the launch pad's outer ring");
         add("gui.ender_laser_quarry.status.no_sky", "No open sky above the pad");
-        add("gui.ender_laser_quarry.status.radar_no_power", "Ground Radar has no power");
+        add("gui.ender_laser_quarry.status.radar_no_power", "Ground Radar has no power: power the launch pad");
         add("gui.ender_laser_quarry.status.no_satellite", "No satellite in orbit");
         add("gui.ender_laser_quarry.status.satellite_offline", "Satellite has no radar uplink");
         add("gui.ender_laser_quarry.status.satellite_moving", "Satellite is changing orbit");
         add("gui.ender_laser_quarry.status.obelisk_no_sky", "Laser needs open sky to reach the satellite (nothing above the obelisk)");
-        add("gui.ender_laser_quarry.status.obelisk_incomplete", "Needs a full 5x5 of Laser Quarry Plating under the obelisk, with one Controller and one Ground Radar on its outer ring");
+        add("gui.ender_laser_quarry.status.obelisk_incomplete", "Needs a full 5x5 of Laser Quarry Plating under the obelisk, with one Controller on its outer ring");
         add("gui.ender_laser_quarry.status.quarry_needs_plating", "This controller needs %s Laser Quarry Plating or better in the whole floor (I/O Ports fit any tier)");
         add("gui.ender_laser_quarry.status.no_crystal", "No Laser Crystal on the obelisk");
         add("gui.ender_laser_quarry.status.crystal_tier_too_low", "Crystal too weak: a Pulsating crystal only runs a Basic quarry");
@@ -162,8 +162,6 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.energy.usage", "Using %s µI/t");
         add("gui.ender_laser_quarry.energy.max_usage", "Max %s µI/t (capacitor)");
 
-        add("gui.ender_laser_quarry.controller.usage.controller", "  Controller: %s µI/t");
-        add("gui.ender_laser_quarry.controller.usage.radar", "  Ground Radar: %s µI/t");
         add("gui.ender_laser_quarry.controller.intake", "Capacitor: takes in up to %s µI/t");
         add("gui.ender_laser_quarry.controller.port_output", "Capacitor: %s items/t out of each I/O port");
 
@@ -177,7 +175,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.launch_pad.pad.incomplete", "Pad: Incomplete");
         add("gui.ender_laser_quarry.launch_pad.pad.no_sky", "Pad: No sky");
         add("gui.ender_laser_quarry.launch_pad.radar", "Radar: %s%%");
-        add("gui.ender_laser_quarry.launch_pad.radar_missing", "Radar: no quarry");
+        add("gui.ender_laser_quarry.launch_pad.radar_missing", "Radar: none on ring");
         add("gui.ender_laser_quarry.launch_pad.uplink.no_satellite", "Uplink: Standby");
         add("gui.ender_laser_quarry.launch_pad.uplink.no_radar", "Uplink: No radar");
         add("gui.ender_laser_quarry.launch_pad.uplink.no_power", "Uplink: No power");
@@ -201,6 +199,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.launch_pad.rocket_slot", "Rocket");
         add("gui.ender_laser_quarry.launch_pad.satellite_slot", "Satellite");
         add("gui.ender_laser_quarry.launch_pad.fuel_cost", "Burns %s mB Rocket Fuel");
+        add("gui.ender_laser_quarry.launch_pad.need_fuel", "Need %s mB");
 
         add("tooltip.ender_laser_quarry.linker.usage", "Use on a Satellite Dish, Crystal Obelisk, Quarry Controller or Launch Pad Controller, then on the block to link it to");
         add("tooltip.ender_laser_quarry.linker.source", "Linking from %s, %s, %s");

@@ -50,7 +50,6 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
     private final IntSyncSlot maxChunks;
     private final IntSyncSlot blocksPerTick;
     private final IntSyncSlot ownUsage;
-    private final IntSyncSlot radarUsage;
     private final IntSyncSlot depthMode;
     private final IntSyncSlot floorY;
     private final IntSyncSlot voidMode;
@@ -90,7 +89,6 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
             return obelisk != null ? obelisk.getBlocksPerTick() : 0;
         }));
         ownUsage = addSyncSlot(IntSyncSlot.readOnly(be::getOwnUsage));
-        radarUsage = addSyncSlot(IntSyncSlot.readOnly(be::getRadarUsage));
         depthMode = addSyncSlot(IntSyncSlot.readOnly(() -> be.getDepthMode().ordinal()));
         floorY = addSyncSlot(IntSyncSlot.readOnly(be::getFloorY));
         voidMode = addSyncSlot(IntSyncSlot.readOnly(() -> be.isVoidMode() ? 1 : 0));
@@ -129,7 +127,6 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         maxChunks = addSyncSlot(IntSyncSlot.standalone());
         blocksPerTick = addSyncSlot(IntSyncSlot.standalone());
         ownUsage = addSyncSlot(IntSyncSlot.standalone());
-        radarUsage = addSyncSlot(IntSyncSlot.standalone());
         depthMode = addSyncSlot(IntSyncSlot.standalone());
         floorY = addSyncSlot(IntSyncSlot.standalone());
         voidMode = addSyncSlot(IntSyncSlot.standalone());
@@ -194,7 +191,8 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         return orbit[8].get() != 0;
     }
 
-    public int getFuelPerFlight() {
+    // fuel a transfer burns before the per-chunk part
+    public int getTransferBaseFuel() {
         return orbit[9].get();
     }
 
@@ -273,10 +271,6 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
 
     public int getOwnUsage() {
         return ownUsage.get();
-    }
-
-    public int getRadarUsage() {
-        return radarUsage.get();
     }
 
     public FluidStorageInfo getCoolant() {

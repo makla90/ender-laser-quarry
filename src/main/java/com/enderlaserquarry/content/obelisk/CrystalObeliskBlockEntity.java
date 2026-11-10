@@ -22,7 +22,6 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import com.mojang.serialization.Codec;
-import com.enderlaserquarry.content.radar.GroundRadarBlockEntity;
 import com.enderlaserquarry.init.ModBlockEntities;
 import com.enderlaserquarry.init.ModBlocks;
 import net.minecraft.core.BlockPos;
@@ -68,7 +67,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The crystal obelisk, core of the laser quarry. Stands on the middle of the 5x5 floor (controller and radar on the
+ * The crystal obelisk, core of the laser quarry. Stands on the middle of the 5x5 floor (controller on the
  * ring), holds the crystal and combines the linked dishes into one beam up to the satellite.
  */
 public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMultiblock, MenuProvider {
@@ -89,7 +88,6 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private static final String CONTROLLER_POS = "ControllerPos";
     private static final String WEAR_BLOCKS = "CrystalWear";
     private static final int REPAIR_INTERVAL = 20;
-    private static final String RADAR_POS = "RadarPos";
     private static final String POWER_UP_START = "PowerUpStart";
 
     private static final int STRUCTURE_CHECK_INTERVAL = 10;
@@ -122,7 +120,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private boolean hot;
     private QuarryTier beamTier = QuarryTier.BASIC;
     private long lastHotTick = NEVER;
-    // linked launch pad, synced for the radar animation
+    // linked launch pad, synced for the uplink beam
     @Nullable
     private BlockPos satellitePos;
     private final List<BlockPos> dishes = new ArrayList<>();
@@ -132,8 +130,6 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private long activeDishesTick;
     @Nullable
     private BlockPos controllerPos;
-    @Nullable
-    private BlockPos radarPos;
     private boolean structureChecked;
     // synced, not saved
     private long powerUpStart = POWERED_DOWN;
@@ -425,9 +421,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         // lowest tier in the floor, must be at least the controller's
         QuarryTier floorTier = QuarryTier.values()[QuarryTier.values().length - 1];
         int controllers = 0;
-        int radars = 0;
         BlockPos nowController = null;
-        BlockPos nowRadar = null;
 
         for (int dx = -RADIUS; dx <= RADIUS; dx++) {
             for (int dz = -RADIUS; dz <= RADIUS; dz++) {
@@ -441,7 +435,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
                     }
                     continue;
                 }
-                // controller and radar can be anywhere on the ring
+                // the controller can be anywhere on the ring
                 boolean outer = Math.max(Math.abs(dx), Math.abs(dz)) == RADIUS;
                 BlockEntity be = outer ? level.getBlockEntity(pos) : null;
                 if (be instanceof QuarryControllerBlockEntity) {
@@ -449,21 +443,14 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
                     if (nowController == null || pos.equals(controllerPos)) {
                         nowController = pos.immutable();
                     }
-                } else if (be instanceof GroundRadarBlockEntity) {
-                    radars++;
-                    if (nowRadar == null || pos.equals(radarPos)) {
-                        nowRadar = pos.immutable();
-                    }
                 } else {
                     frameOk = false;
                 }
             }
         }
 
-        if (!frameOk || controllers > 1 || radars > 1) {
+        if (!frameOk || controllers > 1) {
             structureProblem = QuarryStates.OBELISK_INCOMPLETE;
-        } else if (radars == 0) {
-            structureProblem = QuarryStates.NO_RADAR;
         } else if (controllers == 0) {
             structureProblem = QuarryStates.NO_CONTROLLER;
         } else if (level.getBlockEntity(nowController) instanceof QuarryControllerBlockEntity controller
@@ -478,15 +465,11 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         if (nowController != null && level.getBlockEntity(nowController) instanceof QuarryControllerBlockEntity controller) {
             controller.setObeliskPos(worldPosition);
         }
-        if (nowRadar != null && level.getBlockEntity(nowRadar) instanceof GroundRadarBlockEntity radar) {
-            radar.setStation(worldPosition);
-        }
         // new plating has no glow yet
         updateGlow();
 
-        boolean ringChanged = !Objects.equals(nowController, controllerPos) || !Objects.equals(nowRadar, radarPos);
+        boolean ringChanged = !Objects.equals(nowController, controllerPos);
         controllerPos = nowController;
-        radarPos = nowRadar;
 
         // forget relinked or broken dishes, keep unloaded ones
         activeDishes = null;
@@ -696,19 +679,6 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
             return null;
         }
         return level.getBlockEntity(controllerPos) instanceof QuarryControllerBlockEntity controller ? controller : null;
-    }
-
-    @Nullable
-    public BlockPos getRadarPos() {
-        return radarPos;
-    }
-
-    @Nullable
-    public GroundRadarBlockEntity getRadar() {
-        if (level == null || radarPos == null || !level.isLoaded(radarPos)) {
-            return null;
-        }
-        return level.getBlockEntity(radarPos) instanceof GroundRadarBlockEntity radar ? radar : null;
     }
 
     // endregion
@@ -1077,7 +1047,6 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         }
         tag.putInt(WEAR_BLOCKS, wearBlocks);
         tag.storeNullable(CONTROLLER_POS, BlockPos.CODEC, controllerPos);
-        tag.storeNullable(RADAR_POS, BlockPos.CODEC, radarPos);
         // a running quarry comes back powered up, no second power-up after a reload
         if (powerUpStart != POWERED_DOWN) {
             tag.putLong(POWER_UP_START, powerUpStart);
@@ -1115,7 +1084,6 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         // not in the update tag
         controllerPos = tag.read(CONTROLLER_POS, BlockPos.CODEC).orElse(controllerPos);
         wearBlocks = tag.getIntOr(WEAR_BLOCKS, wearBlocks);
-        radarPos = tag.read(RADAR_POS, BlockPos.CODEC).orElse(radarPos);
         if (tag.getInt(WEAR_BLOCKS).isPresent()) {
             // full save
             crystal = tag.read(CRYSTAL, ItemStack.CODEC).orElse(ItemStack.EMPTY);

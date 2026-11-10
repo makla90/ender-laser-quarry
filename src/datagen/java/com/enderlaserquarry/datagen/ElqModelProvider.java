@@ -8,7 +8,6 @@ import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.launchpad.LaunchPadPlatingBlock;
 import com.enderlaserquarry.content.obelisk.CrystalGlow;
 import com.enderlaserquarry.content.port.TieredPortBlock;
-import com.enderlaserquarry.content.radar.RadarFloor;
 import com.enderlaserquarry.init.ModBlocks;
 import com.enderlaserquarry.init.ModItems;
 import com.mojang.math.Quadrant;
@@ -192,15 +191,7 @@ public class ElqModelProvider extends ModelProvider {
     }
 
     private BlockModelDefinitionGenerator groundRadar() {
-        return states(ModBlocks.GROUND_RADAR.get(), state -> {
-            RadarFloor floor = state.getValue(RadarFloor.PROPERTY);
-            if (floor == RadarFloor.NONE) {
-                return plain(bottomTop("ground_radar", "ground_radar_top", "ground_radar_side", "quarry_machine_bottom"));
-            }
-            String t = floor == RadarFloor.BASIC ? "" : floor.getSerializedName() + "_";
-            return plain(bottomTop("ground_radar_" + floor.getSerializedName(), "ground_radar_top", t + "ground_radar_side_tier",
-                "quarry_machine_bottom"));
-        });
+        return states(ModBlocks.GROUND_RADAR.get(), state -> plain(bottomTop("ground_radar", "ground_radar_top", "ground_radar_side", "quarry_machine_bottom")));
     }
 
     private BlockModelDefinitionGenerator obelisk() {

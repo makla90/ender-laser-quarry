@@ -36,7 +36,7 @@ public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlo
 
     // what the port passes: items, fluids, energy
     public enum Structure {
-        LAUNCH_PAD(true, true, false),
+        LAUNCH_PAD(true, true, true),
         LASER_QUARRY(true, true, true),
         SATELLITE_DISH(false, false, true);
 

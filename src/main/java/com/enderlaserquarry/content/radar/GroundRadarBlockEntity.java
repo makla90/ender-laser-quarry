@@ -4,7 +4,6 @@ import com.enderlaserquarry.config.QuarryConfig;
 import com.enderlaserquarry.content.controller.QuarryControllerBlockEntity;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.launchpad.UplinkStatus;
-import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.enderlaserquarry.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -23,23 +22,20 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import com.enderlaserquarry.content.Transfers;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 /**
- * Ground radar on the quarry ring. Gets power from the controller and keeps the uplink to the satellite.
+ * Ground radar on the launch pad ring. Keeps the uplink to the satellite, paid from the pad's energy.
  */
 public class GroundRadarBlockEntity extends BlockEntity {
     public static final Vec3 ANTENNA_PIVOT = new Vec3(0.5, 1 + 11 / 16.0, 0.5);
     public static final double HORN_DISTANCE = 11 / 16.0;
 
     private static final String STATION = "Station";
-    private static final String ENERGY = "Energy";
     private static final String POWERED = "Powered";
     private static final String SCANNING = "Scanning";
     private static final String SPACE_SCAN = "SpaceScan";
@@ -53,8 +49,6 @@ public class GroundRadarBlockEntity extends BlockEntity {
     // space scan: fast spin, horn up at the sky
     private static final float SPACE_SWEEP_SPEED = 14;
     private static final float SPACE_PITCH = 55;
-
-    private final RadarEnergyStorage energy = new RadarEnergyStorage();
 
     @Nullable
     private BlockPos stationPos;
@@ -89,25 +83,18 @@ public class GroundRadarBlockEntity extends BlockEntity {
     }
 
     @Nullable
-    public CrystalObeliskBlockEntity getStation() {
+    public LaunchPadBlockEntity getStation() {
         if (level == null || stationPos == null || !level.isLoaded(stationPos)) {
             return null;
         }
-        return level.getBlockEntity(stationPos) instanceof CrystalObeliskBlockEntity obelisk ? obelisk : null;
+        return level.getBlockEntity(stationPos) instanceof LaunchPadBlockEntity pad ? pad : null;
     }
 
+    // only while the pad still has us on its ring
     @Nullable
     public LaunchPadBlockEntity getSatellitePad() {
-        CrystalObeliskBlockEntity station = getStation();
-        return station != null ? station.getSatellitePad() : null;
-    }
-
-    public RadarEnergyStorage getEnergy() {
-        return energy;
-    }
-
-    public int getEnergyPercent() {
-        return energy.getMaxEnergyStored() <= 0 ? 0 : (int) (100L * energy.getEnergyStored() / energy.getMaxEnergyStored());
+        LaunchPadBlockEntity pad = getStation();
+        return pad != null && worldPosition.equals(pad.getRadarPos()) ? pad : null;
     }
 
     public boolean isPowered() {
@@ -115,11 +102,12 @@ public class GroundRadarBlockEntity extends BlockEntity {
     }
 
     public boolean consumeUplinkEnergy() {
-        return energy.consume(QuarryConfig.RADAR_UPLINK_USAGE.get());
+        return consumeScanEnergy(QuarryConfig.RADAR_UPLINK_USAGE.get());
     }
 
     public boolean consumeScanEnergy(int amount) {
-        return energy.consume(amount);
+        LaunchPadBlockEntity pad = getSatellitePad();
+        return pad != null && pad.getEnergy().consume(amount);
     }
 
     // endregion
@@ -147,20 +135,14 @@ public class GroundRadarBlockEntity extends BlockEntity {
             return;
         }
 
-        // for radars placed without a neighbour update
-        RadarFloor floor = RadarFloor.around(level, worldPosition);
-        if (getBlockState().getValue(RadarFloor.PROPERTY) != floor) {
-            level.setBlock(worldPosition, getBlockState().setValue(RadarFloor.PROPERTY, floor), Block.UPDATE_CLIENTS);
-        }
-
         if (stationPos != null && level.isLoaded(stationPos)) {
-            CrystalObeliskBlockEntity obelisk = getStation();
-            if (obelisk == null || !worldPosition.equals(obelisk.getRadarPos())) {
+            if (getSatellitePad() == null) {
                 setStation(null);
             }
         }
 
-        boolean nowPowered = energy.getEnergyStored() >= Math.max(1, QuarryConfig.RADAR_UPLINK_USAGE.get());
+        LaunchPadBlockEntity pad = getSatellitePad();
+        boolean nowPowered = pad != null && pad.getEnergy().getEnergyStored() >= Math.max(1, QuarryConfig.RADAR_UPLINK_USAGE.get());
         boolean nowScanning = computeScanning();
         if (nowPowered != powered || nowScanning != scanning) {
             powered = nowPowered;
@@ -178,14 +160,13 @@ public class GroundRadarBlockEntity extends BlockEntity {
         if (!pad.isScanComplete()) {
             return true;
         }
-        CrystalObeliskBlockEntity station = getStation();
-        QuarryControllerBlockEntity controller = station != null ? station.getController() : null;
+        QuarryControllerBlockEntity controller = pad.getStation();
         return controller != null && controller.isScanningSpace() && !controller.isScanStalled();
     }
 
     private boolean computeSpaceScanning() {
-        CrystalObeliskBlockEntity station = getStation();
-        QuarryControllerBlockEntity controller = station != null ? station.getController() : null;
+        LaunchPadBlockEntity pad = getSatellitePad();
+        QuarryControllerBlockEntity controller = pad != null ? pad.getStation() : null;
         return powered && controller != null && controller.isScanningSpace() && !controller.isScanStalled();
     }
 
@@ -302,7 +283,6 @@ public class GroundRadarBlockEntity extends BlockEntity {
     protected void saveAdditional(ValueOutput tag) {
         super.saveAdditional(tag);
         tag.storeNullable(STATION, BlockPos.CODEC, stationPos);
-        tag.putChild(ENERGY, energy);
         tag.putBoolean(POWERED, powered);
         tag.putBoolean(SCANNING, scanning);
         tag.putBoolean(SPACE_SCAN, spaceScanning);
@@ -312,7 +292,6 @@ public class GroundRadarBlockEntity extends BlockEntity {
     protected void loadAdditional(ValueInput tag) {
         super.loadAdditional(tag);
         stationPos = tag.read(STATION, BlockPos.CODEC).orElse(null);
-        tag.readChild(ENERGY, energy);
         powered = tag.getBooleanOr(POWERED, false);
         scanning = tag.getBooleanOr(SCANNING, false);
         spaceScanning = tag.getBooleanOr(SPACE_SCAN, false);
@@ -330,38 +309,4 @@ public class GroundRadarBlockEntity extends BlockEntity {
     }
 
     // endregion
-
-    // receive only
-    public class RadarEnergyStorage extends SimpleEnergyHandler {
-        RadarEnergyStorage() {
-            super(QuarryConfig.RADAR_CAPACITY.get(), QuarryConfig.RADAR_MAX_INPUT.get(), 0);
-        }
-
-        @Override
-        protected void onEnergyChanged(int previousAmount) {
-            setChanged();
-        }
-
-        public int getEnergyStored() {
-            return energy;
-        }
-
-        public int getMaxEnergyStored() {
-            return capacity;
-        }
-
-        public int receiveEnergy(int amount, boolean simulate) {
-            return Transfers.insert(this, amount, simulate);
-        }
-
-        boolean consume(int amount) {
-            if (energy < amount) {
-                return false;
-            }
-            if (amount > 0) {
-                set(energy - amount);
-            }
-            return true;
-        }
-    }
 }

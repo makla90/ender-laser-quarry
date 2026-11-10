@@ -18,7 +18,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Radar antenna and the uplink to the satellite.
+ * Radar antenna, the uplink to the satellite and the hop down to the launch pad controller.
  */
 public class GroundRadarRenderer extends LiveRenderer<GroundRadarBlockEntity> {
     static final Identifier TEXTURE = EnderLaserQuarry.rl("textures/entity/ground_radar.png");
@@ -41,7 +41,6 @@ public class GroundRadarRenderer extends LiveRenderer<GroundRadarBlockEntity> {
             return;
         }
         float time = radar.getLevel().getGameTime() + partialTick;
-        QuarryFloorOverlay.render(radar.getLevel(), radar.getBlockPos(), QuarryFloorOverlay.Emblem.RADAR, poseStack, buffers);
 
         int light = LaunchPadRenderer.lightAt(radar.getLevel(), radar.getBlockPos().above());
 
@@ -85,6 +84,13 @@ public class GroundRadarRenderer extends LiveRenderer<GroundRadarBlockEntity> {
             LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, up), from.lerp(to, Math.min(1, up + 0.02f)), UPLINK, 0.06f, time);
             float down = 1 - frac(time * 0.009f + (i + 0.5f) / PACKETS);
             LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, down), from.lerp(to, Math.min(1, down + 0.02f)), DOWNLINK, 0.06f, time);
+        }
+
+        // data on to the controller's mini radar
+        Vec3 relay = pad.getMiniRadarHorn(partialTick).subtract(Vec3.atLowerCornerOf(radar.getBlockPos()));
+        for (int i = 0; i < 2; i++) {
+            float t = frac(time * 0.03f + i / 2f);
+            LaserBeamRenderer.render(poseStack, buffers, from.lerp(relay, t), from.lerp(relay, Math.min(1, t + 0.08f)), DOWNLINK, 0.04f, time);
         }
     }
 

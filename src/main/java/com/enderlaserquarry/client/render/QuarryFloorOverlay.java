@@ -17,13 +17,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 /**
- * Draws the plating top with an emblem over the controller and radar when they sit in a quarry floor, so the floor
- * looks connected. Tier and glow come from the plating next to them.
+ * Draws the plating top with an emblem over the controller when it sits in a quarry floor, so the floor
+ * looks connected. Tier and glow come from the plating next to it.
  */
 public final class QuarryFloorOverlay {
     public enum Emblem {
-        CONTROLLER("quarry_floor_controller"),
-        RADAR("quarry_floor_radar");
+        CONTROLLER("quarry_floor_controller");
 
         private final Identifier[][] sheets = new Identifier[QuarryTier.values().length][CrystalGlow.values().length];
 

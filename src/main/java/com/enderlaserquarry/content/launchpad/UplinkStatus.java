@@ -6,6 +6,7 @@ public enum UplinkStatus {
     NO_RADAR,
     NO_POWER,
     ONLINE,
+    // unused, the uplink no longer needs the quarry
     NO_STATION;
 
     public static UplinkStatus byOrdinal(int ordinal) {
