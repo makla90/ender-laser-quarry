@@ -399,8 +399,49 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         return VIEW_DISTANCE;
     }
 
+    // Infinite only while the rocket flies or the beam is on. Otherwise: the pad, the link to the quarry controller, the
+    // orbit circle up there and the scan beam's spot on the ground.
     @Override
-    public AABB getRenderBoundingBox(LaunchPadBlockEntity blockEntity) {
-        return AABB.INFINITE;
+    public AABB getRenderBoundingBox(LaunchPadBlockEntity pad) {
+        if (pad.isFlying() || pad.getBeamTarget() != null) {
+            return AABB.INFINITE;
+        }
+        BlockPos center = pad.getPadCenter();
+        BlockPos controller = pad.getBlockPos();
+        int radius = LaunchPadBlockEntity.RADIUS + 1;
+        double minX = Math.min(center.getX() - radius, controller.getX() - 1);
+        double minY = Math.min(center.getY(), controller.getY()) - 1;
+        double minZ = Math.min(center.getZ() - radius, controller.getZ() - 1);
+        double maxX = Math.max(center.getX() + radius + 1, controller.getX() + 2);
+        // rocket standing on the pad, mini radar on the controller
+        double maxY = Math.max(center.getY(), controller.getY()) + 10;
+        double maxZ = Math.max(center.getZ() + radius + 1, controller.getZ() + 2);
+
+        Vec3 station = pad.getStationTarget();
+        if (station != null) {
+            minX = Math.min(minX, station.x - 1);
+            minY = Math.min(minY, station.y - 1);
+            minZ = Math.min(minZ, station.z - 1);
+            maxX = Math.max(maxX, station.x + 1);
+            maxY = Math.max(maxY, station.y + 1);
+            maxZ = Math.max(maxZ, station.z + 1);
+        }
+        if (pad.hasSatelliteInOrbit()) {
+            Vec3 orbit = Vec3.atLowerCornerOf(center).add(LaunchPadBlockEntity.LAUNCH_POINT).add(pad.getOrbitAnchor(0));
+            double reach = LaunchPadBlockEntity.ORBIT_RADIUS + LaunchPadBlockEntity.SATELLITE_ORBIT_SCALE * 2;
+            minX = Math.min(minX, orbit.x - reach);
+            minZ = Math.min(minZ, orbit.z - reach);
+            maxX = Math.max(maxX, orbit.x + reach);
+            maxY = Math.max(maxY, orbit.y + pad.getOrbitAltitude() + reach);
+            maxZ = Math.max(maxZ, orbit.z + reach);
+            ChunkPos scanning = pad.getScanningChunk();
+            if (scanning != null) {
+                minX = Math.min(minX, scanning.getMinBlockX());
+                minZ = Math.min(minZ, scanning.getMinBlockZ());
+                maxX = Math.max(maxX, scanning.getMaxBlockX() + 1);
+                maxZ = Math.max(maxZ, scanning.getMaxBlockZ() + 1);
+            }
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 }

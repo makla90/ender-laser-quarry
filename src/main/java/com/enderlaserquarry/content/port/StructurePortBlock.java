@@ -8,6 +8,8 @@ import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.obelisk.QuarryPlatingBlock;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -63,6 +65,15 @@ public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlo
             case LASER_QUARRY -> QuarryPlatingBlock.isQuarryFloor(neighbour);
             case SATELLITE_DISH -> SatelliteDishPlatingBlock.isDishBase(neighbour);
         };
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
+                                     BlockPos pos, BlockPos neighborPos) {
+        if (level.getBlockEntity(pos) instanceof StructurePortBlockEntity port) {
+            port.forgetCore();
+        }
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
     @Override

@@ -48,7 +48,7 @@ public final class ClaimGuard {
         return !NeoForge.EVENT_BUS.post(new BlockEvent.EntityPlaceEvent(snapshot, against, player)).isCanceled();
     }
 
-    // Queue check on the chunk's middle column, without loading it. The laser checks every block again anyway.
+    // Queue check on the chunk's middle column, without loading it. The laser checks again while it mines.
     public static boolean mayQueue(ServerLevel level, ChunkPos chunk, FakePlayer player) {
         int x = chunk.getMiddleBlockX();
         int z = chunk.getMiddleBlockZ();
