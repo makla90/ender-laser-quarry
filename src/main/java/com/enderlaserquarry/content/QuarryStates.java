@@ -16,6 +16,7 @@ public final class QuarryStates {
     public static final MachineState NOT_IN_QUARRY = error("not_in_quarry");
     public static final MachineState DISH_INCOMPLETE = error("dish_incomplete");
     public static final MachineState ENDERGY_NEEDS_ENDER_DISH = error("endergy_needs_ender_dish");
+    public static final MachineState CAPACITOR_UNSUPPORTED = error("capacitor_unsupported");
     public static final MachineState NO_LAUNCH_PAD = error("no_launch_pad");
     public static final MachineState PAD_OUT_OF_RANGE = error("pad_out_of_range");
     public static final MachineState TARGET_OUT_OF_RANGE = error("target_out_of_range");

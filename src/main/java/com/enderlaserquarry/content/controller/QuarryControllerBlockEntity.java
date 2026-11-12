@@ -45,6 +45,7 @@ import com.enderio.enderio.foundation.state.MachineState;
 import com.enderlaserquarry.EnderLaserQuarry;
 import com.enderlaserquarry.config.QuarryConfig;
 import com.enderlaserquarry.content.QuarryStates;
+import com.enderlaserquarry.content.dish.EndergyCapacitors;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
 import com.enderlaserquarry.content.asteroid.Asteroid;
@@ -140,7 +141,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         QuarryStates.OBELISK_INCOMPLETE, QuarryStates.NO_CRYSTAL, QuarryStates.CRYSTAL_BROKEN, QuarryStates.CRYSTAL_TIER_TOO_LOW, QuarryStates.NO_DISHES, QuarryStates.NO_RADAR, QuarryStates.RADAR_NO_POWER, QuarryStates.NO_CONTROLLER,
         QuarryStates.TARGET_OUT_OF_RANGE, QuarryStates.NO_TARGET, QuarryStates.OUTPUT_LIMITED, QuarryStates.INTAKE_LIMITED, QuarryStates.FINISHED, QuarryStates.POWERING_UP,
         QuarryStates.VOID_NEEDS_ENDER, QuarryStates.ASTEROID_UNMEASURED, QuarryStates.NEEDS_VOID_SATELLITE, QuarryStates.NEEDS_VOID_CRYSTAL,
-        QuarryStates.VOID_SATELLITE_UP,
+        QuarryStates.VOID_SATELLITE_UP, QuarryStates.CAPACITOR_UNSUPPORTED,
         MachineState.NO_CAPACITOR, MachineState.NO_POWER, MachineState.FULL_OUTPUT),
         Stream.concat(QuarryStates.allNeedsSatellite().stream(), QuarryStates.allQuarryNeedsPlating().stream())).toList();
 
@@ -296,7 +297,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     // Ender IO capacitor level (Basic 1, Double-Layer 2, Octadic 3, Endergy up to 6), 0 without one
     public float getCapacitorLevel() {
-        return isCapacitorInstalled() ? getCapacitorData().getModifier(CapacitorModifier.ENERGY_USE) : 0;
+        return isCapacitorInstalled() && !hasUnsupportedCapacitor() ? getCapacitorData().getModifier(CapacitorModifier.ENERGY_USE) : 0;
+    }
+
+    public boolean hasUnsupportedCapacitor() {
+        return EndergyCapacitors.isUnsupported(getCapacitorItem());
     }
 
     private int squared(int base) {
@@ -1021,7 +1026,9 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
         if (!running) {
             CrystalObeliskBlockEntity obelisk = getObelisk();
-            if (obelisk != null && obelisk.isCrystalTierTooLow()) {
+            if (hasUnsupportedCapacitor()) {
+                setProblem(QuarryStates.CAPACITOR_UNSUPPORTED);
+            } else if (obelisk != null && obelisk.isCrystalTierTooLow()) {
                 // say it before Start is pressed
                 setProblem(QuarryStates.CRYSTAL_TIER_TOO_LOW);
             } else if (isVoidMode()) {
@@ -1067,6 +1074,10 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private void tickMining(ServerLevel serverLevel) {
         if (!isCapacitorInstalled()) {
             fail(MachineState.NO_CAPACITOR);
+            return;
+        }
+        if (hasUnsupportedCapacitor()) {
+            fail(QuarryStates.CAPACITOR_UNSUPPORTED);
             return;
         }
 

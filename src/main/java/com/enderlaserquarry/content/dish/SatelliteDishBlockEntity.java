@@ -193,7 +193,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
         if (isCapacitorInstalled()) {
             ItemStack capacitor = getCapacitorItem();
             int endergy = EndergyCapacitors.stripIndex(capacitor);
-            nowTier = !EndergyCapacitors.fits(getTier(), capacitor) ? STRIP_WRONG_CAPACITOR
+            nowTier = EndergyCapacitors.dishProblem(getTier(), capacitor) != null ? STRIP_WRONG_CAPACITOR
                 : endergy > 0 ? endergy : Mth.clamp(Math.round(getCapacitorData().getModifier(CapacitorModifier.ENERGY_USE)), 1, 3);
         }
         if (nowFormed != formed || nowTier != capacitorTier) {
@@ -212,9 +212,12 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
         if (platingTooLow != getMachineStates().contains(needsPlating)) {
             updateMachineState(needsPlating, platingTooLow);
         }
-        boolean wrongCapacitor = !EndergyCapacitors.fits(getTier(), getCapacitorItem());
-        if (wrongCapacitor != getMachineStates().contains(QuarryStates.ENDERGY_NEEDS_ENDER_DISH)) {
-            updateMachineState(QuarryStates.ENDERGY_NEEDS_ENDER_DISH, wrongCapacitor);
+        MachineState capacitorProblem = EndergyCapacitors.dishProblem(getTier(), getCapacitorItem());
+        for (MachineState state : new MachineState[] { QuarryStates.ENDERGY_NEEDS_ENDER_DISH, QuarryStates.CAPACITOR_UNSUPPORTED }) {
+            boolean wanted = state == capacitorProblem;
+            if (wanted != getMachineStates().contains(state)) {
+                updateMachineState(state, wanted);
+            }
         }
     }
 
@@ -286,7 +289,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
         if (!isCapacitorInstalled()) {
             return MachineState.NO_CAPACITOR;
         }
-        return EndergyCapacitors.fits(getTier(), getCapacitorItem()) ? null : QuarryStates.ENDERGY_NEEDS_ENDER_DISH;
+        return EndergyCapacitors.dishProblem(getTier(), getCapacitorItem());
     }
 
     // endregion
