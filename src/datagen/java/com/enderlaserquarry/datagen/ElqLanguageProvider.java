@@ -281,6 +281,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.status.not_in_quarry", "Not part of a Laser Quarry (place it on the outer ring of the floor)");
         add("gui.ender_laser_quarry.status.dish_incomplete", "Dish needs 8 Satellite Dish Plating (or Satellite Dish I/O Ports) around it");
         add("gui.ender_laser_quarry.status.endergy_needs_ender_dish", "Endergy capacitors only work in an Ender Satellite Dish");
+        add("gui.ender_laser_quarry.status.capacitor_unsupported", "Totemic capacitors aren't supported yet");
         add("gui.ender_laser_quarry.status.dish_needs_plating", "Needs %s Satellite Dish Plating or better all around the dish (I/O Ports fit any tier)");
         add("gui.ender_laser_quarry.status.output_limited", "Output limited by capacitor: add an I/O port or a better capacitor");
         add("gui.ender_laser_quarry.status.intake_limited", "Power intake limited by capacitor");
@@ -307,8 +308,11 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.dish.idle", "Laser: idle");
         add("gui.ender_laser_quarry.dish.wrong_capacitor", "Capacitor won't work!");
         add("gui.ender_laser_quarry.dish.wrong_capacitor_hint", "Needs an Ender dish");
+        add("gui.ender_laser_quarry.dish.unsupported_capacitor_hint", "Not supported yet");
 
         add("message.ender_laser_quarry.dish.wrong_capacitor", "This capacitor only works in an Ender Satellite Dish");
+        add("message.ender_laser_quarry.capacitor_unsupported", "Totemic capacitors aren't supported by the laser quarry yet");
+        add("tooltip.ender_laser_quarry.capacitor_unsupported", "Not supported by Ender Laser Quarry yet");
 
         add("gui.ender_laser_quarry.controller.start", "Start");
         add("gui.ender_laser_quarry.controller.stop", "Stop");

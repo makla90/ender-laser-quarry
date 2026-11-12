@@ -5,6 +5,7 @@ import com.enderio.enderio.client.content.machines.gui.widget.ActivityWidget;
 import net.minecraft.ChatFormatting;
 import com.enderio.enderio.client.foundation.widgets.RedstoneControlPickerWidget;
 import com.enderio.enderio.foundation.lang.EIOCommonLang;
+import com.enderlaserquarry.content.QuarryStates;
 import com.enderlaserquarry.content.dish.EndergyCapacitors;
 import com.enderlaserquarry.content.dish.SatelliteDishMenu;
 import net.minecraft.client.gui.GuiGraphics;
@@ -68,9 +69,12 @@ public class SatelliteDishScreen extends MachineScreen<SatelliteDishMenu> {
             x + 4, 29, obelisk != null ? 0x1F5FBF : 0xA02020, false);
 
         // straight from the slot, the synced state lags a few ticks
-        if (!EndergyCapacitors.fits(dish.getTier(), dish.getInventory().getStackInSlot(dish.getCapacitorSlotIndex()))) {
+        var capacitorProblem = EndergyCapacitors.dishProblem(dish.getTier(), dish.getInventory().getStackInSlot(dish.getCapacitorSlotIndex()));
+        if (capacitorProblem != null) {
             g.drawString(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor"), x, 40, 0xC02020, false);
-            g.drawString(font, Component.translatable("gui.ender_laser_quarry.dish.wrong_capacitor_hint"), x + 4, 51, 0xC02020, false);
+            g.drawString(font, Component.translatable(capacitorProblem == QuarryStates.CAPACITOR_UNSUPPORTED
+                ? "gui.ender_laser_quarry.dish.unsupported_capacitor_hint"
+                : "gui.ender_laser_quarry.dish.wrong_capacitor_hint"), x + 4, 51, 0xC02020, false);
             return;
         }
 

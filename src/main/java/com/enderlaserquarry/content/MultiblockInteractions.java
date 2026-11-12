@@ -101,7 +101,10 @@ public final class MultiblockInteractions {
                 player.getInventory().placeItemBackInInventory(old);
             }
             level.playSound(null, machine.getBlockPos(), SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 1, 0.8f);
-            if (machine instanceof SatelliteDishBlockEntity dish && !EndergyCapacitors.fits(dish.getTier(), inventory.getStackInSlot(slot))) {
+            ItemStack inserted = inventory.getStackInSlot(slot);
+            if (EndergyCapacitors.isUnsupported(inserted)) {
+                PlayerMessages.show(player, Component.translatable("message.ender_laser_quarry.capacitor_unsupported").withStyle(ChatFormatting.RED));
+            } else if (machine instanceof SatelliteDishBlockEntity dish && !EndergyCapacitors.fits(dish.getTier(), inserted)) {
                 PlayerMessages.show(player, Component.translatable("message.ender_laser_quarry.dish.wrong_capacitor").withStyle(ChatFormatting.RED));
             }
         }
