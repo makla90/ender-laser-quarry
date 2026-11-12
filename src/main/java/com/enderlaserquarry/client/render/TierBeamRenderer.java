@@ -2,6 +2,7 @@ package com.enderlaserquarry.client.render;
 
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.obelisk.CrystalGlow;
+import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -11,7 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * The mining beams. Uplink (crystal -> satellite): even width, a spiral around it from Enhanced on.
+ * The mining beams. Uplink (crystal -> satellite): even width, rings rising around it from Enhanced on.
  * Downlink (satellite -> ground): a cone widening to the ground, corona and rings from Enhanced, impacts on the ground.
  * Colours follow the crystal.
  */
@@ -46,41 +47,47 @@ public final class TierBeamRenderer {
         };
     }
 
-    /** Crystal -> satellite: the classic beam plus a slow double spiral from Enhanced on, a bit bolder on Ender. */
+    /** Crystal -> satellite: the classic beam plus rings rising around it from Enhanced on, more and bolder on Ender. */
     public static void renderUplink(PoseStack poseStack, MultiBufferSource buffers, Vec3 from, Vec3 to, QuarryTier tier, CrystalGlow glow,
                                     float width, float time) {
         LaserBeamRenderer.render(poseStack, buffers, from, to, color(glow, time), width, time);
         int level = tier.ordinal();
         Vec3 dir = to.subtract(from);
         double length = dir.length();
-        if (level == 0 || length < 0.5) {
+        if (level == 0 || length < 2) {
             return;
         }
         VertexConsumer consumer = buffers.getBuffer(RenderTypes.lightning());
         Matrix4f pose = poseStack.last().pose();
         Vec3 axis = dir.scale(1 / length);
         Vec3[] uv = basis(axis);
-        int strands = 2;
-        float radius = level >= 2 ? 0.25f : 0.22f;
-        float twist = 0.35f;
-        float spin = level >= 2 ? 0.35f : 0.25f;
-        float thick = level >= 2 ? 0.026f : 0.02f;
-        float alpha = level >= 2 ? 0.7f : 0.55f;
-        int segments = Mth.clamp((int) (length / 0.8), 8, 160);
-        for (int strand = 0; strand < strands; strand++) {
-            float offset = strand * Mth.TWO_PI / strands;
-            int color = color(glow, time + strand * 25);
-            Vec3 prev = null;
-            for (int i = 0; i <= segments; i++) {
-                double along = (double) i / segments * length;
-                // fades in over the first block so it doesn't stick out of the crystal
-                float r = radius * (float) Math.min(1, along);
-                float angle = (float) along * twist - time * spin + offset;
-                Vec3 point = from.add(axis.scale(along)).add(uv[0].scale(Mth.cos(angle) * r)).add(uv[1].scale(Mth.sin(angle) * r));
-                if (prev != null) {
-                    line(consumer, pose, prev, point, thick, color, alpha);
-                }
-                prev = point;
+        boolean ender = level >= 2;
+        float spacing = CrystalObeliskBlockEntity.ringSpacing(tier);
+        float speed = CrystalObeliskBlockEntity.ringSpeed(tier);
+        float base = ender ? 0.34f : 0.27f;
+        int count = Mth.ceil(length / spacing);
+        double loop = count * spacing;
+        int hot = pulse(glow);
+        for (int i = 0; i < count; i++) {
+            double along = (i * spacing + time * speed) % loop;
+            if (along > length) {
+                continue;
+            }
+            // which ring this is since the start, so the big ones match the crystal's thump
+            long index = Math.round((time * speed - along) / spacing);
+            boolean big = CrystalObeliskBlockEntity.isBigRing(index);
+            // grows out of the crystal, fades in and out at both ends
+            float grow = (float) Math.min(1, along / (big ? 3 : 2));
+            float fade = (float) Math.min(1, Math.min(along, length - along) / 4);
+            float radius = base * (big ? 1.8f : 1) * (0.4f + 0.6f * grow) * (1 + 0.08f * Mth.sin(time * 0.5f + i));
+            Vec3 at = from.add(axis.scale(along));
+            int ringColor = color(glow, time + i * 20);
+            ring(consumer, pose, at, uv[0], uv[1], radius, big ? 0.07f : 0.045f, hot, (big ? 1 : 0.85f) * fade);
+            ring(consumer, pose, at, uv[0], uv[1], radius * 0.9f, big ? 0.2f : 0.12f, ringColor, (big ? 0.65f : 0.5f) * fade);
+            if (big) {
+                ring(consumer, pose, at, uv[0], uv[1], radius * 1.5f, 0.25f, ringColor, 0.15f * fade);
+            } else if (ender) {
+                ring(consumer, pose, at, uv[0], uv[1], radius * 1.6f, 0.05f, color(glow, time + i * 20 + 40), 0.18f * fade);
             }
         }
     }
