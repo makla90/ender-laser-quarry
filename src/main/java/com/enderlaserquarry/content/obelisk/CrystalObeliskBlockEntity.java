@@ -986,6 +986,22 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         return before >= 0 && Mth.floor(now / interval) > Mth.floor(before / interval);
     }
 
+    // uplink rings from Enhanced on: blocks apart and blocks per tick
+    public static float ringSpacing(QuarryTier tier) {
+        return tier.ordinal() >= 2 ? 8.5f : 12;
+    }
+
+    public static float ringSpeed(QuarryTier tier) {
+        return tier.ordinal() >= 2 ? 0.85f : 0.6f;
+    }
+
+    // every this many rings one big one
+    public static final int BIG_RING_EVERY = 5;
+
+    public static boolean isBigRing(long ring) {
+        return Math.floorMod(ring, BIG_RING_EVERY) == 0;
+    }
+
     public float getSpin(float partialTick) {
         return Mth.lerp(partialTick, prevSpin, spin);
     }
