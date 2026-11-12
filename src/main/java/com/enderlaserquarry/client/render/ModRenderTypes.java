@@ -9,6 +9,7 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
@@ -22,7 +23,7 @@ import java.util.function.Function;
 
 /**
  * Our own render types: entity cutout pushed towards the camera, for overlays lying right on block faces, and an
- * additive glow (vanilla eyes blends translucent now).
+ * additive glow (vanilla eyes blends translucent now), and the beams: lightning without depth writes.
  */
 @EventBusSubscriber(modid = EnderLaserQuarry.MOD_ID, value = Dist.CLIENT)
 public final class ModRenderTypes {
@@ -55,11 +56,21 @@ public final class ModRenderTypes {
         .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
         .build();
 
+    private static final RenderPipeline BEAM_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_FOG_SNIPPET)
+        .withLocation(EnderLaserQuarry.rl("pipeline/beam"))
+        .withVertexShader("core/rendertype_lightning")
+        .withFragmentShader("core/rendertype_lightning")
+        .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+        .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+        .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+        .build();
+
     @SubscribeEvent
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(CASING_PIPELINE);
         event.registerPipeline(CASING_OVERLAY_PIPELINE);
         event.registerPipeline(GLOW_PIPELINE);
+        event.registerPipeline(BEAM_PIPELINE);
     }
 
     private static Function<Identifier, RenderType> type(String name, RenderPipeline pipeline) {
@@ -88,6 +99,14 @@ public final class ModRenderTypes {
     // additive, no depth write
     public static RenderType glow(Identifier texture) {
         return GLOW.apply(texture);
+    }
+
+    private static final RenderType BEAM = RenderType.create("ender_laser_quarry_beam",
+        RenderSetup.builder(BEAM_PIPELINE).setOutputTarget(OutputTarget.WEATHER_TARGET).createRenderSetup());
+
+    // every beam, drawn last in the frame by LateBeams
+    public static RenderType beam() {
+        return BEAM;
     }
 
     private ModRenderTypes() {

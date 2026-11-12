@@ -6,7 +6,6 @@ import com.enderlaserquarry.content.obelisk.CrystalObeliskBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -57,7 +56,7 @@ public final class TierBeamRenderer {
         if (level == 0 || length < 2) {
             return;
         }
-        VertexConsumer consumer = buffers.getBuffer(RenderTypes.lightning());
+        VertexConsumer consumer = LateBeams.buffer();
         Matrix4f pose = poseStack.last().pose();
         Vec3 axis = dir.scale(1 / length);
         Vec3[] uv = basis(axis);
@@ -100,7 +99,7 @@ public final class TierBeamRenderer {
         if (length < 0.05) {
             return;
         }
-        VertexConsumer consumer = buffers.getBuffer(RenderTypes.lightning());
+        VertexConsumer consumer = LateBeams.buffer();
         Matrix4f pose = poseStack.last().pose();
         Vec3 axis = dir.scale(1 / length);
         Vec3[] uv = basis(axis);
