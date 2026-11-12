@@ -47,6 +47,7 @@ public final class ElqDataGen {
         generator.addProvider(event.includeServer(), new ElqTagsProvider<>(output, Registries.FLUID, lookup, files, tags -> {
             tags.tag(ours("quarry_coolant"), "minecraft:water");
             tags.tag(ours("rocket_fuel"), "enderio:fluid_rocket_fuel_still", "enderio:fluid_rocket_fuel_flowing");
+            tags.tag(ours("space_scan_fluid"), "enderio:fluid_dew_of_the_void_still", "enderio:fluid_dew_of_the_void_flowing");
         }));
         generator.addProvider(event.includeServer(), new ElqTagsProvider<>(output, Registries.BIOME, lookup, files, tags -> {
             // an empty list would mean every biome but the void

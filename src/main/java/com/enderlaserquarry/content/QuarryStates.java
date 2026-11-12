@@ -105,6 +105,9 @@ public final class QuarryStates {
     public static final MachineState NEEDS_VOID_SATELLITE = error("needs_void_satellite");
     public static final MachineState NEEDS_VOID_CRYSTAL = error("needs_void_crystal");
     public static final MachineState VOID_SATELLITE_UP = error("void_satellite_up");
+    // warning only: no space scans until a resupply, asteroid mining goes on
+    public static final MachineState SATELLITE_NO_DEW = new MachineState(MachineStateType.IDLE,
+        Component.translatable("gui.ender_laser_quarry.status.satellite_no_dew").withStyle(ChatFormatting.YELLOW));
 
     private static MachineState error(String key) {
         return new MachineState(MachineStateType.ERROR, Component.translatable("gui.ender_laser_quarry.status." + key));

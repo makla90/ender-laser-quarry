@@ -1013,6 +1013,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         if (hot != getMachineStates().contains(QuarryStates.RUNNING_HOT)) {
             updateMachineState(QuarryStates.RUNNING_HOT, hot);
         }
+        LaunchPadBlockEntity pad = getLinkedPad();
+        boolean noDew = pad != null && pad.isOutOfDew();
+        if (noDew != getMachineStates().contains(QuarryStates.SATELLITE_NO_DEW)) {
+            updateMachineState(QuarryStates.SATELLITE_NO_DEW, noDew);
+        }
     }
 
     private void tickMining(ServerLevel serverLevel) {
@@ -1651,6 +1656,11 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             return problem;
         }
         if (!isScanningSpace()) {
+            // the Dew is used up when the scan starts, the power over its run
+            LaunchPadBlockEntity pad = getLinkedPad();
+            if (pad == null || !pad.consumeScanDew()) {
+                return QuarryStates.SATELLITE_NO_DEW.component();
+            }
             spaceScanTicks = QuarryConfig.VOID_SCAN_TICKS.get();
             scanStalled = false;
             setChanged();

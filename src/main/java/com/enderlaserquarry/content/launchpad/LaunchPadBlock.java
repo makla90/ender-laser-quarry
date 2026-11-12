@@ -64,12 +64,13 @@ public class LaunchPadBlock extends MachineBlock<LaunchPadBlockEntity> {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hitResult) {
-        // buckets go into the tank like on the Vat
-        if (!stack.isEmpty() && level.getBlockEntity(pos) instanceof LaunchPadBlockEntity pad) {
+        // full buckets go into the matching tank like on the Vat
+        var contained = net.neoforged.neoforge.fluids.FluidUtil.getFluidContained(stack).orElse(net.neoforged.neoforge.fluids.FluidStack.EMPTY);
+        if (!contained.isEmpty() && level.getBlockEntity(pos) instanceof LaunchPadBlockEntity pad && pad.tankFor(contained) != null) {
             if (level.isClientSide()) {
                 return ItemInteractionResult.SUCCESS;
             }
-            if (pad.handleFluidItemInteraction(player, hand, stack, pad, LaunchPadBlockEntity.FUEL)) {
+            if (pad.handleFluidItemInteraction(player, hand, stack, pad, pad.tankFor(contained))) {
                 player.getInventory().setChanged();
                 return ItemInteractionResult.CONSUME;
             }

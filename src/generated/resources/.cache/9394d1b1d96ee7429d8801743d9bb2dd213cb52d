@@ -1,3 +1,4 @@
-// 1.21.1	2026-11-09T14:07:42.1292984	Tags for minecraft:fluid mod id ender_laser_quarry
+// 1.21.1	2026-11-12T15:36:13.7113804	Tags for minecraft:fluid mod id ender_laser_quarry
 cf3608bd187922aeb48c566c19e8482b0dca34c7 data/ender_laser_quarry/tags/fluid/quarry_coolant.json
 7afe5179dc5ce5a8c95d316ca0bdd48161319ede data/ender_laser_quarry/tags/fluid/rocket_fuel.json
+63225c6ebec1b8bb335d7004ef49d05f716e8da6 data/ender_laser_quarry/tags/fluid/space_scan_fluid.json

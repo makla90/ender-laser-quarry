@@ -23,17 +23,27 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
     public static final int PLAYER_INV_Y = 104;
 
     public static final int BUTTON_LAUNCH = 0;
+    public static final int BUTTON_RESUPPLY = 1;
+    public static final int DEW_X = 154;
+    public static final int DEW_Y = 44;
 
     private final FluidStorageSyncSlot fuelTank;
     private final IntSyncSlot radarEnergy;
     // mB the next launch burns, -1 = nothing to fly (common config isn't synced)
     private final IntSyncSlot launchCost;
+    private final FluidStorageSyncSlot dewTank;
+    // resupply flight price (the orbiting satellite's returnFuel), its Dew, its Dew tank
+    private final IntSyncSlot resupplyCost;
+    private final IntSyncSlot dewCapacity;
 
     public LaunchPadMenu(int containerId, Inventory playerInventory, LaunchPadBlockEntity be) {
         super(ModMenus.LAUNCH_PAD.get(), containerId, playerInventory, be);
         fuelTank = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getFuelTank())));
         radarEnergy = addSyncSlot(IntSyncSlot.readOnly(() -> be.getRadar() != null ? be.getEnergyPercent() : -1));
         launchCost = addSyncSlot(IntSyncSlot.readOnly(be::getLaunchCost));
+        dewTank = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getDewTank())));
+        resupplyCost = addSyncSlot(IntSyncSlot.readOnly(be::getTransferBaseCost));
+        dewCapacity = addSyncSlot(IntSyncSlot.readOnly(com.enderlaserquarry.content.satellite.SatelliteItem::dewCapacity));
         addSlots();
     }
 
@@ -42,6 +52,9 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
         fuelTank = addSyncSlot(FluidStorageSyncSlot.standalone());
         radarEnergy = addSyncSlot(IntSyncSlot.standalone());
         launchCost = addSyncSlot(IntSyncSlot.standalone());
+        dewTank = addSyncSlot(FluidStorageSyncSlot.standalone());
+        resupplyCost = addSyncSlot(IntSyncSlot.standalone());
+        dewCapacity = addSyncSlot(IntSyncSlot.standalone());
         addSlots();
     }
 
@@ -61,6 +74,13 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
             }
             return true;
         }
+        if (id == BUTTON_RESUPPLY) {
+            var error = getBlockEntity().tryResupply();
+            if (error != null) {
+                PlayerMessages.show(player, error.copy().withStyle(ChatFormatting.RED));
+            }
+            return true;
+        }
         return super.clickMenuButton(player, id);
     }
 
@@ -75,5 +95,17 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
 
     public int getLaunchCost() {
         return launchCost.get();
+    }
+
+    public FluidStorageInfo getDewTank() {
+        return dewTank.get();
+    }
+
+    public int getResupplyCost() {
+        return resupplyCost.get();
+    }
+
+    public int getDewCapacity() {
+        return dewCapacity.get();
     }
 }

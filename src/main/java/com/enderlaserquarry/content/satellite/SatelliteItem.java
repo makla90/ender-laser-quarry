@@ -3,6 +3,7 @@ package com.enderlaserquarry.content.satellite;
 import com.enderlaserquarry.config.QuarryConfig;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
+import com.enderlaserquarry.init.ModDataComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -19,6 +20,7 @@ import java.util.List;
 public class SatelliteItem extends Item implements Tiered {
     private final QuarryTier tier;
     private final boolean voidSatellite;
+    private static final java.text.NumberFormat DEW_FORMAT = java.text.NumberFormat.getIntegerInstance(java.util.Locale.ROOT);
 
     public SatelliteItem(QuarryTier tier, boolean voidSatellite, Properties properties) {
         super(properties);
@@ -61,11 +63,30 @@ public class SatelliteItem extends Item implements Tiered {
         return stack.getItem() instanceof SatelliteItem satellite && satellite.voidSatellite;
     }
 
+    // Dew of the Void it carries for space scans, mB
+    public static int getDew(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.SATELLITE_DEW.get(), 0);
+    }
+
+    public static void setDew(ItemStack stack, int mb) {
+        if (mb <= 0) {
+            stack.remove(ModDataComponents.SATELLITE_DEW.get());
+        } else {
+            stack.set(ModDataComponents.SATELLITE_DEW.get(), Math.min(mb, dewCapacity()));
+        }
+    }
+
+    public static int dewCapacity() {
+        return QuarryConfig.VOID_SATELLITE_DEW_TANK.get();
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         if (voidSatellite) {
             tooltip.add(Component.translatable("tooltip.ender_laser_quarry.void_satellite").withStyle(ChatFormatting.GRAY));
             tooltip.add(Component.translatable("tooltip.ender_laser_quarry.void_satellite.needs").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.void_satellite.dew", DEW_FORMAT.format(getDew(stack)),
+                DEW_FORMAT.format(dewCapacity())).withStyle(ChatFormatting.DARK_AQUA));
         } else {
             tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite").withStyle(ChatFormatting.GRAY));
             int across = tier.chunkRadius() * 2 + 1;

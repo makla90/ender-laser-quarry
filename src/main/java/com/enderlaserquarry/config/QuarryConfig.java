@@ -56,6 +56,9 @@ public final class QuarryConfig {
     public static final ModConfigSpec.IntValue VOID_ANALYZE_ENERGY;
     public static final ModConfigSpec.IntValue VOID_SATELLITE_LAUNCH_FUEL;
     public static final ModConfigSpec.IntValue VOID_SATELLITE_RETURN_FUEL;
+    public static final ModConfigSpec.IntValue VOID_SATELLITE_DEW_TANK;
+    public static final ModConfigSpec.IntValue VOID_SCAN_DEW;
+    public static final ModConfigSpec.IntValue PAD_DEW_TANK;
     public static final ModConfigSpec.IntValue SAMPLING_QUICK_SPOTS;
     public static final ModConfigSpec.IntValue SAMPLING_FULL_SPOTS;
     public static final ModConfigSpec.BooleanValue SAMPLING_REFINE;
@@ -154,6 +157,8 @@ public final class QuarryConfig {
         builder.push("launch_pad");
         PAD_TANK_CAPACITY = builder.comment("Rocket fuel tank size of the launch pad, in mB.")
             .defineInRange("tankCapacity", 16_000, 1_000, 1_000_000);
+        PAD_DEW_TANK = builder.comment("Dew of the Void tank of the launch pad, in mB: loaded into the Void Satellite at launch and on resupply flights.")
+            .defineInRange("dewTankCapacity", 8_000, 1, 1_000_000);
         FUEL_PER_TRANSFER_CHUNK = builder.comment("Orbit transfer: extra rocket fuel per chunk the satellite moves, in mB (on top of the",
                 "satellite tier's returnFuel).")
             .defineInRange("fuelPerTransferChunk", 100, 0, 100_000);
@@ -216,6 +221,10 @@ public final class QuarryConfig {
             .defineInRange("launchFuel", 8_000, 0, 1_000_000);
         VOID_SATELLITE_RETURN_FUEL = builder.comment("Rocket fuel in mB for a flight to it while it is up (recovery).")
             .defineInRange("returnFuel", 4_000, 0, 1_000_000);
+        VOID_SATELLITE_DEW_TANK = builder.comment("Dew of the Void the satellite carries for space scans, in mB (filled at launch and by resupply flights).")
+            .defineInRange("dewTank", 8_000, 1, 1_000_000);
+        VOID_SCAN_DEW = builder.comment("Dew of the Void one space scan uses from the satellite, in mB (fluid tag ender_laser_quarry:space_scan_fluid).")
+            .defineInRange("scanDew", 1_000, 0, 1_000_000);
         builder.pop();
 
         builder.comment("Laser crystals wear while mining: one durability point per this many blocks (solid blocks, voided ones too,",
@@ -261,7 +270,7 @@ public final class QuarryConfig {
         VOID_SCAN_TICKS = builder.comment("Ticks a space scan takes (1200 = 1 minute). Without radar power it pauses and goes on later.")
             .defineInRange("scanTicks", 1_200, 1, 72_000);
         VOID_SCAN_ENERGY = builder.comment("µI a space scan takes from the ground radar, spread over the scan (the launch pad powers the radar).")
-            .defineInRange("scanEnergy", 30_000_000, 0, Integer.MAX_VALUE);
+            .defineInRange("scanEnergy", 10_000_000, 0, Integer.MAX_VALUE);
         VOID_MAX_QUEUED = builder.comment("Asteroids a controller can queue.")
             .defineInRange("maxQueued", 8, 1, 40);
         VOID_NETHER_CHANCE = builder.comment("Share of found asteroids that come from Nether biomes.")
