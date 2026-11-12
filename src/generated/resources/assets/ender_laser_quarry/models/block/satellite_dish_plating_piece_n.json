@@ -1,0 +1,26 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        0,
+        16,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        1
+      ]
+    }
+  ],
+  "textures": {
+    "overlay": "ender_laser_quarry:block/satellite_dish_plating_edge_n",
+    "particle": "ender_laser_quarry:block/satellite_dish_plating_side"
+  }
+}

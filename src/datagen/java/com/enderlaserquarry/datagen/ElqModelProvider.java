@@ -16,6 +16,7 @@ import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.ModelProvider;
 import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.blockstates.BlockModelDefinitionGenerator;
+import net.minecraft.client.data.models.blockstates.ConditionBuilder;
 import net.minecraft.client.data.models.blockstates.MultiPartGenerator;
 import net.minecraft.client.data.models.model.ItemModelUtils;
 import net.minecraft.client.data.models.model.ModelInstance;
@@ -45,12 +46,14 @@ import net.neoforged.neoforge.client.model.generators.template.ExtendedModelTemp
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -123,52 +126,130 @@ public class ElqModelProvider extends ModelProvider {
 
     // region blocks
 
+    // Dish and quarry plating and their ports: one model per side-join combination with the fully joined top (the quarry
+    // sides show where the grooves end), plus the ConnectedTop pieces of the open sides. The unconnected models stay for
+    // the items.
+
     private BlockModelDefinitionGenerator quarryPlating(Block block, String t) {
         String base = t + "laser_quarry_plating";
-        return states(block, state -> {
-            String conn = connection(state);
-            String glow = glow(state);
-            return plain(model(base + conn + glow, ModelTemplates.CUBE, new TextureMapping()
-                .put(TextureSlot.PARTICLE, mat(base + "_side"))
-                .put(TextureSlot.UP, mat(base + "_top" + conn + glow))
-                .put(TextureSlot.DOWN, mat(base + "_bottom"))
-                .put(TextureSlot.NORTH, mat(base + "_side" + sideJoin(state, Direction.NORTH)))
-                .put(TextureSlot.SOUTH, mat(base + "_side" + sideJoin(state, Direction.SOUTH)))
-                .put(TextureSlot.EAST, mat(base + "_side" + sideJoin(state, Direction.EAST)))
-                .put(TextureSlot.WEST, mat(base + "_side" + sideJoin(state, Direction.WEST)))));
-        });
+        quarryCube(base, base + "_top", base + "_side", base + "_bottom", null);
+        MultiPartGenerator parts = MultiPartGenerator.multiPart(block);
+        for (BlockState state : joinStates(block)) {
+            parts.with(joins(state, BlockModelGenerators.condition()),
+                plain(quarryCube(base + "_frame" + connection(state), base + "_top_nesw", base + "_side", base + "_bottom", state)));
+        }
+        for (CrystalGlow glow : CrystalGlow.values()) {
+            withPieces(parts, base, true, glowSuffix(glow), base + "_side", c -> c.term(CrystalGlow.PROPERTY, glow));
+        }
+        return parts;
     }
 
     private BlockModelDefinitionGenerator quarryPort() {
-        return states(ModBlocks.QUARRY_PORT.get(), state -> {
-            String t = TIER_PREFIX[state.getValue(TieredPortBlock.TIER).ordinal()];
-            String base = t + "laser_quarry_port";
-            String conn = connection(state);
-            String glow = glow(state);
-            return ioOverlay(model(base + conn + glow, ModelTemplates.CUBE, new TextureMapping()
-                .put(TextureSlot.PARTICLE, mat(base + "_side"))
-                .put(TextureSlot.UP, mat(t + "laser_quarry_plating_top" + conn + glow))
-                .put(TextureSlot.DOWN, mat(base + "_bottom"))
-                .put(TextureSlot.NORTH, mat(base + "_side" + sideJoin(state, Direction.NORTH)))
-                .put(TextureSlot.SOUTH, mat(base + "_side" + sideJoin(state, Direction.SOUTH)))
-                .put(TextureSlot.EAST, mat(base + "_side" + sideJoin(state, Direction.EAST)))
-                .put(TextureSlot.WEST, mat(base + "_side" + sideJoin(state, Direction.WEST)))));
-        });
+        Block block = ModBlocks.QUARRY_PORT.get();
+        quarryCube("laser_quarry_port", "laser_quarry_plating_top", "laser_quarry_port_side", "laser_quarry_port_bottom", null);
+        MultiPartGenerator parts = MultiPartGenerator.multiPart(block);
+        // pieces first: Ender IO's IO overlay of the base goes on top of them
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            for (CrystalGlow glow : CrystalGlow.values()) {
+                withPieces(parts, t + "laser_quarry_plating", true, glowSuffix(glow), t + "laser_quarry_plating_side",
+                    c -> c.term(TieredPortBlock.TIER, tier).term(CrystalGlow.PROPERTY, glow));
+            }
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            for (BlockState state : joinStates(block)) {
+                parts.with(joins(state, BlockModelGenerators.condition().term(TieredPortBlock.TIER, tier)),
+                    ioOverlay(quarryCube(t + "laser_quarry_port_frame" + connection(state), t + "laser_quarry_plating_top_nesw",
+                        t + "laser_quarry_port_side", t + "laser_quarry_port_bottom", state)));
+            }
+        }
+        return parts;
     }
 
     private BlockModelDefinitionGenerator dishPlating(Block block, String t) {
         String base = t + "satellite_dish_plating";
-        return states(block, state -> plain(bottomTop(base + connection(state), base + "_top" + connection(state),
-            base + "_side", t + "satellite_dish_bottom")));
+        bottomTop(base, base + "_top", base + "_side", t + "satellite_dish_bottom");
+        MultiPartGenerator parts = MultiPartGenerator.multiPart(block)
+            .with(plain(bottomTop(base + "_joined", base + "_top_nesw", base + "_side", t + "satellite_dish_bottom")));
+        return withPieces(parts, base, false, "", base + "_side", UnaryOperator.identity());
     }
 
     private BlockModelDefinitionGenerator dishPort() {
-        return states(ModBlocks.SATELLITE_DISH_PORT.get(), state -> {
-            String t = TIER_PREFIX[state.getValue(TieredPortBlock.TIER).ordinal()];
-            String conn = connection(state);
-            return ioOverlay(bottomTop(t + "satellite_dish_port" + conn, t + "satellite_dish_plating_top" + conn,
-                t + "satellite_dish_port_side", t + "satellite_dish_port_bottom"));
+        bottomTop("satellite_dish_port", "satellite_dish_plating_top", "satellite_dish_port_side", "satellite_dish_port_bottom");
+        MultiPartGenerator parts = MultiPartGenerator.multiPart(ModBlocks.SATELLITE_DISH_PORT.get());
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            withPieces(parts, t + "satellite_dish_plating", false, "", t + "satellite_dish_plating_side", c -> c.term(TieredPortBlock.TIER, tier));
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            parts.with(BlockModelGenerators.condition(TieredPortBlock.TIER, tier), ioOverlay(bottomTop(t + "satellite_dish_port_joined",
+                t + "satellite_dish_plating_top_nesw", t + "satellite_dish_port_side", t + "satellite_dish_port_bottom")));
+        }
+        return parts;
+    }
+
+    // every ConnectedTop piece of <family>_edge_<side><glow>, shown while its side is open (and its neighbours fit)
+    private MultiPartGenerator withPieces(MultiPartGenerator parts, String family, boolean strip, String glow, String particle,
+                                          UnaryOperator<ConditionBuilder> extra) {
+        for (ConnectedTop.Piece piece : ConnectedTop.pieces(strip)) {
+            ConditionBuilder condition = extra.apply(BlockModelGenerators.condition()).term(joinProperty(piece.side()), false);
+            piece.neighbours().forEach((side, joined) -> condition.term(joinProperty(side), joined));
+            parts.with(condition, plain(pieceModel(family + "_piece_" + piece.name() + glow,
+                family + "_edge_" + ConnectedTop.letter(piece.side()) + glow, particle, piece.rects())));
+        }
+        return parts;
+    }
+
+    // faces lying on the block's top, each showing the same spot of the texture
+    private Identifier pieceModel(String name, String texture, String particle, List<ConnectedTop.Rect> rects) {
+        return made.computeIfAbsent(rl("block/" + name), id -> {
+            ExtendedModelTemplateBuilder builder = ExtendedModelTemplateBuilder.builder()
+                .requiredTextureSlot(OVERLAY).requiredTextureSlot(TextureSlot.PARTICLE);
+            for (ConnectedTop.Rect r : rects) {
+                builder.element(e -> e.from(r.x0(), 16, r.y0()).to(r.x1(), 16, r.y1())
+                    .face(Direction.UP, face -> face.uvs(r.x0(), r.y0(), r.x1(), r.y1()).texture(OVERLAY).cullface(Direction.UP)));
+            }
+            return builder.build().create(id, new TextureMapping().put(OVERLAY, mat(texture)).put(TextureSlot.PARTICLE, mat(particle)), models);
         });
+    }
+
+    // quarry plating / port cube; the side faces show where the grooves end next to joined neighbours (none for the item)
+    private Identifier quarryCube(String name, String top, String side, String bottom, BlockState state) {
+        return model(name, ModelTemplates.CUBE, new TextureMapping()
+            .put(TextureSlot.PARTICLE, mat(side))
+            .put(TextureSlot.UP, mat(top))
+            .put(TextureSlot.DOWN, mat(bottom))
+            .put(TextureSlot.NORTH, mat(side + (state == null ? "" : sideJoin(state, Direction.NORTH))))
+            .put(TextureSlot.SOUTH, mat(side + (state == null ? "" : sideJoin(state, Direction.SOUTH))))
+            .put(TextureSlot.EAST, mat(side + (state == null ? "" : sideJoin(state, Direction.EAST))))
+            .put(TextureSlot.WEST, mat(side + (state == null ? "" : sideJoin(state, Direction.WEST)))));
+    }
+
+    // one state per combination of joined sides, everything else at its default
+    private static List<BlockState> joinStates(Block block) {
+        List<BlockState> states = new ArrayList<>();
+        for (int mask = 0; mask < 16; mask++) {
+            BlockState state = block.defaultBlockState();
+            int bit = 0;
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                state = state.setValue(joinProperty(side), (mask & 1 << bit++) != 0);
+            }
+            states.add(state);
+        }
+        return states;
+    }
+
+    private static ConditionBuilder joins(BlockState state, ConditionBuilder condition) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            condition.term(joinProperty(side), state.getValue(joinProperty(side)));
+        }
+        return condition;
+    }
+
+    private static String glowSuffix(CrystalGlow glow) {
+        return glow == CrystalGlow.NONE ? "" : "_" + glow.getSerializedName();
     }
 
     // Launch pad blocks: the fully joined model plus a hazard edge overlay per open side (see withPadEdges). The
