@@ -23,11 +23,13 @@ import net.neoforged.neoforge.client.model.generators.loaders.CompositeModelBuil
 import net.neoforged.neoforge.client.model.generators.loaders.ObjModelBuilder;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Blockstates and block models. The hand-made geometry (controller antenna templates, the OBJ obelisk) stays in
@@ -77,46 +79,132 @@ public class ElqBlockStateProvider extends BlockStateProvider {
 
     // region blocks
 
+    // Dish and quarry plating and their ports: one model per side-join combination with the fully joined top (the quarry
+    // sides show where the grooves end), plus the ConnectedTop pieces of the open sides. The unconnected models stay for
+    // the items.
+
     private void quarryPlating(Block block, String t) {
         String base = t + "laser_quarry_plating";
-        states(block, state -> {
-            String conn = connection(state);
-            String glow = glow(state);
-            return model(base + conn + glow, () -> cube(models().withExistingParent(base + conn + glow, mcLoc("block/cube")),
-                base + "_side", base + "_top" + conn + glow, base + "_bottom", base + "_side", state));
-        });
+        quarryCube(base, base + "_top", base + "_side", base + "_bottom", null);
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(block);
+        for (BlockState state : joinStates(block)) {
+            joins(state, parts.part().modelFile(quarryCube(base + "_frame" + connection(state), base + "_top_nesw", base + "_side",
+                base + "_bottom", state)).addModel()).end();
+        }
+        for (CrystalGlow glow : CrystalGlow.values()) {
+            withPieces(parts, base, true, glowSuffix(glow), base + "_side", p -> p.condition(CrystalGlow.PROPERTY, glow));
+        }
     }
 
     private void quarryPort() {
-        states(ModBlocks.QUARRY_PORT.get(), state -> {
-            String t = TIER_PREFIX[state.getValue(TieredPortBlock.TIER).ordinal()];
-            String base = t + "laser_quarry_port";
-            String conn = connection(state);
-            String glow = glow(state);
-            return model(base + conn + glow, () -> port(base + conn + glow, base + "_side",
-                cube(models().nested().parent(models().getExistingFile(mcLoc("block/cube"))),
-                    base + "_side", t + "laser_quarry_plating_top" + conn + glow, base + "_bottom", base + "_side", state)));
-        });
+        Block block = ModBlocks.QUARRY_PORT.get();
+        quarryPortModel("laser_quarry_port", "laser_quarry_plating_top", "", null);
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(block);
+        // pieces first: Ender IO's IO overlay of the base goes on top of them
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            for (CrystalGlow glow : CrystalGlow.values()) {
+                withPieces(parts, t + "laser_quarry_plating", true, glowSuffix(glow), t + "laser_quarry_plating_side",
+                    p -> p.condition(TieredPortBlock.TIER, tier).condition(CrystalGlow.PROPERTY, glow));
+            }
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            for (BlockState state : joinStates(block)) {
+                joins(state, parts.part().modelFile(quarryPortModel(t + "laser_quarry_port_frame" + connection(state),
+                    t + "laser_quarry_plating_top_nesw", t, state)).addModel().condition(TieredPortBlock.TIER, tier)).end();
+            }
+        }
+    }
+
+    private ModelFile quarryPortModel(String name, String top, String t, BlockState state) {
+        return model(name, () -> port(name, t + "laser_quarry_port_side",
+            cube(models().nested().parent(models().getExistingFile(mcLoc("block/cube"))),
+                t + "laser_quarry_port_side", top, t + "laser_quarry_port_bottom", t + "laser_quarry_port_side", state)));
     }
 
     private void dishPlating(Block block, String t) {
         String base = t + "satellite_dish_plating";
-        states(block, state -> {
-            String conn = connection(state);
-            return model(base + conn, () -> bottomTop(models().withExistingParent(base + conn, mcLoc("block/cube_bottom_top")),
-                base + "_top" + conn, base + "_side", t + "satellite_dish_bottom"));
-        });
+        cubeBottomTop(base, base + "_top", base + "_side", t + "satellite_dish_bottom");
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(block);
+        parts.part().modelFile(cubeBottomTop(base + "_joined", base + "_top_nesw", base + "_side", t + "satellite_dish_bottom")).addModel().end();
+        withPieces(parts, base, false, "", base + "_side", UnaryOperator.identity());
     }
 
     private void dishPort() {
-        states(ModBlocks.SATELLITE_DISH_PORT.get(), state -> {
-            String t = TIER_PREFIX[state.getValue(TieredPortBlock.TIER).ordinal()];
-            String conn = connection(state);
-            String name = t + "satellite_dish_port" + conn;
-            return model(name, () -> port(name, t + "satellite_dish_port_side",
-                bottomTop(models().nested().parent(models().getExistingFile(mcLoc("block/cube_bottom_top"))),
-                    t + "satellite_dish_plating_top" + conn, t + "satellite_dish_port_side", t + "satellite_dish_port_bottom")));
+        dishPortModel("satellite_dish_port", "", "satellite_dish_plating_top");
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(ModBlocks.SATELLITE_DISH_PORT.get());
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            withPieces(parts, t + "satellite_dish_plating", false, "", t + "satellite_dish_plating_side", p -> p.condition(TieredPortBlock.TIER, tier));
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            parts.part().modelFile(dishPortModel(t + "satellite_dish_port_joined", t, t + "satellite_dish_plating_top_nesw"))
+                .addModel().condition(TieredPortBlock.TIER, tier).end();
+        }
+    }
+
+    private ModelFile dishPortModel(String name, String t, String top) {
+        return model(name, () -> port(name, t + "satellite_dish_port_side",
+            bottomTop(models().nested().parent(models().getExistingFile(mcLoc("block/cube_bottom_top"))),
+                top, t + "satellite_dish_port_side", t + "satellite_dish_port_bottom")));
+    }
+
+    // every ConnectedTop piece of <family>_edge_<side><glow>, shown while its side is open (and its neighbours fit)
+    private void withPieces(MultiPartBlockStateBuilder parts, String family, boolean strip, String glow, String particle,
+                            UnaryOperator<MultiPartBlockStateBuilder.PartBuilder> extra) {
+        for (ConnectedTop.Piece piece : ConnectedTop.pieces(strip)) {
+            MultiPartBlockStateBuilder.PartBuilder part = extra.apply(parts.part().modelFile(pieceModel(family + "_piece_" + piece.name() + glow,
+                family + "_edge_" + ConnectedTop.letter(piece.side()) + glow, particle, piece.rects())).addModel())
+                .condition(joinProperty(piece.side()), false);
+            piece.neighbours().forEach((side, joined) -> part.condition(joinProperty(side), joined));
+            part.end();
+        }
+    }
+
+    // faces lying on the block's top, each showing the same spot of the texture
+    private ModelFile pieceModel(String name, String texture, String particle, List<ConnectedTop.Rect> rects) {
+        return model(name, () -> {
+            BlockModelBuilder builder = models().getBuilder(name).renderType("cutout")
+                .texture("overlay", tex(texture)).texture("particle", tex(particle));
+            for (ConnectedTop.Rect r : rects) {
+                builder.element().from(r.x0(), 16, r.y0()).to(r.x1(), 16, r.y1())
+                    .face(Direction.UP).uvs(r.x0(), r.y0(), r.x1(), r.y1()).texture("#overlay").cullface(Direction.UP).end()
+                    .end();
+            }
+            return builder;
         });
+    }
+
+    // quarry plating cube; the side faces show where the grooves end next to joined neighbours (none for the item)
+    private ModelFile quarryCube(String name, String top, String side, String bottom, BlockState state) {
+        return model(name, () -> cube(models().withExistingParent(name, mcLoc("block/cube")), side, top, bottom, side, state));
+    }
+
+    // one state per combination of joined sides, everything else at its default
+    private static List<BlockState> joinStates(Block block) {
+        List<BlockState> states = new ArrayList<>();
+        for (int mask = 0; mask < 16; mask++) {
+            BlockState state = block.defaultBlockState();
+            int bit = 0;
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                state = state.setValue(joinProperty(side), (mask & 1 << bit++) != 0);
+            }
+            states.add(state);
+        }
+        return states;
+    }
+
+    private static MultiPartBlockStateBuilder.PartBuilder joins(BlockState state, MultiPartBlockStateBuilder.PartBuilder part) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            part.condition(joinProperty(side), state.getValue(joinProperty(side)));
+        }
+        return part;
+    }
+
+    private static String glowSuffix(CrystalGlow glow) {
+        return glow == CrystalGlow.NONE ? "" : "_" + glow.getSerializedName();
     }
 
     // Launch pad blocks: the fully joined model plus a hazard edge overlay per open side (see withPadEdges). The
@@ -295,8 +383,11 @@ public class ElqBlockStateProvider extends BlockStateProvider {
         return glow == CrystalGlow.NONE ? "" : "_" + glow.getSerializedName();
     }
 
-    /** Side texture variant: whether the neighbours left / right of this face (seen from outside) are joined. */
+    /** Side texture variant: whether the neighbours left / right of this face (seen from outside) are joined; none without a state. */
     private static String sideJoin(BlockState state, Direction face) {
+        if (state == null) {
+            return "";
+        }
         boolean left = joined(state, face.getClockWise());
         boolean right = joined(state, face.getCounterClockWise());
         return left && right ? "_lr" : left ? "_l" : right ? "_r" : "";

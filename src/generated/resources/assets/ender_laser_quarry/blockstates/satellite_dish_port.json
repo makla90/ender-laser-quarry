@@ -1,148 +1,256 @@
 {
-  "variants": {
-    "east=false,north=false,south=false,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port"
+  "multipart": [
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_n"
+      },
+      "when": {
+        "north": "false",
+        "tier": "basic"
+      }
     },
-    "east=false,north=false,south=false,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_w"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_w"
+      },
+      "when": {
+        "tier": "basic",
+        "west": "false"
+      }
     },
-    "east=false,north=false,south=false,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_e"
+      },
+      "when": {
+        "east": "false",
+        "tier": "basic"
+      }
     },
-    "east=false,north=false,south=false,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_w"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_s"
+      },
+      "when": {
+        "south": "false",
+        "tier": "basic"
+      }
     },
-    "east=false,north=false,south=false,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_nw"
+      },
+      "when": {
+        "north": "false",
+        "tier": "basic",
+        "west": "false"
+      }
     },
-    "east=false,north=false,south=false,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_w"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_ne"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "tier": "basic"
+      }
     },
-    "east=false,north=false,south=true,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_s"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_sw"
+      },
+      "when": {
+        "south": "false",
+        "tier": "basic",
+        "west": "false"
+      }
     },
-    "east=false,north=false,south=true,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_sw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_plating_piece_se"
+      },
+      "when": {
+        "east": "false",
+        "south": "false",
+        "tier": "basic"
+      }
     },
-    "east=false,north=false,south=true,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_s"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_n"
+      },
+      "when": {
+        "north": "false",
+        "tier": "enhanced"
+      }
     },
-    "east=false,north=false,south=true,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_sw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_w"
+      },
+      "when": {
+        "tier": "enhanced",
+        "west": "false"
+      }
     },
-    "east=false,north=false,south=true,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_s"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_e"
+      },
+      "when": {
+        "east": "false",
+        "tier": "enhanced"
+      }
     },
-    "east=false,north=false,south=true,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_sw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_s"
+      },
+      "when": {
+        "south": "false",
+        "tier": "enhanced"
+      }
     },
-    "east=false,north=true,south=false,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_n"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_nw"
+      },
+      "when": {
+        "north": "false",
+        "tier": "enhanced",
+        "west": "false"
+      }
     },
-    "east=false,north=true,south=false,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_nw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_ne"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "tier": "enhanced"
+      }
     },
-    "east=false,north=true,south=false,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_n"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_sw"
+      },
+      "when": {
+        "south": "false",
+        "tier": "enhanced",
+        "west": "false"
+      }
     },
-    "east=false,north=true,south=false,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_plating_piece_se"
+      },
+      "when": {
+        "east": "false",
+        "south": "false",
+        "tier": "enhanced"
+      }
     },
-    "east=false,north=true,south=false,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_n"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_n"
+      },
+      "when": {
+        "north": "false",
+        "tier": "ender"
+      }
     },
-    "east=false,north=true,south=false,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_w"
+      },
+      "when": {
+        "tier": "ender",
+        "west": "false"
+      }
     },
-    "east=false,north=true,south=true,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_ns"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_e"
+      },
+      "when": {
+        "east": "false",
+        "tier": "ender"
+      }
     },
-    "east=false,north=true,south=true,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_nsw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_s"
+      },
+      "when": {
+        "south": "false",
+        "tier": "ender"
+      }
     },
-    "east=false,north=true,south=true,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_ns"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_nw"
+      },
+      "when": {
+        "north": "false",
+        "tier": "ender",
+        "west": "false"
+      }
     },
-    "east=false,north=true,south=true,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nsw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_ne"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "tier": "ender"
+      }
     },
-    "east=false,north=true,south=true,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_ns"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_sw"
+      },
+      "when": {
+        "south": "false",
+        "tier": "ender",
+        "west": "false"
+      }
     },
-    "east=false,north=true,south=true,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nsw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_plating_piece_se"
+      },
+      "when": {
+        "east": "false",
+        "south": "false",
+        "tier": "ender"
+      }
     },
-    "east=true,north=false,south=false,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_e"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/satellite_dish_port_joined"
+      },
+      "when": {
+        "tier": "basic"
+      }
     },
-    "east=true,north=false,south=false,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_ew"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_joined"
+      },
+      "when": {
+        "tier": "enhanced"
+      }
     },
-    "east=true,north=false,south=false,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_e"
-    },
-    "east=true,north=false,south=false,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_ew"
-    },
-    "east=true,north=false,south=false,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_e"
-    },
-    "east=true,north=false,south=false,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_ew"
-    },
-    "east=true,north=false,south=true,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_es"
-    },
-    "east=true,north=false,south=true,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_esw"
-    },
-    "east=true,north=false,south=true,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_es"
-    },
-    "east=true,north=false,south=true,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_esw"
-    },
-    "east=true,north=false,south=true,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_es"
-    },
-    "east=true,north=false,south=true,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_esw"
-    },
-    "east=true,north=true,south=false,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_ne"
-    },
-    "east=true,north=true,south=false,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_new"
-    },
-    "east=true,north=true,south=false,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_ne"
-    },
-    "east=true,north=true,south=false,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_new"
-    },
-    "east=true,north=true,south=false,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_ne"
-    },
-    "east=true,north=true,south=false,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_new"
-    },
-    "east=true,north=true,south=true,tier=basic,west=false": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_nes"
-    },
-    "east=true,north=true,south=true,tier=basic,west=true": {
-      "model": "ender_laser_quarry:block/satellite_dish_port_nesw"
-    },
-    "east=true,north=true,south=true,tier=ender,west=false": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nes"
-    },
-    "east=true,north=true,south=true,tier=ender,west=true": {
-      "model": "ender_laser_quarry:block/ender_satellite_dish_port_nesw"
-    },
-    "east=true,north=true,south=true,tier=enhanced,west=false": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nes"
-    },
-    "east=true,north=true,south=true,tier=enhanced,west=true": {
-      "model": "ender_laser_quarry:block/enhanced_satellite_dish_port_nesw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_satellite_dish_port_joined"
+      },
+      "when": {
+        "tier": "ender"
+      }
     }
-  }
+  ]
 }

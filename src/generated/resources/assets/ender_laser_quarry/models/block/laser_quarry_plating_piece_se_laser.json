@@ -1,0 +1,27 @@
+{
+  "elements": [
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        13,
+        16,
+        13
+      ],
+      "to": [
+        14,
+        16,
+        14
+      ]
+    }
+  ],
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "overlay": "ender_laser_quarry:block/laser_quarry_plating_edge_s_laser",
+    "particle": "ender_laser_quarry:block/laser_quarry_plating_side"
+  }
+}
