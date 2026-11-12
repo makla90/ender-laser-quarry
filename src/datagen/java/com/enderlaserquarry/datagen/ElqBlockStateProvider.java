@@ -13,10 +13,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.neoforged.neoforge.client.model.generators.BlockModelBuilder;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.client.model.generators.MultiPartBlockStateBuilder;
 import net.neoforged.neoforge.client.model.generators.loaders.CompositeModelBuilder;
 import net.neoforged.neoforge.client.model.generators.loaders.ObjModelBuilder;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
@@ -117,48 +119,77 @@ public class ElqBlockStateProvider extends BlockStateProvider {
         });
     }
 
+    // Launch pad blocks: the fully joined model plus a hazard edge overlay per open side (see withPadEdges). The
+    // unconnected models stay for the items.
+
     private void launchPadPlating() {
-        states(ModBlocks.LAUNCH_PAD_PLATING.get(), state -> {
-            if (state.getValue(LaunchPadPlatingBlock.CENTER)) {
-                return model("launch_pad_plating_center", () -> bottomTop(models().withExistingParent("launch_pad_plating_center",
-                    mcLoc("block/cube_bottom_top")), "launch_pad_top_connected", "launch_pad_side", "quarry_machine_bottom"));
-            }
-            String name = "launch_pad_plating" + connection(state);
-            return model(name, () -> bottomTop(models().withExistingParent(name, mcLoc("block/cube_bottom_top")),
-                "launch_pad_plating_top" + connection(state), "launch_pad_side", "quarry_machine_bottom"));
-        });
+        cubeBottomTop("launch_pad_plating", "launch_pad_plating_top", "launch_pad_side", "quarry_machine_bottom");
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(ModBlocks.LAUNCH_PAD_PLATING.get());
+        parts.part().modelFile(cubeBottomTop("launch_pad_plating_center", "launch_pad_top_connected", "launch_pad_side", "quarry_machine_bottom"))
+            .addModel().condition(LaunchPadPlatingBlock.CENTER, true).end();
+        parts.part().modelFile(cubeBottomTop("launch_pad_plating_joined", "launch_pad_plating_top_nesw", "launch_pad_side", "quarry_machine_bottom"))
+            .addModel().condition(LaunchPadPlatingBlock.CENTER, false).end();
+        withPadEdges(parts);
     }
 
     private void launchPadPort() {
-        states(ModBlocks.LAUNCH_PAD_PORT.get(), state -> {
-            String name = "launch_pad_port" + connection(state);
-            return model(name, () -> port(name, "launch_pad_port_side",
-                bottomTop(models().nested().parent(models().getExistingFile(mcLoc("block/cube_bottom_top"))),
-                    "launch_pad_plating_top" + connection(state), "launch_pad_port_side", "launch_pad_port_bottom")));
-        });
+        padPort("launch_pad_port", "launch_pad_plating_top");
+        // base last, so Ender IO's IO overlay is drawn over the edges
+        MultiPartBlockStateBuilder parts = withPadEdges(getMultipartBuilder(ModBlocks.LAUNCH_PAD_PORT.get()));
+        parts.part().modelFile(padPort("launch_pad_port_joined", "launch_pad_plating_top_nesw")).addModel().end();
     }
 
-    // the top follows the plating around it, so it keeps its world alignment (uvlock) when the front turns
+    private ModelFile padPort(String name, String top) {
+        return model(name, () -> port(name, "launch_pad_port_side",
+            bottomTop(models().nested().parent(models().getExistingFile(mcLoc("block/cube_bottom_top"))),
+                top, "launch_pad_port_side", "launch_pad_port_bottom")));
+    }
+
+    // the top keeps its world alignment (uvlock) when the front turns, so the edges line up
     private void launchPadController() {
-        getVariantBuilder(ModBlocks.LAUNCH_PAD.get()).forAllStates(state -> {
-            String name = "launch_pad_controller" + connection(state);
-            ModelFile model = model(name, () -> models().withExistingParent(name, mcLoc("block/orientable_with_bottom"))
-                .texture("front", tex("launch_pad_front"))
-                .texture("side", tex("launch_pad_side"))
-                .texture("top", tex("launch_pad_controller_top" + connection(state)))
-                .texture("bottom", tex("quarry_machine_bottom")));
-            Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
-            return new ConfiguredModel[]{new ConfiguredModel(model, 0, rotation(facing), facing != Direction.NORTH)};
-        });
+        ModelFile joined = model("launch_pad_controller_joined", () -> models().withExistingParent("launch_pad_controller_joined",
+                mcLoc("block/orientable_with_bottom"))
+            .texture("front", tex("launch_pad_front"))
+            .texture("side", tex("launch_pad_side"))
+            .texture("top", tex("launch_pad_controller_top_nesw"))
+            .texture("bottom", tex("quarry_machine_bottom")));
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(ModBlocks.LAUNCH_PAD.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            parts.part().modelFile(joined).rotationY(rotation(facing)).uvLock(facing != Direction.NORTH)
+                .addModel().condition(BlockStateProperties.HORIZONTAL_FACING, facing).end();
+        }
+        withPadEdges(parts);
     }
 
     private void groundRadar() {
-        // the top follows the launch pad plating around it like the controller's; the unconnected one is the item's base
-        states(ModBlocks.GROUND_RADAR.get(), state -> {
-            String name = "ground_radar" + connection(state);
-            return model(name, () -> bottomTop(models().withExistingParent(name, mcLoc("block/cube_bottom_top")),
-                "ground_radar_top" + connection(state), "ground_radar_side", "quarry_machine_bottom"));
-        });
+        cubeBottomTop("ground_radar", "ground_radar_top", "ground_radar_side", "quarry_machine_bottom");
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(ModBlocks.GROUND_RADAR.get());
+        parts.part().modelFile(cubeBottomTop("ground_radar_joined", "launch_pad_plating_top_nesw", "ground_radar_side", "quarry_machine_bottom"))
+            .addModel().end();
+        withPadEdges(parts);
+        // the ring goes last: it covers the edge bolts that sit under it
+        parts.part().modelFile(topOverlay("ground_radar_ring", "ground_radar_side")).addModel().end();
+    }
+
+    // the hazard strip of each side that isn't joined to the next pad block; the same four on every pad block
+    private MultiPartBlockStateBuilder withPadEdges(MultiPartBlockStateBuilder parts) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            parts.part().modelFile(topOverlay("launch_pad_edge_" + side.getSerializedName().charAt(0), "launch_pad_side"))
+                .addModel().condition(joinProperty(side), false).end();
+        }
+        return parts;
+    }
+
+    // one face lying on the top of the block; a multipart takes its break particles from the first part, which can be one
+    private ModelFile topOverlay(String texture, String particle) {
+        return model(texture, () -> models().withExistingParent(texture, modLoc("block/top_overlay"))
+            .renderType("cutout")
+            .texture("overlay", tex(texture))
+            .texture("particle", tex(particle)));
+    }
+
+    private ModelFile cubeBottomTop(String name, String top, String side, String bottom) {
+        return model(name, () -> bottomTop(models().withExistingParent(name, mcLoc("block/cube_bottom_top")), top, side, bottom));
     }
 
     private void obelisk() {
@@ -272,12 +303,16 @@ public class ElqBlockStateProvider extends BlockStateProvider {
     }
 
     private static boolean joined(BlockState state, Direction side) {
-        return state.getValue(switch (side) {
+        return state.getValue(joinProperty(side));
+    }
+
+    private static BooleanProperty joinProperty(Direction side) {
+        return switch (side) {
             case NORTH -> ConnectedFrameBlock.NORTH;
             case EAST -> ConnectedFrameBlock.EAST;
             case SOUTH -> ConnectedFrameBlock.SOUTH;
             default -> ConnectedFrameBlock.WEST;
-        });
+        };
     }
 
     private ResourceLocation tex(String block) {

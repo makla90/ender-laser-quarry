@@ -1,52 +1,46 @@
 {
-  "variants": {
-    "east=false,north=false,south=false,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar"
+  "multipart": [
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ground_radar_joined"
+      }
     },
-    "east=false,north=false,south=false,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_w"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_n"
+      },
+      "when": {
+        "north": "false"
+      }
     },
-    "east=false,north=false,south=true,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_s"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_e"
+      },
+      "when": {
+        "east": "false"
+      }
     },
-    "east=false,north=false,south=true,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_sw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_s"
+      },
+      "when": {
+        "south": "false"
+      }
     },
-    "east=false,north=true,south=false,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_n"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_w"
+      },
+      "when": {
+        "west": "false"
+      }
     },
-    "east=false,north=true,south=false,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_nw"
-    },
-    "east=false,north=true,south=true,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_ns"
-    },
-    "east=false,north=true,south=true,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_nsw"
-    },
-    "east=true,north=false,south=false,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_e"
-    },
-    "east=true,north=false,south=false,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_ew"
-    },
-    "east=true,north=false,south=true,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_es"
-    },
-    "east=true,north=false,south=true,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_esw"
-    },
-    "east=true,north=true,south=false,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_ne"
-    },
-    "east=true,north=true,south=false,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_new"
-    },
-    "east=true,north=true,south=true,west=false": {
-      "model": "ender_laser_quarry:block/ground_radar_nes"
-    },
-    "east=true,north=true,south=true,west=true": {
-      "model": "ender_laser_quarry:block/ground_radar_nesw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ground_radar_ring"
+      }
     }
-  }
+  ]
 }
