@@ -1,0 +1,7 @@
+{
+  "parent": "ender_laser_quarry:block/top_overlay",
+  "textures": {
+    "overlay": "ender_laser_quarry:block/ground_radar_ring",
+    "particle": "ender_laser_quarry:block/ground_radar_side"
+  }
+}

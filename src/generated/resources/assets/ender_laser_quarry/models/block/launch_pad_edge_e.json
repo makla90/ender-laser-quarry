@@ -1,0 +1,7 @@
+{
+  "parent": "ender_laser_quarry:block/top_overlay",
+  "textures": {
+    "overlay": "ender_laser_quarry:block/launch_pad_edge_e",
+    "particle": "ender_laser_quarry:block/launch_pad_side"
+  }
+}

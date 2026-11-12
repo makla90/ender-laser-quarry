@@ -16,6 +16,7 @@ import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.ModelProvider;
 import net.minecraft.client.data.models.MultiVariant;
 import net.minecraft.client.data.models.blockstates.BlockModelDefinitionGenerator;
+import net.minecraft.client.data.models.blockstates.MultiPartGenerator;
 import net.minecraft.client.data.models.model.ItemModelUtils;
 import net.minecraft.client.data.models.model.ModelInstance;
 import net.minecraft.client.data.models.model.ModelTemplate;
@@ -36,6 +37,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.neoforged.neoforge.client.model.generators.blockstate.CustomBlockStateModelBuilder;
 import net.neoforged.neoforge.client.model.generators.loaders.ObjModelBuilder;
@@ -60,6 +62,9 @@ public class ElqModelProvider extends ModelProvider {
     private static final TextureSlot ANTENNA = TextureSlot.create("antenna");
     private static final Identifier CONTROLLER_TEMPLATE = rl("block/quarry_controller_template");
     private static final Identifier MAST_TEMPLATE = rl("block/quarry_controller_mast_template");
+    // one face lying on the top of the block, for the connected-top overlays
+    private static final Identifier TOP_OVERLAY = rl("block/top_overlay");
+    private static final TextureSlot OVERLAY = TextureSlot.create("overlay");
     private static final String[] TIER_PREFIX = {"", "enhanced_", "ender_"};
 
     private BiConsumer<Identifier, ModelInstance> models;
@@ -166,37 +171,62 @@ public class ElqModelProvider extends ModelProvider {
         });
     }
 
+    // Launch pad blocks: the fully joined model plus a hazard edge overlay per open side (see withPadEdges). The
+    // unconnected models stay for the items.
+
     private BlockModelDefinitionGenerator launchPadPlating() {
-        return states(ModBlocks.LAUNCH_PAD_PLATING.get(), state -> state.getValue(LaunchPadPlatingBlock.CENTER)
-            ? plain(bottomTop("launch_pad_plating_center", "launch_pad_top_connected", "launch_pad_side", "quarry_machine_bottom"))
-            : plain(bottomTop("launch_pad_plating" + connection(state), "launch_pad_plating_top" + connection(state),
-                "launch_pad_side", "quarry_machine_bottom")));
+        bottomTop("launch_pad_plating", "launch_pad_plating_top", "launch_pad_side", "quarry_machine_bottom");
+        return withPadEdges(MultiPartGenerator.multiPart(ModBlocks.LAUNCH_PAD_PLATING.get())
+            .with(BlockModelGenerators.condition(LaunchPadPlatingBlock.CENTER, true),
+                plain(bottomTop("launch_pad_plating_center", "launch_pad_top_connected", "launch_pad_side", "quarry_machine_bottom")))
+            .with(BlockModelGenerators.condition(LaunchPadPlatingBlock.CENTER, false),
+                plain(bottomTop("launch_pad_plating_joined", "launch_pad_plating_top_nesw", "launch_pad_side", "quarry_machine_bottom"))));
     }
 
     private BlockModelDefinitionGenerator launchPadPort() {
-        return states(ModBlocks.LAUNCH_PAD_PORT.get(), state -> ioOverlay(bottomTop("launch_pad_port" + connection(state),
-            "launch_pad_plating_top" + connection(state), "launch_pad_port_side", "launch_pad_port_bottom")));
+        bottomTop("launch_pad_port", "launch_pad_plating_top", "launch_pad_port_side", "launch_pad_port_bottom");
+        // base last, so Ender IO's IO overlay is drawn over the edges
+        return withPadEdges(MultiPartGenerator.multiPart(ModBlocks.LAUNCH_PAD_PORT.get()))
+            .with(ioOverlay(bottomTop("launch_pad_port_joined", "launch_pad_plating_top_nesw", "launch_pad_port_side", "launch_pad_port_bottom")));
     }
 
-    // the top follows the plating around it, so it keeps its world alignment (uvlock) when the front turns
+    // the top keeps its world alignment (uvlock) when the front turns, so the edges line up
     private BlockModelDefinitionGenerator launchPadController() {
-        return states(ModBlocks.LAUNCH_PAD.get(), state -> {
-            String conn = connection(state);
-            Identifier model = model("launch_pad_controller" + conn, ModelTemplates.CUBE_ORIENTABLE_TOP_BOTTOM, new TextureMapping()
-                .put(TextureSlot.FRONT, mat("launch_pad_front"))
-                .put(TextureSlot.SIDE, mat("launch_pad_side"))
-                .put(TextureSlot.TOP, mat("launch_pad_controller_top" + conn))
-                .put(TextureSlot.BOTTOM, mat("quarry_machine_bottom")));
-            Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
-            MultiVariant variant = rotated(model, facing);
-            return facing == Direction.NORTH ? variant : variant.with(BlockModelGenerators.UV_LOCK);
-        });
+        Identifier joined = model("launch_pad_controller_joined", ModelTemplates.CUBE_ORIENTABLE_TOP_BOTTOM, new TextureMapping()
+            .put(TextureSlot.FRONT, mat("launch_pad_front"))
+            .put(TextureSlot.SIDE, mat("launch_pad_side"))
+            .put(TextureSlot.TOP, mat("launch_pad_controller_top_nesw"))
+            .put(TextureSlot.BOTTOM, mat("quarry_machine_bottom")));
+        MultiPartGenerator parts = MultiPartGenerator.multiPart(ModBlocks.LAUNCH_PAD.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            MultiVariant variant = rotated(joined, facing);
+            parts.with(BlockModelGenerators.condition(BlockStateProperties.HORIZONTAL_FACING, facing),
+                facing == Direction.NORTH ? variant : variant.with(BlockModelGenerators.UV_LOCK));
+        }
+        return withPadEdges(parts);
     }
 
     private BlockModelDefinitionGenerator groundRadar() {
-        // the top follows the launch pad plating around it like the controller's; the unconnected one is the item's base
-        return states(ModBlocks.GROUND_RADAR.get(), state -> plain(bottomTop("ground_radar" + connection(state),
-            "ground_radar_top" + connection(state), "ground_radar_side", "quarry_machine_bottom")));
+        bottomTop("ground_radar", "ground_radar_top", "ground_radar_side", "quarry_machine_bottom");
+        // the ring goes last: it covers the edge bolts that sit under it
+        return withPadEdges(MultiPartGenerator.multiPart(ModBlocks.GROUND_RADAR.get())
+            .with(plain(bottomTop("ground_radar_joined", "launch_pad_plating_top_nesw", "ground_radar_side", "quarry_machine_bottom"))))
+            .with(plain(topOverlay("ground_radar_ring", "ground_radar_side")));
+    }
+
+    // the hazard strip of each side that isn't joined to the next pad block; the same four on every pad block
+    private MultiPartGenerator withPadEdges(MultiPartGenerator parts) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            parts.with(BlockModelGenerators.condition(joinProperty(side), false),
+                plain(topOverlay("launch_pad_edge_" + side.getSerializedName().charAt(0), "launch_pad_side")));
+        }
+        return parts;
+    }
+
+    // a multipart takes its break particles from the first part, which can be an overlay
+    private Identifier topOverlay(String texture, String particle) {
+        return model(texture, new ModelTemplate(Optional.of(TOP_OVERLAY), Optional.empty(), OVERLAY, TextureSlot.PARTICLE),
+            new TextureMapping().put(OVERLAY, mat(texture)).put(TextureSlot.PARTICLE, mat(particle)));
     }
 
     private BlockModelDefinitionGenerator obelisk() {
@@ -403,12 +433,16 @@ public class ElqModelProvider extends ModelProvider {
     }
 
     private static boolean joined(BlockState state, Direction side) {
-        return state.getValue(switch (side) {
+        return state.getValue(joinProperty(side));
+    }
+
+    private static BooleanProperty joinProperty(Direction side) {
+        return switch (side) {
             case NORTH -> ConnectedFrameBlock.NORTH;
             case EAST -> ConnectedFrameBlock.EAST;
             case SOUTH -> ConnectedFrameBlock.SOUTH;
             default -> ConnectedFrameBlock.WEST;
-        });
+        };
     }
 
     private static Material mat(String block) {

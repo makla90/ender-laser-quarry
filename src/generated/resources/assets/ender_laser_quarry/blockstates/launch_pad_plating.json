@@ -1,100 +1,52 @@
 {
-  "variants": {
-    "center=false,east=false,north=false,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating"
+  "multipart": [
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_plating_center"
+      },
+      "when": {
+        "center": "true"
+      }
     },
-    "center=false,east=false,north=false,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_w"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_plating_joined"
+      },
+      "when": {
+        "center": "false"
+      }
     },
-    "center=false,east=false,north=false,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_s"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_n"
+      },
+      "when": {
+        "north": "false"
+      }
     },
-    "center=false,east=false,north=false,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_sw"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_e"
+      },
+      "when": {
+        "east": "false"
+      }
     },
-    "center=false,east=false,north=true,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_n"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_s"
+      },
+      "when": {
+        "south": "false"
+      }
     },
-    "center=false,east=false,north=true,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_nw"
-    },
-    "center=false,east=false,north=true,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_ns"
-    },
-    "center=false,east=false,north=true,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_nsw"
-    },
-    "center=false,east=true,north=false,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_e"
-    },
-    "center=false,east=true,north=false,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_ew"
-    },
-    "center=false,east=true,north=false,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_es"
-    },
-    "center=false,east=true,north=false,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_esw"
-    },
-    "center=false,east=true,north=true,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_ne"
-    },
-    "center=false,east=true,north=true,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_new"
-    },
-    "center=false,east=true,north=true,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_nes"
-    },
-    "center=false,east=true,north=true,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_nesw"
-    },
-    "center=true,east=false,north=false,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=false,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=false,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=false,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=true,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=true,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=true,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=false,north=true,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=false,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=false,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=false,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=false,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=true,south=false,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=true,south=false,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=true,south=true,west=false": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
-    },
-    "center=true,east=true,north=true,south=true,west=true": {
-      "model": "ender_laser_quarry:block/launch_pad_plating_center"
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_w"
+      },
+      "when": {
+        "west": "false"
+      }
     }
-  }
+  ]
 }
