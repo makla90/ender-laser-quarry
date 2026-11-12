@@ -28,6 +28,9 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     private static final java.text.NumberFormat FORMAT = java.text.NumberFormat.getIntegerInstance(java.util.Locale.ROOT);
 
     private Button launchButton;
+    private Button resupplyButton;
+    private static final int RESUPPLY_X = 36;
+    private static final int RESUPPLY_Y = 77;
 
     public LaunchPadScreen(LaunchPadMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, 186);
@@ -40,6 +43,16 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         super.init();
 
         addRenderableOnly(new FluidStackWidget(leftPos + TANK_X, topPos + TANK_Y, 16, 52, menu::getFuelTank));
+        addRenderableOnly(new FluidStackWidget(leftPos + LaunchPadMenu.DEW_X, topPos + LaunchPadMenu.DEW_Y, 16, 50, menu::getDewTank));
+
+        // resupply: an icon button under the satellite slot, only with the Void Satellite up
+        resupplyButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
+                if (minecraft != null && minecraft.gameMode != null) {
+                    minecraft.gameMode.handleInventoryButtonClick(menu.containerId, LaunchPadMenu.BUTTON_RESUPPLY);
+                }
+            })
+            .bounds(leftPos + RESUPPLY_X, topPos + RESUPPLY_Y, 18, 18)
+            .build());
 
         launchButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
                 if (minecraft != null && minecraft.gameMode != null) {
@@ -59,6 +72,9 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         super.containerTick();
         var pad = menu.getBlockEntity();
         launchButton.active = !pad.isFlying();
+        resupplyButton.visible = pad.isVoidSatelliteUp();
+        resupplyButton.active = !pad.isFlying() && !pad.isRelocating() && dew() > 0 && fuel() >= menu.getResupplyCost()
+            && pad.getSatelliteDew() < menu.getDewCapacity();
         int cost = menu.getLaunchCost();
         if (!pad.isFlying() && cost > 0 && fuel() < cost) {
             // too little fuel: the button says how much it takes
@@ -71,6 +87,11 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
             : pad.hasSatelliteInOrbit() ? "gui.ender_laser_quarry.launch_pad.recover" : "gui.ender_laser_quarry.launch_pad.launch"));
     }
 
+    private int dew() {
+        var tank = menu.getDewTank();
+        return tank == null ? 0 : tank.contents().getAmount();
+    }
+
     private int fuel() {
         var tank = menu.getFuelTank();
         return tank == null ? 0 : tank.contents().getAmount();
@@ -80,6 +101,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
         GuiPanels.inset(g, leftPos + TANK_X - 1, topPos + TANK_Y - 1, 18, 54);
+        GuiPanels.inset(g, leftPos + LaunchPadMenu.DEW_X - 1, topPos + LaunchPadMenu.DEW_Y - 1, 18, 52);
         GuiPanels.slot(g, leftPos + LaunchPadMenu.ROCKET_X, topPos + LaunchPadMenu.ROCKET_Y);
         GuiPanels.slot(g, leftPos + LaunchPadMenu.SATELLITE_X, topPos + LaunchPadMenu.SATELLITE_Y);
         GuiPanels.inset(g, leftPos + INFO_X, topPos + INFO_Y, INFO_W, INFO_H);
@@ -115,7 +137,11 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         // Flight / satellite
         line(g, flightStatus(pad), x, y + 30, pad.isFlying() ? FLIGHT : pad.hasSatelliteInOrbit() ? INFO : TEXT_COLOR);
 
-        if (pad.getBeamTarget() != null) {
+        if (pad.isVoidSatelliteUp()) {
+            // the Void Satellite maps no ground: its Dew of the Void instead
+            line(g, Component.translatable("gui.ender_laser_quarry.launch_pad.sat_dew", FORMAT.format(pad.getSatelliteDew())),
+                x, y + 40, pad.isOutOfDew() ? BAD : INFO);
+        } else if (pad.getBeamTarget() != null) {
             // The quarry is bouncing its laser off the satellite right now
             line(g, Component.translatable("gui.ender_laser_quarry.launch_pad.reflector.lasering"), x, y + 40, GOOD);
         } else {
@@ -139,12 +165,39 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
                 case DEPLOY -> "gui.ender_laser_quarry.launch_pad.deploying";
                 case RECOVER -> "gui.ender_laser_quarry.launch_pad.docking";
                 case TRANSFER -> "gui.ender_laser_quarry.launch_pad.fuelling";
+                case RESUPPLY -> "gui.ender_laser_quarry.launch_pad.resupplying";
             });
             case COUNTDOWN -> Component.translatable("gui.ender_laser_quarry.launch_pad.countdown",
                 (int) Math.ceil((1 - progress) * FlightPhase.COUNTDOWN.duration() / 20f));
             case ASCENT -> Component.translatable("gui.ender_laser_quarry.launch_pad.ascent", percent);
             case DESCENT -> Component.translatable("gui.ender_laser_quarry.launch_pad.landing", percent);
         };
+    }
+
+    private static final java.util.function.Supplier<net.minecraft.world.item.ItemStack> DEW_BUCKET = com.google.common.base.Suppliers.memoize(
+        () -> new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("enderio", "dew_of_the_void_bucket"))));
+
+    private java.util.List<Component> resupplyLines() {
+        var pad = menu.getBlockEntity();
+        var lines = new java.util.ArrayList<Component>();
+        int space = Math.max(0, menu.getDewCapacity() - pad.getSatelliteDew());
+        lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.resupply"));
+        lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.resupply.what", FORMAT.format(Math.min(space, dew())),
+            FORMAT.format(menu.getResupplyCost())).withStyle(net.minecraft.ChatFormatting.GRAY));
+        lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.sat_dew_of", FORMAT.format(pad.getSatelliteDew()),
+            FORMAT.format(menu.getDewCapacity())).withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
+        String problem = pad.isFlying() ? null
+            : space <= 0 ? "message.ender_laser_quarry.launch.resupply_full"
+            : dew() <= 0 ? "message.ender_laser_quarry.launch.resupply_no_dew"
+            : null;
+        if (problem != null) {
+            lines.add(Component.translatable(problem).withStyle(net.minecraft.ChatFormatting.RED));
+        } else if (!pad.isFlying() && fuel() < menu.getResupplyCost()) {
+            lines.add(Component.translatable("message.ender_laser_quarry.launch.no_fuel", FORMAT.format(fuel()),
+                FORMAT.format(menu.getResupplyCost())).withStyle(net.minecraft.ChatFormatting.RED));
+        }
+        return lines;
     }
 
     private void line(GuiGraphicsExtractor g, Component text, int x, int y, int color) {
@@ -154,6 +207,14 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
+
+        if (resupplyButton.visible) {
+            g.item(DEW_BUCKET.get(), resupplyButton.getX() + 1, resupplyButton.getY() + 1);
+            if (resupplyButton.isMouseOver(mouseX, mouseY)) {
+                g.setComponentTooltipForNextFrame(font, resupplyLines(), mouseX, mouseY);
+                return;
+            }
+        }
 
         // Hints for the empty slots (EnderContainerScreen.renderTooltip is final, so draw them here)
         if (hoveredSlot != null && !hoveredSlot.hasItem() && menu.getCarried().isEmpty()) {

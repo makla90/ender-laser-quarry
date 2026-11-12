@@ -45,6 +45,9 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
     private static final int PUFF = 0xDDEEFF;
     private static final int FUEL_LINE = 0x8A5A10;
     private static final int FUEL_PULSE = 0xFFC23A;
+    // resupply: Dew of the Void goes up
+    private static final int DEW_LINE = 0x3A1E6C;
+    private static final int DEW_PULSE = 0xB088F8;
     private static final int BURN_OUTER = 0x6FB8FF;
     private static final int BURN_CORE = 0xF0FAFF;
     private static final float PUFF_INTERVAL = 67;
@@ -108,7 +111,7 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         if (satellitePos != null) {
             renderSatellite(pad, level, satellitePos, partialTick, time, poseStack, buffers);
         }
-        if (rocketPos != null && satellitePos != null && pad.getPhase() == FlightPhase.ORBIT_OPS && pad.getMission() == FlightPhase.Mission.TRANSFER) {
+        if (rocketPos != null && satellitePos != null && pad.getPhase() == FlightPhase.ORBIT_OPS && pad.getMission().refuelsInOrbit()) {
             renderFuelLine(pad, rocketPos, satellitePos, partialTick, time, poseStack, buffers);
         }
         poseStack.popPose();
@@ -125,11 +128,14 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         }
         Vec3 nose = rocketPos.add(0, LaunchPadBlockEntity.PAYLOAD_DOCK_HEIGHT + 0.6, 0);
         Vec3 to = satellitePos.add(0, -0.4, 0);
-        LaserBeamRenderer.render(poseStack, buffers, nose, to, FUEL_LINE, 0.07f * strength, time);
-        LaserBeamRenderer.render(poseStack, buffers, nose, to, FUEL_PULSE, 0.025f * strength, time);
+        boolean dew = pad.getMission() == FlightPhase.Mission.RESUPPLY;
+        int lineColor = dew ? DEW_LINE : FUEL_LINE;
+        int pulseColor = dew ? DEW_PULSE : FUEL_PULSE;
+        LaserBeamRenderer.render(poseStack, buffers, nose, to, lineColor, 0.07f * strength, time);
+        LaserBeamRenderer.render(poseStack, buffers, nose, to, pulseColor, 0.025f * strength, time);
         for (int i = 0; i < 4; i++) {
             float at = frac(time * 0.035f + i / 4f);
-            LaserBeamRenderer.render(poseStack, buffers, nose.lerp(to, at), nose.lerp(to, Math.min(1, at + 0.08f)), FUEL_PULSE, 0.16f * strength, time);
+            LaserBeamRenderer.render(poseStack, buffers, nose.lerp(to, at), nose.lerp(to, Math.min(1, at + 0.08f)), pulseColor, 0.16f * strength, time);
         }
     }
 

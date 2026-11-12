@@ -34,7 +34,14 @@ public enum FlightPhase {
         DEPLOY,
         RECOVER,
         // fuel the satellite up, it then flies over a new area
-        TRANSFER;
+        TRANSFER,
+        // bring Dew of the Void up to the Void Satellite, it stays up
+        RESUPPLY;
+
+        // the rocket meets the satellite up there instead of docking it
+        public boolean refuelsInOrbit() {
+            return this == TRANSFER || this == RESUPPLY;
+        }
 
         public static Mission byOrdinal(int ordinal) {
             return ordinal >= 0 && ordinal < values().length ? values()[ordinal] : DEPLOY;

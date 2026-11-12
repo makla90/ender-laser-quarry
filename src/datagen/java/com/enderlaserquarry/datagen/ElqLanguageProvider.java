@@ -84,6 +84,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("item.ender_laser_quarry.void_satellite", "Void Satellite");
         add("tooltip.ender_laser_quarry.void_satellite", "In orbit it throws the Void Laser Crystal's beam out to the asteroids and scans space for them. Maps no ground, stays over its Launch Pad");
         add("tooltip.ender_laser_quarry.void_satellite.needs", "Needs an Ender Quarry Controller and a Void Laser Crystal to mine");
+        add("tooltip.ender_laser_quarry.void_satellite.dew", "Dew of the Void: %s / %s mB (space scans)");
 
         add("tooltip.ender_laser_quarry.satellite.area", "Maps %sx%s chunks around its Launch Pad");
 
@@ -138,6 +139,9 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("message.ender_laser_quarry.launch.no_satellite", "Insert a satellite to launch");
         add("message.ender_laser_quarry.launch.satellite_slot_full", "Empty the satellite slot to recover the satellite");
         add("message.ender_laser_quarry.launch.no_fuel", "Not enough Rocket Fuel (%s / %s mB)");
+        add("message.ender_laser_quarry.launch.resupply_no_void", "Only the Void Satellite takes Dew of the Void");
+        add("message.ender_laser_quarry.launch.resupply_full", "The Void Satellite's Dew tank is full");
+        add("message.ender_laser_quarry.launch.resupply_no_dew", "No Dew of the Void in the Launch Pad");
         add("message.ender_laser_quarry.launch.transfer_no_satellite", "No satellite in orbit to move");
         add("message.ender_laser_quarry.launch.transfer_tier", "A %s Satellite stays over its Launch Pad");
         add("message.ender_laser_quarry.launch.transfer_void", "The Void Satellite stays over its Launch Pad");
@@ -179,6 +183,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.status.needs_void_satellite", "Asteroid mining needs the Void Satellite in orbit");
         add("gui.ender_laser_quarry.status.needs_void_crystal", "Asteroid mining needs a Void Laser Crystal on the obelisk");
         add("gui.ender_laser_quarry.status.void_satellite_up", "The Void Satellite can't mine the ground: launch a normal satellite");
+        add("gui.ender_laser_quarry.status.satellite_no_dew", "Satellite out of Dew of the Void: resupply");
 
         add("gui.ender_laser_quarry.launch_pad.pad.ready", "Pad: Ready");
         add("gui.ender_laser_quarry.launch_pad.pad.incomplete", "Pad: Incomplete");
@@ -197,6 +202,11 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.launch_pad.deploying", "Deploying sat");
         add("gui.ender_laser_quarry.launch_pad.docking", "Docking sat");
         add("gui.ender_laser_quarry.launch_pad.fuelling", "Fuelling sat");
+        add("gui.ender_laser_quarry.launch_pad.resupplying", "Resupplying");
+        add("gui.ender_laser_quarry.launch_pad.sat_dew", "Sat Dew: %s mB");
+        add("gui.ender_laser_quarry.launch_pad.sat_dew_of", "In the satellite: %s / %s mB");
+        add("gui.ender_laser_quarry.launch_pad.resupply", "Resupply the Void Satellite");
+        add("gui.ender_laser_quarry.launch_pad.resupply.what", "Flies %s mB Dew of the Void up, burns %s mB Rocket Fuel. The quarry keeps mining.");
         add("gui.ender_laser_quarry.launch_pad.orbit_offset", "%s, %s chunks from this pad");
         add("gui.ender_laser_quarry.launch_pad.orbit_hint", "Move it in the Quarry Controller's Orbit planner");
         add("gui.ender_laser_quarry.launch_pad.landing", "Landing %s%%");
@@ -241,6 +251,8 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("message.ender_laser_quarry.controller.analyze_busy", "Already analyzing another asteroid");
         add("message.ender_laser_quarry.controller.analyze_scan_running", "Wait for the space scan to finish");
         add("message.ender_laser_quarry.controller.scan_analyze_running", "Wait for the analysis to finish");
+        add("gui.ender_laser_quarry.controller.dew", "Dew of the Void in the satellite: %s / %s mB");
+        add("gui.ender_laser_quarry.controller.dew_per_scan", "A space scan takes %s mB. Resupply it from the Launch Pad.");
         add("message.ender_laser_quarry.controller.queue_full", "Queue is full (max %s chunks). Click a queued chunk to remove it");
         add("message.ender_laser_quarry.controller.box_too_big", "That box is too big: the queue holds at most %s chunks");
         add("message.ender_laser_quarry.controller.not_scanned", "The satellite hasn't mapped that chunk yet");

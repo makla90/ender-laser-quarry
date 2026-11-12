@@ -10,6 +10,7 @@ import com.enderio.core.common.storage.layout.ItemStorageLayout;
 import com.enderio.core.common.storage.layout.SlotTemplates;
 import com.enderio.core.common.storage.slot.SingleResourceSlotKey;
 import com.enderlaserquarry.content.Tank;
+import com.enderlaserquarry.init.ModDataComponents;
 import com.enderlaserquarry.init.ModTickets;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.world.level.storage.ValueInput;
@@ -94,10 +95,13 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
     public static final SingleResourceSlotKey<ItemResource> ROCKET = new SingleResourceSlotKey<>();
     public static final SingleResourceSlotKey<ItemResource> SATELLITE = new SingleResourceSlotKey<>();
     public static final SingleResourceSlotKey<FluidResource> FUEL = new SingleResourceSlotKey<>();
+    public static final SingleResourceSlotKey<FluidResource> DEW = new SingleResourceSlotKey<>();
 
     public static final TagKey<Block> FRAME_BLOCKS = TagKey.create(Registries.BLOCK, EnderLaserQuarry.rl("launch_pad_frame"));
     public static final int RADIUS = 2;
     public static final TagKey<Fluid> ROCKET_FUEL = TagKey.create(Registries.FLUID, EnderLaserQuarry.rl("rocket_fuel"));
+    // what the Void Satellite needs for a space scan (Ender IO's Dew of the Void)
+    public static final TagKey<Fluid> SPACE_SCAN_FLUID = TagKey.create(Registries.FLUID, EnderLaserQuarry.rl("space_scan_fluid"));
 
     // Flight geometry, relative to the pad center
     public static final Vec3 LAUNCH_POINT = new Vec3(0.5, 1.0, 0.5);
@@ -132,6 +136,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
     private static final String FULL_SAVE = "FullSave";
     private static final String FLUIDS = "Fluids";
     private static final String PAYLOAD = "Payload";
+    private static final String CARGO_DEW = "CargoDew";
+    private static final String SATELLITE_DEW = "SatelliteDew";
     private static final String ORBITING = "Orbiting";
     private static final String HAS_PAYLOAD = "HasPayload";
     private static final String IN_ORBIT = "InOrbit";
@@ -174,6 +180,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
     private final FluidStorage fluidStorage;
     private final ResourceHandler<FluidResource> externalFluids;
     private final Tank fuelTank;
+    private final Tank dewTank;
     private final PadEnergy energy = new PadEnergy();
 
     private boolean platingOk;
@@ -186,6 +193,10 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
     // Server only: rocket in flight, satellite on board, satellite in orbit
     private ItemStack flightRocket = ItemStack.EMPTY;
     private ItemStack payload = ItemStack.EMPTY;
+    // Dew of the Void on its way up (resupply)
+    private int cargoDew;
+    // synced: Dew in the Void Satellite up there
+    private int satelliteDew;
     private ItemStack orbiting = ItemStack.EMPTY;
     // synced for rendering
     private boolean hasPayload;
@@ -259,6 +270,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         fluidStorage = new FluidStorage(FluidStorageLayout.builder()
             // fill only from outside
             .add(FUEL, SlotTemplates.input(QuarryConfig.PAD_TANK_CAPACITY.get()), slot -> slot.filter((i, fluid) -> fluid.is(ROCKET_FUEL)))
+            .add(DEW, SlotTemplates.input(QuarryConfig.PAD_DEW_TANK.get()), slot -> slot.filter((i, fluid) -> fluid.is(SPACE_SCAN_FLUID)))
             .build()) {
             @Override
             protected void onContentsChanged(int index, FluidStack previousContents) {
@@ -268,6 +280,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         };
         externalFluids = new ExternalResourceStorageView<>(fluidStorage);
         fuelTank = new Tank(fluidStorage, FUEL);
+        dewTank = new Tank(fluidStorage, DEW);
     }
 
     // region Inventory & tank
@@ -303,6 +316,16 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
 
     public int getFuel() {
         return fuelTank.getFluidAmount();
+    }
+
+    public Tank getDewTank() {
+        return dewTank;
+    }
+
+    // the tank a fluid goes into (buckets), null if none takes it
+    @Nullable
+    public SingleResourceSlotKey<FluidResource> tankFor(FluidStack fluid) {
+        return fluid.is(ROCKET_FUEL) ? FUEL : fluid.is(SPACE_SCAN_FLUID) ? DEW : null;
     }
 
     // endregion
@@ -628,6 +651,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         if (newMission == Mission.DEPLOY) {
             payload = satellite.copy();
             getInventory().setStack(SATELLITE, ItemStack.EMPTY);
+            loadDew(payload);
         }
         mission = newMission;
         flightDx = orbitDx;
@@ -725,6 +749,94 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         }
         return getInventory().getStack(SATELLITE).getItem() instanceof SatelliteItem satellite ? satellite.launchFuel() : -1;
     }
+
+    // region Dew of the Void
+
+    // a Void Satellite going up takes what fits from the pad's Dew tank
+    private void loadDew(ItemStack satellite) {
+        if (!SatelliteItem.isVoid(satellite)) {
+            return;
+        }
+        int have = SatelliteItem.getDew(satellite);
+        int take = Math.min(dewTank.getFluidAmount(), SatelliteItem.dewCapacity() - have);
+        if (take > 0) {
+            dewTank.drain(take, false);
+            SatelliteItem.setDew(satellite, have + take);
+        }
+    }
+
+    /**
+     * Resupply: the rocket flies the pad's Dew of the Void up to the Void Satellite and comes back; the satellite stays up
+     * and the quarry keeps mining. Recovery price. Returns the reason if it can't go.
+     */
+    @Nullable
+    public Component tryResupply() {
+        if (level == null || level.isClientSide() || phase != FlightPhase.IDLE || arriving) {
+            return launchError("busy");
+        }
+        updateStructure();
+        if (!platingOk) {
+            return launchError("incomplete");
+        }
+        if (!skyOk) {
+            return launchError("no_sky");
+        }
+        if (getInventory().getStack(ROCKET).isEmpty()) {
+            return launchError("no_rocket");
+        }
+        if (!SatelliteItem.isVoid(orbiting)) {
+            return launchError("resupply_no_void");
+        }
+        int space = SatelliteItem.dewCapacity() - SatelliteItem.getDew(orbiting);
+        if (space <= 0) {
+            return launchError("resupply_full");
+        }
+        if (dewTank.getFluidAmount() <= 0) {
+            return launchError("resupply_no_dew");
+        }
+        int cost = getTransferBaseCost();
+        if (getFuel() < cost) {
+            return Component.translatable("message.ender_laser_quarry.launch.no_fuel", getFuel(), cost);
+        }
+
+        if (cost > 0) {
+            fuelTank.drain(cost, false);
+        }
+        cargoDew = Math.min(space, dewTank.getFluidAmount());
+        dewTank.drain(cargoDew, false);
+        flightRocket = getInventory().getStack(ROCKET).copy();
+        getInventory().setStack(ROCKET, ItemStack.EMPTY);
+        mission = Mission.RESUPPLY;
+        flightDx = orbitDx;
+        flightDz = orbitDz;
+        refreshSyncedItems();
+        setPhase(FlightPhase.COUNTDOWN, level.getGameTime());
+        return null;
+    }
+
+    // Client and server: Dew in the satellite up there (0 for any other satellite)
+    public int getSatelliteDew() {
+        return level != null && !level.isClientSide() ? SatelliteItem.getDew(orbiting) : satelliteDew;
+    }
+
+    // Server: takes a space scan's Dew from the satellite, false if it has too little
+    public boolean consumeScanDew() {
+        int need = QuarryConfig.VOID_SCAN_DEW.get();
+        int have = SatelliteItem.getDew(orbiting);
+        if (!SatelliteItem.isVoid(orbiting) || have < need) {
+            return false;
+        }
+        SatelliteItem.setDew(orbiting, have - need);
+        setChanged();
+        syncToClients();
+        return true;
+    }
+
+    public boolean isOutOfDew() {
+        return isVoidSatelliteUp() && getSatelliteDew() < QuarryConfig.VOID_SCAN_DEW.get();
+    }
+
+    // endregion
 
     // ticks the satellite needs to fly over
     public static int relocationTicks(double chunks) {
@@ -915,6 +1027,11 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
                         scanIndex = 0;
                         refreshIndex = 0;
                     }
+                } else if (mission == Mission.RESUPPLY) {
+                    if (SatelliteItem.isVoid(orbiting)) {
+                        SatelliteItem.setDew(orbiting, SatelliteItem.getDew(orbiting) + cargoDew);
+                    }
+                    cargoDew = 0;
                 } else {
                     startRelocation(serverLevel, next);
                 }
@@ -1040,6 +1157,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
             syncToClients();
         }
         setState(QuarryStates.RADAR_NO_POWER, status == UplinkStatus.NO_POWER);
+        setState(QuarryStates.SATELLITE_NO_DEW, isOutOfDew());
 
         // in case the controller vanished mid beam
         if (beamTarget != null && getReflectorProblem() != null) {
@@ -1613,8 +1731,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
 
     @Nullable
     public Vec3 getSatellitePos(float partialTick) {
-        // a transfer doesn't dock: the rocket only brings it fuel
-        if (phase == FlightPhase.ORBIT_OPS && mission != Mission.TRANSFER) {
+        // a transfer or resupply doesn't dock: the rocket only brings it fuel / Dew
+        if (phase == FlightPhase.ORBIT_OPS && !mission.refuelsInOrbit()) {
             Vec3 rocket = getRocketPos(partialTick);
             Vec3 dock = rocket.add(0, PAYLOAD_DOCK_HEIGHT, 0);
             return dock.lerp(getOrbitPos(partialTick), getSatelliteTransfer(partialTick));
@@ -1624,7 +1742,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
 
     // 0 = docked, 1 = in orbit
     public float getSatelliteTransfer(float partialTick) {
-        if (phase != FlightPhase.ORBIT_OPS || mission == Mission.TRANSFER) {
+        if (phase != FlightPhase.ORBIT_OPS || mission.refuelsInOrbit()) {
             return inOrbit ? 1 : 0;
         }
         float move = smoothstep(Mth.clamp((getPhaseProgress(partialTick) - 0.25f) / 0.5f, 0, 1));
@@ -1690,6 +1808,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         if (!payload.isEmpty()) {
             tag.store(PAYLOAD, ItemStack.CODEC, payload);
         }
+        tag.putInt(CARGO_DEW, cargoDew);
         if (!orbiting.isEmpty()) {
             tag.store(ORBITING, ItemStack.CODEC, orbiting);
         }
@@ -1722,6 +1841,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         tag.putInt(DRAWN_TIER, drawn == null ? 0 : drawn.ordinal());
         tag.putBoolean(DRAWN_VOID, SatelliteItem.isVoid(!payload.isEmpty() ? payload : orbiting));
         tag.putBoolean(VOID_UP, SatelliteItem.isVoid(orbiting));
+        tag.putInt(SATELLITE_DEW, SatelliteItem.getDew(orbiting));
         tag.storeNullable(BEAM_TARGET, BlockPos.CODEC, beamTarget);
         tag.putInt(BEAM_TIER, beamTier.ordinal());
         tag.putInt(BEAM_GLOW, beamGlow.ordinal());
@@ -1764,6 +1884,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         drawnSatelliteTier = QuarryTier.values()[Math.floorMod(tag.getIntOr(DRAWN_TIER, 0), QuarryTier.values().length)];
         drawnVoid = tag.getBooleanOr(DRAWN_VOID, false);
         voidUp = tag.getBooleanOr(VOID_UP, false);
+        satelliteDew = tag.getIntOr(SATELLITE_DEW, 0);
         beamTarget = tag.read(BEAM_TARGET, BlockPos.CODEC).orElse(null);
         beamTier = QuarryTier.values()[Math.floorMod(tag.getIntOr(BEAM_TIER, 0), QuarryTier.values().length)];
         beamGlow = CrystalGlow.values()[Math.floorMod(tag.getIntOr(BEAM_GLOW, 1), CrystalGlow.values().length)];
@@ -1790,6 +1911,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         if (tag.getBooleanOr(FULL_SAVE, false)) {
             flightRocket = tag.read(FLIGHT_ROCKET, ItemStack.CODEC).orElse(ItemStack.EMPTY);
             payload = tag.read(PAYLOAD, ItemStack.CODEC).orElse(ItemStack.EMPTY);
+            cargoDew = tag.getIntOr(CARGO_DEW, 0);
             orbiting = tag.read(ORBITING, ItemStack.CODEC).orElse(ItemStack.EMPTY);
             hasPayload = !payload.isEmpty();
             inOrbit = !orbiting.isEmpty();
@@ -1805,6 +1927,10 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         if (stored != null) {
             fuelTank.setFluid(stored.copy());
         }
+        SimpleFluidContent dew = components.get(ModDataComponents.PAD_DEW.get());
+        if (dew != null) {
+            dewTank.setFluid(dew.copy());
+        }
     }
 
     @Override
@@ -1815,6 +1941,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidIte
         var tank = fuelTank;
         if (!tank.isEmpty()) {
             components.set(EIODataComponents.ITEM_FLUID_CONTENT, SimpleFluidContent.copyOf(tank.getFluid()));
+        }
+        if (!dewTank.isEmpty()) {
+            components.set(ModDataComponents.PAD_DEW.get(), SimpleFluidContent.copyOf(dewTank.getFluid()));
         }
     }
 

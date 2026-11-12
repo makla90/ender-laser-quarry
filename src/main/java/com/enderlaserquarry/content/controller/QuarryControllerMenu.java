@@ -57,6 +57,10 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
     private final IntSyncSlot spaceScan;
     private final IntSyncSlot spaceScanTotal;
     private final IntSyncSlot scanStalled;
+    // Dew of the Void in the Void Satellite (-1 = none up), its tank, what a scan takes
+    private final IntSyncSlot satelliteDew;
+    private final IntSyncSlot dewCapacity;
+    private final IntSyncSlot scanDew;
     private final IntSyncSlot analyzeId;
     private final IntSyncSlot analyzeProgress;
     private final IntSyncSlot analyzeStalled;
@@ -97,6 +101,12 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         // common config isn't synced
         spaceScanTotal = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.VOID_SCAN_TICKS::get));
         scanStalled = addSyncSlot(IntSyncSlot.readOnly(() -> be.isScanStalled() ? 1 : 0));
+        satelliteDew = addSyncSlot(IntSyncSlot.readOnly(() -> {
+            var pad = be.getLinkedPad();
+            return pad != null && pad.isVoidSatelliteUp() ? pad.getSatelliteDew() : -1;
+        }));
+        dewCapacity = addSyncSlot(IntSyncSlot.readOnly(com.enderlaserquarry.content.satellite.SatelliteItem::dewCapacity));
+        scanDew = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.VOID_SCAN_DEW::get));
         analyzeId = addSyncSlot(IntSyncSlot.readOnly(be::getAnalyzeId));
         analyzeProgress = addSyncSlot(IntSyncSlot.readOnly(() -> Math.round(be.getAnalyzeProgress() * 1000)));
         analyzeStalled = addSyncSlot(IntSyncSlot.readOnly(() -> be.isAnalyzeStalled() ? 1 : 0));
@@ -134,6 +144,9 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         spaceScan = addSyncSlot(IntSyncSlot.standalone());
         spaceScanTotal = addSyncSlot(IntSyncSlot.standalone());
         scanStalled = addSyncSlot(IntSyncSlot.standalone());
+        satelliteDew = addSyncSlot(IntSyncSlot.standalone());
+        dewCapacity = addSyncSlot(IntSyncSlot.standalone());
+        scanDew = addSyncSlot(IntSyncSlot.standalone());
         analyzeId = addSyncSlot(IntSyncSlot.standalone());
         analyzeProgress = addSyncSlot(IntSyncSlot.standalone());
         analyzeStalled = addSyncSlot(IntSyncSlot.standalone());
@@ -319,6 +332,18 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
 
     public boolean isScanStalled() {
         return scanStalled.get() != 0;
+    }
+
+    public int getSatelliteDew() {
+        return satelliteDew.get();
+    }
+
+    public int getDewCapacity() {
+        return dewCapacity.get();
+    }
+
+    public int getScanDew() {
+        return scanDew.get();
     }
 
     /** Asteroid being analyzed, -1 = none. */

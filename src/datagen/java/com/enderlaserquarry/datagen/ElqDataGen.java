@@ -45,6 +45,7 @@ public final class ElqDataGen {
         generator.addProvider(true, new ElqTagsProvider<>(output, Registries.FLUID, lookup, tags -> {
             tags.tag(ours("quarry_coolant"), "minecraft:water");
             tags.tag(ours("rocket_fuel"), "enderio:fluid_rocket_fuel_still", "enderio:fluid_rocket_fuel_flowing");
+            tags.tag(ours("space_scan_fluid"), "enderio:fluid_dew_of_the_void_still", "enderio:fluid_dew_of_the_void_flowing");
         }));
         generator.addProvider(true, new ElqTagsProvider<>(output, Registries.ITEM, lookup, tags -> {
             tags.tag(ours("crystal_repair/basic"), "enderio:pulsating_crystal");

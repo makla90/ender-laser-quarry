@@ -604,7 +604,8 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             refreshButton.setMessage(Component.translatable(voidMode
                 ? "gui.ender_laser_quarry.controller.scan_space"
                 : "gui.ender_laser_quarry.controller.refresh"));
-            refreshButton.active = !voidMode || (!running && menu.getSpaceScanProgress() < 0 && menu.getAnalyzeId() < 0);
+            refreshButton.active = !voidMode || (!running && menu.getSpaceScanProgress() < 0 && menu.getAnalyzeId() < 0
+                && menu.getSatelliteDew() >= menu.getScanDew());
         }
     }
 
@@ -914,6 +915,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         GuiPanels.playerInventory(g, leftPos + QuarryControllerMenu.PLAYER_INV_X, topPos + QuarryControllerMenu.PLAYER_INV_Y);
 
         renderMinimap(g, mouseX, mouseY);
+        renderDewGauge(g);
     }
 
     private void renderMinimap(GuiGraphicsExtractor g, int mouseX, int mouseY) {
@@ -1560,10 +1562,64 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         g.pose().popMatrix();
     }
 
+    // Dew of the Void in the Void Satellite: a thin bar under the scan button
+    private static final int DEW_GAUGE_Y = 132;
+    private static final int DEW_GAUGE_W = 56;
+    private static final int DEW_GAUGE_H = 4;
+
+    private void renderDewGauge(GuiGraphicsExtractor g) {
+        if (!menu.isVoidMode() || menu.getSatelliteDew() < 0) {
+            return;
+        }
+        int x = leftPos + QuarryControllerMenu.OUTPUT_X - 1;
+        int y = topPos + DEW_GAUGE_Y;
+        g.fill(x, y, x + DEW_GAUGE_W, y + DEW_GAUGE_H, 0xFF1A1420);
+        int filled = Math.round((DEW_GAUGE_W - 2) * Math.min(1f, menu.getSatelliteDew() / (float) Math.max(1, menu.getDewCapacity())));
+        boolean enough = menu.getSatelliteDew() >= menu.getScanDew();
+        if (filled > 0) {
+            g.fill(x + 1, y + 1, x + 1 + filled, y + DEW_GAUGE_H - 1, enough ? 0xFF8A5CE0 : 0xFFE0A030);
+        }
+        // one notch per scan
+        int scans = menu.getDewCapacity() / Math.max(1, menu.getScanDew());
+        if (scans > 1 && scans <= 16) {
+            for (int i = 1; i < scans; i++) {
+                int nx = x + 1 + Math.round((DEW_GAUGE_W - 2) * i / (float) scans);
+                g.fill(nx, y + 1, nx + 1, y + DEW_GAUGE_H - 1, 0x80000000);
+            }
+        }
+    }
+
+    private boolean isOverDewGauge(int mouseX, int mouseY) {
+        int x = leftPos + QuarryControllerMenu.OUTPUT_X - 1;
+        int y = topPos + DEW_GAUGE_Y;
+        return menu.getSatelliteDew() >= 0 && mouseX >= x && mouseX < x + DEW_GAUGE_W && mouseY >= y - 1 && mouseY < y + DEW_GAUGE_H + 1;
+    }
+
+    private List<Component> dewLines() {
+        List<Component> lines = new ArrayList<>();
+        int dew = Math.max(0, menu.getSatelliteDew());
+        lines.add(Component.translatable("gui.ender_laser_quarry.controller.dew", formatMb(dew), formatMb(menu.getDewCapacity())));
+        lines.add(Component.translatable("gui.ender_laser_quarry.controller.dew_per_scan", formatMb(menu.getScanDew()))
+            .withStyle(ChatFormatting.GRAY));
+        if (dew < menu.getScanDew()) {
+            lines.add(QuarryStates.SATELLITE_NO_DEW.component().copy().withStyle(ChatFormatting.RED));
+        }
+        return lines;
+    }
+
+    private static String formatMb(int mb) {
+        return java.text.NumberFormat.getIntegerInstance(java.util.Locale.ROOT).format(mb);
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         renderPlannerIcon(g);
+
+        if (menu.isVoidMode() && (isOverDewGauge(mouseX, mouseY) || (refreshButton != null && refreshButton.isMouseOver(mouseX, mouseY)))) {
+            g.setComponentTooltipForNextFrame(font, dewLines(), mouseX, mouseY);
+            return;
+        }
 
         // tooltip for the empty filter slot
         int fx = leftPos + QuarryControllerMenu.FILTER_X;
