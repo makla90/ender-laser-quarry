@@ -252,6 +252,22 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     // MIN_VALUE / 2 so now - NEVER can't overflow
     private static final long NEVER = Long.MIN_VALUE / 2;
     private long linkFlashStart = NEVER;
+    // power over the controller's antenna
+    private static final String ANTENNA_FEEDING = "AntennaFeeding";
+    private static final String ANTENNA_POWERED = "AntennaPowered";
+    private static final int USAGE_WINDOW = 20;
+    private static final int FEED_LINGER = 20;
+    private static final int FEED_SHOW_MIN = 100;
+    private static final int TRICKLE_LINGER = 40;
+    private long antennaFedTick = NEVER;
+    private boolean antennaFeeding;
+    // any antenna power lately, also the uplink trickle: a yellow packet now and then
+    private long antennaTrickleTick = NEVER;
+    private boolean antennaPowered;
+    private int radarUsedSum;
+    private int radarUsage;
+    private int antennaInSum;
+    private int antennaInput;
     // client side animation
     private float radarYaw;
     private float prevRadarYaw;
@@ -540,6 +556,56 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     public int getEnergyPercent() {
         return energy.getMaxEnergyStored() <= 0 ? 0 : (int) (100L * energy.getEnergyStored() / energy.getMaxEnergyStored());
+    }
+
+    // the linked quarry controller tops the buffer up over its antenna link, returns what fit
+    public int receiveAntennaPower(int max) {
+        int taken = max <= 0 ? 0 : energy.receiveAntenna(max);
+        if (taken > 0 && level != null) {
+            antennaInSum += taken;
+            antennaTrickleTick = level.getGameTime();
+            // the uplink trickle alone shows no packets, a scan, Analyze or a refill does
+            if (taken >= FEED_SHOW_MIN) {
+                antennaFedTick = level.getGameTime();
+            }
+        }
+        return taken;
+    }
+
+    // 20-tick averages for the GUIs
+    public int getRadarUsage() {
+        return radarUsage;
+    }
+
+    public int getAntennaInput() {
+        return antennaInput;
+    }
+
+    // synced: the controller is sending power right now (yellow packets on the link)
+    public boolean isAntennaFeeding() {
+        return antennaFeeding;
+    }
+
+    // synced: the pad lives on the antenna (any power from it lately)
+    public boolean isAntennaPowered() {
+        return antennaPowered;
+    }
+
+    private void updatePowerStats(ServerLevel serverLevel) {
+        long now = serverLevel.getGameTime();
+        if (now % USAGE_WINDOW == 0) {
+            radarUsage = radarUsedSum / USAGE_WINDOW;
+            antennaInput = antennaInSum / USAGE_WINDOW;
+            radarUsedSum = 0;
+            antennaInSum = 0;
+        }
+        boolean feeding = now - antennaFedTick <= FEED_LINGER;
+        boolean powered = now - antennaTrickleTick <= TRICKLE_LINGER;
+        if (feeding != antennaFeeding || powered != antennaPowered) {
+            antennaFeeding = feeding;
+            antennaPowered = powered;
+            syncToClients();
+        }
     }
 
     // Read from the world, works client side too
@@ -1419,6 +1485,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         tickFlight(serverLevel);
         tickArrival(serverLevel);
         tickUplink();
+        updatePowerStats(serverLevel);
         if (serverLevel.getGameTime() % 10 == 0) {
             updateRegistry(serverLevel);
             tickSelfLoading(serverLevel);
@@ -1850,6 +1917,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             tag.put(PAD_CENTER, NbtUtils.writeBlockPos(padCenter));
         }
         tag.putLong(LINK_FLASH, linkFlashStart);
+        tag.putBoolean(ANTENNA_FEEDING, antennaFeeding);
+        tag.putBoolean(ANTENNA_POWERED, antennaPowered);
         tag.putInt(ORBIT_DX, orbitDx);
         tag.putInt(ORBIT_DZ, orbitDz);
         tag.putInt(MOVE_FROM_DX, moveFromDx);
@@ -1897,6 +1966,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         beamGlow = tag.contains(BEAM_GLOW) ? CrystalGlow.values()[Math.floorMod(tag.getInt(BEAM_GLOW), CrystalGlow.values().length)] : CrystalGlow.LASER;
         padCenter = NbtUtils.readBlockPos(tag, PAD_CENTER).orElse(null);
         linkFlashStart = tag.contains(LINK_FLASH) ? tag.getLong(LINK_FLASH) : NEVER;
+        antennaFeeding = tag.getBoolean(ANTENNA_FEEDING);
+        antennaPowered = tag.getBoolean(ANTENNA_POWERED);
         orbitDx = tag.getInt(ORBIT_DX);
         orbitDz = tag.getInt(ORBIT_DZ);
         moveFromDx = tag.getInt(MOVE_FROM_DX);
@@ -1988,9 +2059,20 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             }
             if (amount > 0) {
                 energy -= amount;
+                radarUsedSum += amount;
                 setChanged();
             }
             return true;
+        }
+
+        // past the port input limit, the antenna has its own
+        int receiveAntenna(int amount) {
+            int taken = Math.min(amount, capacity - energy);
+            if (taken > 0) {
+                energy += taken;
+                setChanged();
+            }
+            return taken;
         }
     }
 }

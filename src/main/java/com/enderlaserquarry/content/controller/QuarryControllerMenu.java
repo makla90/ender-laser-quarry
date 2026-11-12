@@ -24,7 +24,8 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
     public static final int OUTPUT_X = 158;
     public static final int OUTPUT_Y = 18;
     public static final int OUTPUT_COLUMNS = 3;
-    public static final int PLAYER_INV_X = 52;
+    public static final int GUI_WIDTH = 282;
+    public static final int PLAYER_INV_X = (GUI_WIDTH - 162) / 2;
     public static final int PLAYER_INV_Y = 176;
     public static final int FILTER_X = 158;
     public static final int FILTER_Y = 96;
@@ -37,6 +38,8 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
     public static final int COOLANT_Y = 18;
     public static final int COOLANT_HEIGHT = 72;
     public static final int XP_X = 249;
+    // Dew of the Void in the Void Satellite, only shown while it is up
+    public static final int DEW_X = 264;
 
     private final IntSyncSlot hasTarget;
     private final IntSyncSlot targetX;
@@ -61,6 +64,12 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
     private final IntSyncSlot satelliteDew;
     private final IntSyncSlot dewCapacity;
     private final IntSyncSlot scanDew;
+    private final IntSyncSlot antennaSent;
+    private final IntSyncSlot padEnergy;
+    private final IntSyncSlot padCapacity;
+    private final IntSyncSlot scanEnergy;
+    private final IntSyncSlot analyzeEnergy;
+    private final IntSyncSlot analyzeTicks;
     private final IntSyncSlot analyzeId;
     private final IntSyncSlot analyzeProgress;
     private final IntSyncSlot analyzeStalled;
@@ -107,6 +116,16 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         }));
         dewCapacity = addSyncSlot(IntSyncSlot.readOnly(com.enderlaserquarry.content.satellite.SatelliteItem::dewCapacity));
         scanDew = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.VOID_SCAN_DEW::get));
+        antennaSent = addSyncSlot(IntSyncSlot.readOnly(be::getAntennaSent));
+        // the linked pad's buffer feeds the Ground Radar: -1 = no linked pad
+        padEnergy = addSyncSlot(IntSyncSlot.readOnly(() -> {
+            var pad = be.getLinkedPad();
+            return pad != null ? pad.getEnergy().getEnergyStored() : -1;
+        }));
+        padCapacity = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.RADAR_CAPACITY::get));
+        scanEnergy = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.VOID_SCAN_ENERGY::get));
+        analyzeEnergy = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.VOID_ANALYZE_ENERGY::get));
+        analyzeTicks = addSyncSlot(IntSyncSlot.readOnly(QuarryConfig.VOID_ANALYZE_TICKS::get));
         analyzeId = addSyncSlot(IntSyncSlot.readOnly(be::getAnalyzeId));
         analyzeProgress = addSyncSlot(IntSyncSlot.readOnly(() -> Math.round(be.getAnalyzeProgress() * 1000)));
         analyzeStalled = addSyncSlot(IntSyncSlot.readOnly(() -> be.isAnalyzeStalled() ? 1 : 0));
@@ -147,6 +166,12 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         satelliteDew = addSyncSlot(IntSyncSlot.standalone());
         dewCapacity = addSyncSlot(IntSyncSlot.standalone());
         scanDew = addSyncSlot(IntSyncSlot.standalone());
+        antennaSent = addSyncSlot(IntSyncSlot.standalone());
+        padEnergy = addSyncSlot(IntSyncSlot.standalone());
+        padCapacity = addSyncSlot(IntSyncSlot.standalone());
+        scanEnergy = addSyncSlot(IntSyncSlot.standalone());
+        analyzeEnergy = addSyncSlot(IntSyncSlot.standalone());
+        analyzeTicks = addSyncSlot(IntSyncSlot.standalone());
         analyzeId = addSyncSlot(IntSyncSlot.standalone());
         analyzeProgress = addSyncSlot(IntSyncSlot.standalone());
         analyzeStalled = addSyncSlot(IntSyncSlot.standalone());
@@ -330,6 +355,10 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
         return left <= 0 ? -1 : 1 - Math.min(left, total) / (float) total;
     }
 
+    public int getScanTicksTotal() {
+        return Math.max(1, spaceScanTotal.get());
+    }
+
     public boolean isScanStalled() {
         return scanStalled.get() != 0;
     }
@@ -344,6 +373,31 @@ public class QuarryControllerMenu extends PoweredMachineMenu<QuarryControllerBlo
 
     public int getScanDew() {
         return scanDew.get();
+    }
+
+    public int getAntennaSent() {
+        return antennaSent.get();
+    }
+
+    /** Energy in the linked launch pad's buffer, -1 = no linked pad. */
+    public int getPadEnergy() {
+        return padEnergy.get();
+    }
+
+    public int getPadCapacity() {
+        return padCapacity.get();
+    }
+
+    public int getScanEnergy() {
+        return scanEnergy.get();
+    }
+
+    public int getAnalyzeEnergy() {
+        return analyzeEnergy.get();
+    }
+
+    public int getAnalyzeTicks() {
+        return analyzeTicks.get();
     }
 
     /** Asteroid being analyzed, -1 = none. */

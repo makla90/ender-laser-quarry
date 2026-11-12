@@ -189,6 +189,13 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.launch_pad.pad.incomplete", "Pad: Incomplete");
         add("gui.ender_laser_quarry.launch_pad.pad.no_sky", "Pad: No sky");
         add("gui.ender_laser_quarry.launch_pad.radar", "Radar: %s%%");
+        add("gui.ender_laser_quarry.tank.empty", "No %s");
+        add("gui.ender_laser_quarry.tank.amount", "%s / %s mB");
+        add("gui.ender_laser_quarry.launch_pad.power.stored", "Launch pad power: %s / %s µI");
+        add("gui.ender_laser_quarry.launch_pad.power.radar", "Ground Radar uses: %s µI/t");
+        add("gui.ender_laser_quarry.launch_pad.power.antenna", "From the quarry controller's antenna: %s µI/t");
+        add("gui.ender_laser_quarry.launch_pad.power.no_antenna", "No quarry controller linked to power it");
+        add("gui.ender_laser_quarry.launch_pad.power.ports", "Launch Pad I/O Ports take power too");
         add("gui.ender_laser_quarry.launch_pad.radar_missing", "Radar: none on ring");
         add("gui.ender_laser_quarry.launch_pad.uplink.no_satellite", "Uplink: Standby");
         add("gui.ender_laser_quarry.launch_pad.uplink.no_radar", "Uplink: No radar");
@@ -325,6 +332,13 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.controller.asteroid_line", "%s asteroids, %s blocks/t");
         add("gui.ender_laser_quarry.controller.space_scan", "Scanning space... %s%%");
         add("gui.ender_laser_quarry.controller.space_scan_waiting", "Scan waits: radar / uplink");
+        add("gui.ender_laser_quarry.controller.space_scan_waiting_power", "Scan waits: pad power");
+        add("gui.ender_laser_quarry.controller.scan_cost", "Scan: %s µI over %s s (%s µI/t)");
+        add("gui.ender_laser_quarry.controller.analyze_cost", "Analyze: %s µI over %s s");
+        add("gui.ender_laser_quarry.controller.pad_power", "Launch pad power: %s / %s µI");
+        add("gui.ender_laser_quarry.controller.pad_power_hint", "Paid by the launch pad, topped up over this antenna");
+        add("gui.ender_laser_quarry.controller.no_pad_power", "Link a launch pad: its Ground Radar pays for this");
+        add("gui.ender_laser_quarry.controller.antenna_sent", "Sent to the launch pad: %s µI/t");
         add("gui.ender_laser_quarry.controller.space_scan_hint", "No asteroids yet: Scan");
         add("gui.ender_laser_quarry.controller.pick_asteroid", "Click asteroids to queue");
         add("gui.ender_laser_quarry.controller.mining_asteroid", "Asteroid %s%% left | %s");
@@ -359,7 +373,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.orbit.click", "Click to pick this spot");
 
         add("gui.ender_laser_quarry.controller.analyzing", "Analyzing asteroid %s%%");
-        add("gui.ender_laser_quarry.controller.analyze_waiting", "Analysis waits: radar power");
+        add("gui.ender_laser_quarry.controller.analyze_waiting", "Analysis waits: pad power");
 
         add("gui.ender_laser_quarry.asteroid.small", "Small %s asteroid");
         add("gui.ender_laser_quarry.asteroid.medium", "Medium %s asteroid");

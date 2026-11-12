@@ -149,17 +149,21 @@ public class GroundRadarBlockEntity extends BlockEntity {
         }
     }
 
-    // mapping chunks or running a space scan
+    // mapping chunks, running a space scan or analyzing an asteroid (the Void Satellite maps no ground)
     private boolean computeScanning() {
         LaunchPadBlockEntity pad = getSatellitePad();
         if (pad == null || pad.getUplink() != UplinkStatus.ONLINE) {
             return false;
         }
-        if (!pad.isScanComplete()) {
+        if (!pad.isVoidSatelliteUp() && !pad.isScanComplete()) {
             return true;
         }
         QuarryControllerBlockEntity controller = pad.getStation();
-        return controller != null && controller.isScanningSpace() && !controller.isScanStalled();
+        if (controller == null) {
+            return false;
+        }
+        return (controller.isScanningSpace() && !controller.isScanStalled())
+            || (controller.getAnalyzeId() >= 0 && !controller.isAnalyzeStalled());
     }
 
     private boolean computeSpaceScanning() {

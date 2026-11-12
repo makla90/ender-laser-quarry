@@ -58,6 +58,10 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
     private static final int LINK_BEAM = 0x1C6C80;
     private static final float PULSE_INTERVAL = 80;
     private static final float PULSE_TRAVEL = 24;
+    // quarry controller -> pad: power over the antenna link
+    private static final int POWER_PULSE = 0xFFD84A;
+    private static final int POWER_PACKETS = 3;
+    private static final float POWER_TRAVEL = 30;
 
     private final RocketModel rocket;
     private final SatelliteModel satellite;
@@ -185,6 +189,20 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
             float age = (time % PULSE_INTERVAL) / PULSE_TRAVEL;
             if (age < 1) {
                 LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, age), from.lerp(to, Math.min(1, age + 0.04f)), LINK_PULSE, 0.05f, time);
+            }
+        }
+
+        // power from the quarry controller's antenna: yellow packets the other way
+        if (linked && pad.isAntennaFeeding()) {
+            for (int i = 0; i < POWER_PACKETS; i++) {
+                float at = frac(time / POWER_TRAVEL + i / (float) POWER_PACKETS);
+                LaserBeamRenderer.render(poseStack, buffers, to.lerp(from, at), to.lerp(from, Math.min(1, at + 0.03f)), POWER_PULSE, 0.04f, time);
+            }
+        } else if (linked && pad.isAntennaPowered()) {
+            // just the uplink trickle: one packet now and then, between the cyan ones
+            float at = ((time + PULSE_INTERVAL / 2) % PULSE_INTERVAL) / POWER_TRAVEL;
+            if (at < 1) {
+                LaserBeamRenderer.render(poseStack, buffers, to.lerp(from, at), to.lerp(from, Math.min(1, at + 0.03f)), POWER_PULSE, 0.04f, time);
             }
         }
     }

@@ -18,9 +18,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     private static final int INFO = 0x1F5FBF;
     private static final int FLIGHT = 0x7A2FBF;
 
-    private static final int TANK_X = 12;
-    private static final int TANK_Y = 18;
-    private static final int INFO_X = 58;
+    private static final int INFO_X = 78;
     private static final int INFO_Y = 16;
     private static final int INFO_W = 92;
     private static final int INFO_H = 58;
@@ -29,12 +27,13 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
 
     private Button launchButton;
     private Button resupplyButton;
-    private static final int RESUPPLY_X = 36;
+    private static final int RESUPPLY_X = 55;
+    private NamedTankWidget dewWidget;
     private static final int RESUPPLY_Y = 77;
 
     public LaunchPadScreen(LaunchPadMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        imageWidth = 176;
+        imageWidth = LaunchPadMenu.GUI_WIDTH;
         imageHeight = 186;
         inventoryLabelX = LaunchPadMenu.PLAYER_INV_X;
         inventoryLabelY = LaunchPadMenu.PLAYER_INV_Y - 11;
@@ -44,8 +43,15 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     protected void init() {
         super.init();
 
-        addRenderableOnly(new FluidStackWidget(leftPos + TANK_X, topPos + TANK_Y, 16, 52, menu::getFuelTank));
-        addRenderableOnly(new FluidStackWidget(leftPos + LaunchPadMenu.DEW_X, topPos + LaunchPadMenu.DEW_Y, 16, 50, menu::getDewTank));
+        // energy, rocket fuel, Dew: side by side like the quarry controller's bars
+        addRenderableOnly(new UsageEnergyWidget(leftPos + LaunchPadMenu.ENERGY_X, topPos + LaunchPadMenu.BAR_Y, 9, LaunchPadMenu.BAR_HEIGHT,
+            () -> new com.enderio.enderio.foundation.energy.EnergyStorageInfo(menu.getEnergyStored(), menu.getEnergyCapacity()),
+            () -> true, this::usageLines));
+        addRenderableOnly(new NamedTankWidget(leftPos + LaunchPadMenu.FUEL_X, topPos + LaunchPadMenu.BAR_Y, 9, LaunchPadMenu.BAR_HEIGHT,
+            menu::getFuelTank, "enderio:fluid_rocket_fuel_still"));
+        dewWidget = addRenderableOnly(new NamedTankWidget(leftPos + LaunchPadMenu.DEW_X, topPos + LaunchPadMenu.BAR_Y, 9,
+            LaunchPadMenu.BAR_HEIGHT, menu::getDewTank, "enderio:fluid_dew_of_the_void_still"));
+        dewWidget.visible = showsDew();
 
         // resupply: an icon button under the satellite slot, only with the Void Satellite up
         resupplyButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
@@ -75,6 +81,7 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         var pad = menu.getBlockEntity();
         launchButton.active = !pad.isFlying();
         resupplyButton.visible = pad.isVoidSatelliteUp();
+        dewWidget.visible = showsDew();
         resupplyButton.active = !pad.isFlying() && !pad.isRelocating() && dew() > 0 && fuel() >= menu.getResupplyCost()
             && pad.getSatelliteDew() < menu.getDewCapacity();
         int cost = menu.getLaunchCost();
@@ -102,8 +109,11 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         GuiPanels.panel(g, leftPos, topPos, imageWidth, imageHeight);
-        GuiPanels.inset(g, leftPos + TANK_X - 1, topPos + TANK_Y - 1, 18, 54);
-        GuiPanels.inset(g, leftPos + LaunchPadMenu.DEW_X - 1, topPos + LaunchPadMenu.DEW_Y - 1, 18, 52);
+        GuiPanels.inset(g, leftPos + LaunchPadMenu.ENERGY_X - 1, topPos + LaunchPadMenu.BAR_Y - 1, 11, LaunchPadMenu.BAR_HEIGHT + 2);
+        GuiPanels.inset(g, leftPos + LaunchPadMenu.FUEL_X - 1, topPos + LaunchPadMenu.BAR_Y - 1, 11, LaunchPadMenu.BAR_HEIGHT + 2);
+        if (showsDew()) {
+            GuiPanels.inset(g, leftPos + LaunchPadMenu.DEW_X - 1, topPos + LaunchPadMenu.BAR_Y - 1, 11, LaunchPadMenu.BAR_HEIGHT + 2);
+        }
         GuiPanels.slot(g, leftPos + LaunchPadMenu.ROCKET_X, topPos + LaunchPadMenu.ROCKET_Y);
         GuiPanels.slot(g, leftPos + LaunchPadMenu.SATELLITE_X, topPos + LaunchPadMenu.SATELLITE_Y);
         GuiPanels.inset(g, leftPos + INFO_X, topPos + INFO_Y, INFO_W, INFO_H);
@@ -202,6 +212,34 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
         return lines;
     }
 
+    // the Dew tank only matters around the Void Satellite (or once Dew is in it)
+    private boolean showsDew() {
+        var pad = menu.getBlockEntity();
+        return pad.isVoidSatelliteUp() || pad.isDrawnVoid() || dew() > 0
+            || com.enderlaserquarry.content.satellite.SatelliteItem.isVoid(menu.getSlot(1).getItem());
+    }
+
+    // energy bar tooltip, below the stored line
+    private java.util.List<Component> usageLines() {
+        var lines = powerLines();
+        lines.remove(0);
+        return lines;
+    }
+
+    private java.util.List<Component> powerLines() {
+        var lines = new java.util.ArrayList<Component>();
+        lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.power.stored", FORMAT.format(menu.getEnergyStored()),
+            FORMAT.format(menu.getEnergyCapacity())));
+        lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.power.radar", FORMAT.format(menu.getRadarUsage()))
+            .withStyle(net.minecraft.ChatFormatting.AQUA));
+        boolean linked = menu.getBlockEntity().getStation() != null;
+        lines.add(Component.translatable(linked ? "gui.ender_laser_quarry.launch_pad.power.antenna"
+                : "gui.ender_laser_quarry.launch_pad.power.no_antenna", FORMAT.format(menu.getAntennaInput()))
+            .withStyle(linked ? net.minecraft.ChatFormatting.DARK_AQUA : net.minecraft.ChatFormatting.RED));
+        lines.add(Component.translatable("gui.ender_laser_quarry.launch_pad.power.ports").withStyle(net.minecraft.ChatFormatting.GRAY));
+        return lines;
+    }
+
     private void line(GuiGraphics g, Component text, int x, int y, int color) {
         g.drawString(font, text, x, y, color, false);
     }
@@ -216,6 +254,12 @@ public class LaunchPadScreen extends MachineScreen<LaunchPadMenu> {
                 g.renderComponentTooltip(font, resupplyLines(), mouseX, mouseY);
                 return;
             }
+        }
+
+        // the radar line: where its power comes from and what it uses
+        if (isHovering(INFO_X, INFO_Y + 12, INFO_W, 10, mouseX, mouseY)) {
+            g.renderComponentTooltip(font, powerLines(), mouseX, mouseY);
+            return;
         }
 
         // Hints for the empty slots (EnderContainerScreen.renderTooltip is final, so draw them here)

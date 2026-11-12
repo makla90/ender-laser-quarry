@@ -15,17 +15,22 @@ import net.minecraft.world.entity.player.Player;
 
 public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
     // Layout shared with the screen
-    public static final int ROCKET_X = 36;
+    public static final int GUI_WIDTH = 198;
+    // energy, rocket fuel and Dew side by side, like the quarry controller's bars
+    public static final int ENERGY_X = 8;
+    public static final int FUEL_X = 23;
+    public static final int BAR_Y = 18;
+    public static final int BAR_HEIGHT = 72;
+    public static final int ROCKET_X = 56;
     public static final int ROCKET_Y = 22;
-    public static final int SATELLITE_X = 36;
+    public static final int SATELLITE_X = 56;
     public static final int SATELLITE_Y = 52;
-    public static final int PLAYER_INV_X = 8;
+    public static final int PLAYER_INV_X = (GUI_WIDTH - 162) / 2;
     public static final int PLAYER_INV_Y = 104;
 
     public static final int BUTTON_LAUNCH = 0;
     public static final int BUTTON_RESUPPLY = 1;
-    public static final int DEW_X = 154;
-    public static final int DEW_Y = 44;
+    public static final int DEW_X = 38;
 
     private final FluidStorageSyncSlot fuelTank;
     private final IntSyncSlot radarEnergy;
@@ -35,6 +40,11 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
     // resupply flight price (the orbiting satellite's returnFuel), its Dew, its Dew tank
     private final IntSyncSlot resupplyCost;
     private final IntSyncSlot dewCapacity;
+    // power for the radar tooltip: stored, capacity, what the radar uses and what the quarry antenna sends (µI/t)
+    private final IntSyncSlot energyStored;
+    private final IntSyncSlot energyCapacity;
+    private final IntSyncSlot radarUsage;
+    private final IntSyncSlot antennaInput;
 
     public LaunchPadMenu(int containerId, Inventory playerInventory, LaunchPadBlockEntity be) {
         super(ModMenus.LAUNCH_PAD.get(), containerId, playerInventory, be);
@@ -44,6 +54,10 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
         dewTank = addSyncSlot(FluidStorageSyncSlot.readOnly(() -> FluidStorageInfo.of(be.getDewTank())));
         resupplyCost = addSyncSlot(IntSyncSlot.readOnly(be::getTransferBaseCost));
         dewCapacity = addSyncSlot(IntSyncSlot.readOnly(com.enderlaserquarry.content.satellite.SatelliteItem::dewCapacity));
+        energyStored = addSyncSlot(IntSyncSlot.readOnly(() -> be.getEnergy().getEnergyStored()));
+        energyCapacity = addSyncSlot(IntSyncSlot.readOnly(() -> be.getEnergy().getMaxEnergyStored()));
+        radarUsage = addSyncSlot(IntSyncSlot.readOnly(be::getRadarUsage));
+        antennaInput = addSyncSlot(IntSyncSlot.readOnly(be::getAntennaInput));
         addSlots();
     }
 
@@ -55,6 +69,10 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
         dewTank = addSyncSlot(FluidStorageSyncSlot.standalone());
         resupplyCost = addSyncSlot(IntSyncSlot.standalone());
         dewCapacity = addSyncSlot(IntSyncSlot.standalone());
+        energyStored = addSyncSlot(IntSyncSlot.standalone());
+        energyCapacity = addSyncSlot(IntSyncSlot.standalone());
+        radarUsage = addSyncSlot(IntSyncSlot.standalone());
+        antennaInput = addSyncSlot(IntSyncSlot.standalone());
         addSlots();
     }
 
@@ -107,5 +125,21 @@ public class LaunchPadMenu extends MachineMenu<LaunchPadBlockEntity> {
 
     public int getDewCapacity() {
         return dewCapacity.get();
+    }
+
+    public int getEnergyStored() {
+        return energyStored.get();
+    }
+
+    public int getEnergyCapacity() {
+        return energyCapacity.get();
+    }
+
+    public int getRadarUsage() {
+        return radarUsage.get();
+    }
+
+    public int getAntennaInput() {
+        return antennaInput.get();
     }
 }
