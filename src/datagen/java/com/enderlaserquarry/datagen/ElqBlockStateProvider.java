@@ -55,6 +55,7 @@ public class ElqBlockStateProvider extends BlockStateProvider {
         launchPadPlating();
         launchPadPort();
         launchPadController();
+        padMast();
         groundRadar();
         obelisk();
         for (var block : List.of(ModBlocks.QUARRY_CONTROLLER, ModBlocks.ENHANCED_QUARRY_CONTROLLER, ModBlocks.ENDER_QUARRY_CONTROLLER)) {
@@ -152,8 +153,12 @@ public class ElqBlockStateProvider extends BlockStateProvider {
     }
 
     private void groundRadar() {
-        states(ModBlocks.GROUND_RADAR.get(), state -> model("ground_radar", () -> bottomTop(
-            models().withExistingParent("ground_radar", mcLoc("block/cube_bottom_top")), "ground_radar_top", "ground_radar_side", "quarry_machine_bottom")));
+        // the top follows the launch pad plating around it like the controller's; the unconnected one is the item's base
+        states(ModBlocks.GROUND_RADAR.get(), state -> {
+            String name = "ground_radar" + connection(state);
+            return model(name, () -> bottomTop(models().withExistingParent(name, mcLoc("block/cube_bottom_top")),
+                "ground_radar_top" + connection(state), "ground_radar_side", "quarry_machine_bottom"));
+        });
     }
 
     private void obelisk() {
@@ -183,6 +188,12 @@ public class ElqBlockStateProvider extends BlockStateProvider {
             .texture("bottom", tex(base + "_bottom"));
         models().withExistingParent(base + "_mast", modLoc("block/quarry_controller_mast_template"))
             .texture("antenna", tex(base + "_antenna"));
+    }
+
+    // the Launch Pad Controller's antenna mast, drawn by its renderer like the quarry controller's
+    private void padMast() {
+        models().withExistingParent("launch_pad_controller_mast", modLoc("block/quarry_controller_mast_template"))
+            .texture("antenna", tex("launch_pad_controller_antenna"));
     }
 
     // endregion

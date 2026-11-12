@@ -47,7 +47,7 @@ public class LaunchPadBlock extends MachineBlock<LaunchPadBlockEntity> {
         }
         for (Direction side : Direction.Plane.HORIZONTAL) {
             BlockState neighbour = context.getLevel().getBlockState(context.getClickedPos().relative(side));
-            state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side), neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS));
+            state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side), joinsPad(neighbour));
         }
         return state;
     }
@@ -56,9 +56,14 @@ public class LaunchPadBlock extends MachineBlock<LaunchPadBlockEntity> {
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
                                      BlockPos pos, BlockPos neighborPos) {
         if (direction.getAxis().isHorizontal()) {
-            return state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(direction), neighborState.is(LaunchPadBlockEntity.FRAME_BLOCKS));
+            return state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(direction), joinsPad(neighborState));
         }
         return state;
+    }
+
+    // plating, ports and the Ground Radar on the ring
+    private static boolean joinsPad(BlockState neighbour) {
+        return neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS) || neighbour.getBlock() instanceof com.enderlaserquarry.content.radar.GroundRadarBlock;
     }
 
     @Override

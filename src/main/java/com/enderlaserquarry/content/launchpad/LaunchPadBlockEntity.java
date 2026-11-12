@@ -120,12 +120,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private static final int SCAN_LOAD_WAIT = 1200;
     private static final int KNOWN_PER_STEP = 32;
 
-    // Small radar on top of the controller
-    public static final float MINI_RADAR_SCALE = 0.5f;
-    public static final Vec3 MINI_RADAR_PIVOT = new Vec3(0.5, 1 + 11 / 16.0 * MINI_RADAR_SCALE, 0.5);
-    public static final double MINI_RADAR_HORN = 11 / 16.0 * MINI_RADAR_SCALE;
     public static final int LINK_FLASH_TICKS = 50;
-    private static final float MINI_RADAR_SWEEP_PITCH = 15;
 
     private static final String PHASE = "Phase";
     private static final String MISSION = "Mission";
@@ -268,11 +263,6 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private int radarUsage;
     private int antennaInSum;
     private int antennaInput;
-    // client side animation
-    private float radarYaw;
-    private float prevRadarYaw;
-    private float radarPitch = MINI_RADAR_SWEEP_PITCH;
-    private float prevRadarPitch = MINI_RADAR_SWEEP_PITCH;
 
     public LaunchPadBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LAUNCH_PAD.get(), pos, state, true);
@@ -1513,7 +1503,6 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     @Override
     public void clientTick() {
         super.clientTick();
-        tickMiniRadar();
         relocationTrail();
         rocketEffects();
     }
@@ -1639,29 +1628,6 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
     }
 
-    // Faces the controller antenna, sweeps while unlinked
-    private void tickMiniRadar() {
-        prevRadarYaw = radarYaw;
-        prevRadarPitch = radarPitch;
-        Vec3 target = getStationTarget();
-        float targetPitch = MINI_RADAR_SWEEP_PITCH;
-        if (target != null) {
-            Vec3 dir = target.subtract(Vec3.atLowerCornerOf(worldPosition).add(MINI_RADAR_PIVOT));
-            double horizontal = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
-            float targetYaw = horizontal > 1.0E-3 ? (float) Math.toDegrees(Math.atan2(dir.x, dir.z)) : radarYaw;
-            radarYaw += Mth.clamp(Mth.wrapDegrees(targetYaw - radarYaw), -5, 5);
-            targetPitch = Mth.clamp((float) Math.toDegrees(Math.atan2(dir.y, horizontal)), -10, 60);
-        } else {
-            radarYaw += 1.5f;
-        }
-        radarPitch += Mth.clamp(targetPitch - radarPitch, -3, 3);
-        if (radarYaw > 180 || radarYaw < -180) {
-            float wrapped = Mth.wrapDegrees(radarYaw);
-            prevRadarYaw += wrapped - radarYaw;
-            radarYaw = wrapped;
-        }
-    }
-
     @Nullable
     public Vec3 getStationTarget() {
         if (stationPos == null || level == null) {
@@ -1670,19 +1636,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         return QuarryControllerBlockEntity.antennaTip(stationPos, level.getBlockState(stationPos));
     }
 
-    public float getMiniRadarYaw(float partialTick) {
-        return Mth.lerp(partialTick, prevRadarYaw, radarYaw);
-    }
-
-    public float getMiniRadarPitch(float partialTick) {
-        return Mth.lerp(partialTick, prevRadarPitch, radarPitch);
-    }
-
-    public Vec3 getMiniRadarHorn(float partialTick) {
-        float yaw = getMiniRadarYaw(partialTick) * Mth.DEG_TO_RAD;
-        float pitch = getMiniRadarPitch(partialTick) * Mth.DEG_TO_RAD;
-        Vec3 axis = new Vec3(Mth.sin(yaw) * Mth.cos(pitch), Mth.sin(pitch), Mth.cos(yaw) * Mth.cos(pitch));
-        return Vec3.atLowerCornerOf(worldPosition).add(MINI_RADAR_PIVOT).add(axis.scale(MINI_RADAR_HORN));
+    // tip of the antenna mast on top of the controller, where the link packets start and land (same mast as the quarry controller's)
+    public Vec3 getAntennaTip() {
+        return QuarryControllerBlockEntity.antennaTip(worldPosition, getBlockState());
     }
 
     // 0..1 during the link animation, -1 otherwise

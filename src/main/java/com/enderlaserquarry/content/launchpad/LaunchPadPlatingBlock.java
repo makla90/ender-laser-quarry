@@ -25,6 +25,7 @@ public class LaunchPadPlatingBlock extends ConnectedFrameBlock {
 
     @Override
     protected boolean connectsTo(BlockState neighbour) {
-        return neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS) || neighbour.getBlock() instanceof LaunchPadBlock;
+        return neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS) || neighbour.getBlock() instanceof LaunchPadBlock
+            || neighbour.getBlock() instanceof com.enderlaserquarry.content.radar.GroundRadarBlock;
     }
 }

@@ -17,6 +17,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
@@ -27,7 +30,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
 /**
- * Rocket, satellite, beams and the controller's mini radar. Flight positions are relative to the pad center, not the
+ * Rocket, satellite, beams and the controller's antenna mast. Flight positions are relative to the pad center, not the
  * controller.
  */
 public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEntity> {
@@ -53,7 +56,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
     private static final float PUFF_TICKS = 5;
     public static final int VIEW_DISTANCE = 256;
 
-    // mini radar -> obelisk
+    // controller antenna -> quarry controller antenna
     private static final int LINK_PULSE = 0x4CE0FF;
     private static final int LINK_BEAM = 0x1C6C80;
     private static final float PULSE_INTERVAL = 80;
@@ -65,12 +68,10 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
 
     private final RocketModel rocket;
     private final SatelliteModel satellite;
-    private final GroundRadarModel miniRadar;
 
     public LaunchPadRenderer(BlockEntityRendererProvider.Context context) {
         this.rocket = new RocketModel(context.bakeLayer(RocketModel.LAYER));
         this.satellite = new SatelliteModel(context.bakeLayer(SatelliteModel.LAYER));
-        this.miniRadar = new GroundRadarModel(context.bakeLayer(GroundRadarModel.LAYER));
     }
 
     @Override
@@ -82,7 +83,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         }
         float time = level.getGameTime() + partialTick;
 
-        renderMiniRadar(pad, level, partialTick, time, poseStack, buffers);
+        renderAntenna(pad, level, partialTick, time, poseStack, buffers);
         // far from the pad RemoteSatellites draws the flight, this renderer gets culled out there
         if (!RemoteSatellites.drawsFlight(pad)) {
             renderFlight(pad, level, partialTick, time, poseStack, buffers, false);
@@ -142,34 +143,23 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         }
     }
 
-    private void renderMiniRadar(LaunchPadBlockEntity pad, Level level, float partialTick, float time, PoseStack poseStack,
-                                 MultiBufferSource buffers) {
+    private void renderAntenna(LaunchPadBlockEntity pad, Level level, float partialTick, float time, PoseStack poseStack,
+                               MultiBufferSource buffers) {
         int light = lightAt(level, pad.getBlockPos().above());
-        float scale = LaunchPadBlockEntity.MINI_RADAR_SCALE;
-        miniRadar.turret.yRot = pad.getMiniRadarYaw(partialTick) * Mth.DEG_TO_RAD;
-        miniRadar.antenna.xRot = -pad.getMiniRadarPitch(partialTick) * Mth.DEG_TO_RAD;
-
-        poseStack.pushPose();
-        poseStack.translate(0.5, 1.0, 0.5);
-        poseStack.scale(scale, scale, scale);
-        miniRadar.horn.visible = false;
-        miniRadar.root.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(GroundRadarRenderer.TEXTURE)), light,
-            OverlayTexture.NO_OVERLAY);
-        miniRadar.horn.visible = true;
-        miniRadar.root.translateAndRotate(poseStack);
-        miniRadar.turret.translateAndRotate(poseStack);
-        miniRadar.antenna.translateAndRotate(poseStack);
+        BlockState state = pad.getBlockState();
+        Direction facing = state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
+            ? state.getValue(BlockStateProperties.HORIZONTAL_FACING) : Direction.NORTH;
+        // the LED is lit while a quarry controller is linked
         boolean linked = pad.getStation() != null;
-        miniRadar.horn.render(poseStack, buffers.getBuffer(RenderType.entityTranslucentEmissive(GroundRadarRenderer.TEXTURE)),
-            linked ? LightTexture.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, linked ? 0xFFFFFFFF : 0xFF505050);
-        poseStack.popPose();
+        QuarryControllerRenderer.renderMast(QuarryControllerRenderer.PAD_MAST, state, facing, poseStack, buffers, light,
+            linked ? LightTexture.FULL_BRIGHT : light);
 
         Vec3 target = pad.getStationTarget();
         if (target == null) {
             return;
         }
         Vec3 origin = Vec3.atLowerCornerOf(pad.getBlockPos());
-        Vec3 from = pad.getMiniRadarHorn(partialTick).subtract(origin);
+        Vec3 from = pad.getAntennaTip().subtract(origin);
         Vec3 to = target.subtract(origin);
 
         // just linked: show the whole link for a moment
@@ -449,7 +439,7 @@ public class LaunchPadRenderer implements BlockEntityRenderer<LaunchPadBlockEnti
         double minY = Math.min(center.getY(), controller.getY()) - 1;
         double minZ = Math.min(center.getZ() - radius, controller.getZ() - 1);
         double maxX = Math.max(center.getX() + radius + 1, controller.getX() + 2);
-        // rocket standing on the pad, mini radar on the controller
+        // rocket standing on the pad, antenna on the controller
         double maxY = Math.max(center.getY(), controller.getY()) + 10;
         double maxZ = Math.max(center.getZ() + radius + 1, controller.getZ() + 2);
 

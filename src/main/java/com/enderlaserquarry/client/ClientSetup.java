@@ -17,7 +17,6 @@ import com.enderlaserquarry.client.screen.CrystalObeliskScreen;
 import com.enderlaserquarry.client.screen.LaunchPadScreen;
 import com.enderlaserquarry.client.screen.QuarryControllerScreen;
 import com.enderlaserquarry.client.screen.SatelliteDishScreen;
-import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.init.ModBlockEntities;
 import com.enderlaserquarry.init.ModBlocks;
 import com.enderlaserquarry.init.ModItems;
@@ -57,7 +56,6 @@ public final class ClientSetup {
         }, ModItems.SATELLITE_DISH.get(), ModItems.ENHANCED_SATELLITE_DISH.get(), ModItems.ENDER_SATELLITE_DISH.get());
 
         registerRadarItem(event, ModBlocks.GROUND_RADAR, 1, 0.48f, ModItems.GROUND_RADAR.get());
-        registerRadarItem(event, ModBlocks.LAUNCH_PAD, LaunchPadBlockEntity.MINI_RADAR_SCALE, 0.66f, ModItems.LAUNCH_PAD.get());
     }
 
     private static void registerRadarItem(RegisterClientExtensionsEvent event, Supplier<? extends Block> block, float antennaScale,

@@ -55,7 +55,14 @@ public class ElqItemModelProvider extends ItemModelProvider {
         machineItem(ModItems.ENHANCED_SATELLITE_DISH, "enhanced_satellite_dish_plating_side", 0.2f, 0.875f);
         machineItem(ModItems.ENDER_SATELLITE_DISH, "ender_satellite_dish_plating_side", 0.2f, 0.875f);
         machineItem(ModItems.GROUND_RADAR, "ground_radar_side", 0.3f, 0.86f);
-        machineItem(ModItems.LAUNCH_PAD, "launch_pad_side", 0.55f, 0.825f);
+        // the Launch Pad Controller with its mast, like the quarry controllers
+        withExistingParent("launch_pad_controller", modLoc("block/quarry_controller_template"))
+            .texture("front", modLoc("block/launch_pad_front"))
+            .texture("side", modLoc("block/launch_pad_side"))
+            .texture("top", modLoc("block/launch_pad_controller_top"))
+            .texture("bottom", modLoc("block/quarry_machine_bottom"))
+            .texture("antenna", modLoc("block/launch_pad_controller_antenna"))
+            .transforms().transform(ItemDisplayContext.GUI).rotation(30, 225, 0).translation(0, -1.25f, 0).scale(0.55f).end().end();
     }
 
     // drawn in 3D by its item renderer; the model only carries the transforms and particle
