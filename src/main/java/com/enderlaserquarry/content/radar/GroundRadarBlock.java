@@ -1,6 +1,10 @@
 package com.enderlaserquarry.content.radar;
 
+import com.enderlaserquarry.content.ConnectedFrameBlock;
 import com.enderlaserquarry.content.PlayerMessages;
+import com.enderlaserquarry.content.launchpad.LaunchPadBlock;
+import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
+import net.minecraft.world.level.block.PipeBlock;
 import com.enderlaserquarry.init.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -33,11 +37,44 @@ public class GroundRadarBlock extends BaseEntityBlock {
 
     public GroundRadarBlock(Properties properties) {
         super(properties);
+        registerDefaultState(stateDefinition.any().setValue(ConnectedFrameBlock.NORTH, false).setValue(ConnectedFrameBlock.EAST, false)
+            .setValue(ConnectedFrameBlock.SOUTH, false).setValue(ConnectedFrameBlock.WEST, false));
     }
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
+    }
+
+    // joins the launch pad plating around it like the Launch Pad Controller, so the hazard edge only shows on open sides
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(ConnectedFrameBlock.NORTH, ConnectedFrameBlock.EAST, ConnectedFrameBlock.SOUTH, ConnectedFrameBlock.WEST);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState state = defaultBlockState();
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            BlockState neighbour = context.getLevel().getBlockState(context.getClickedPos().relative(side));
+            state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side), joinsPad(neighbour));
+        }
+        return state;
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
+                                     BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+        if (direction.getAxis().isHorizontal()) {
+            return state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(direction), joinsPad(neighborState));
+        }
+        return state;
+    }
+
+    // launch pad plating, ports and the controller (not a second radar)
+    public static boolean joinsPad(BlockState neighbour) {
+        return neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS) || neighbour.getBlock() instanceof LaunchPadBlock;
     }
 
     @Override

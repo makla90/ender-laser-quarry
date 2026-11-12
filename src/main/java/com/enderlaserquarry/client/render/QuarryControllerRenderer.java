@@ -32,7 +32,9 @@ public class QuarryControllerRenderer extends LiveRenderer<QuarryControllerBlock
     private static final StandaloneModelKey<BlockStateModelPart> ENHANCED = model("enhanced_quarry_controller_mast");
     private static final StandaloneModelKey<BlockStateModelPart> ENDER = model("ender_quarry_controller_mast");
     private static final StandaloneModelKey<BlockStateModelPart> TIP = model("quarry_controller_mast_tip");
-    public static final List<StandaloneModelKey<BlockStateModelPart>> MODELS = List.of(BASIC, ENHANCED, ENDER, TIP);
+    // the Launch Pad Controller carries the same mast, in the pad's colours
+    public static final StandaloneModelKey<BlockStateModelPart> PAD_MAST = model("launch_pad_controller_mast");
+    public static final List<StandaloneModelKey<BlockStateModelPart>> MODELS = List.of(BASIC, ENHANCED, ENDER, TIP, PAD_MAST);
 
     public QuarryControllerRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -62,8 +64,13 @@ public class QuarryControllerRenderer extends LiveRenderer<QuarryControllerBlock
         // the LED is lit while a launch pad is linked
         int tipLight = controller.getPad() != null ? LightCoordsUtil.FULL_BRIGHT : light;
 
+        renderMast(mast, state, facing, poseStack, buffers, light, tipLight);
+    }
+
+    // mast + LED tip on top of a block, turned like its blockstate
+    public static void renderMast(StandaloneModelKey<BlockStateModelPart> mast, BlockState state, Direction facing, PoseStack poseStack,
+                                  MultiBufferSource buffers, int light, int tipLight) {
         poseStack.pushPose();
-        // same turn as the blockstate's y rotation
         poseStack.translate(0.5, 0, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot() + 180));
         poseStack.translate(-0.5, 0, -0.5);

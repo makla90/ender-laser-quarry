@@ -86,8 +86,8 @@ public class GroundRadarRenderer extends LiveRenderer<GroundRadarBlockEntity> {
             LaserBeamRenderer.render(poseStack, buffers, from.lerp(to, down), from.lerp(to, Math.min(1, down + 0.02f)), DOWNLINK, 0.06f, time);
         }
 
-        // data on to the controller's mini radar
-        Vec3 relay = pad.getMiniRadarHorn(partialTick).subtract(Vec3.atLowerCornerOf(radar.getBlockPos()));
+        // data on to the controller's antenna
+        Vec3 relay = pad.getAntennaTip().subtract(Vec3.atLowerCornerOf(radar.getBlockPos()));
         for (int i = 0; i < 2; i++) {
             float t = frac(time * 0.03f + i / 2f);
             LaserBeamRenderer.render(poseStack, buffers, from.lerp(relay, t), from.lerp(relay, Math.min(1, t + 0.08f)), DOWNLINK, 0.04f, time);

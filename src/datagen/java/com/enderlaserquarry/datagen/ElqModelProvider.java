@@ -90,6 +90,9 @@ public class ElqModelProvider extends ModelProvider {
             states.accept(dishPlating(ModBlocks.dishPlating(tier).get(), t));
             controllerModels(t);
         }
+        // the Launch Pad Controller's antenna mast, drawn by its renderer like the quarry controller's
+        model("launch_pad_controller_mast", new ModelTemplate(Optional.of(MAST_TEMPLATE), Optional.empty(), ANTENNA),
+            new TextureMapping().put(ANTENNA, mat("launch_pad_controller_antenna")));
         states.accept(quarryPort());
         states.accept(dishPort());
         states.accept(launchPadPlating());
@@ -191,7 +194,9 @@ public class ElqModelProvider extends ModelProvider {
     }
 
     private BlockModelDefinitionGenerator groundRadar() {
-        return states(ModBlocks.GROUND_RADAR.get(), state -> plain(bottomTop("ground_radar", "ground_radar_top", "ground_radar_side", "quarry_machine_bottom")));
+        // the top follows the launch pad plating around it like the controller's; the unconnected one is the item's base
+        return states(ModBlocks.GROUND_RADAR.get(), state -> plain(bottomTop("ground_radar" + connection(state),
+            "ground_radar_top" + connection(state), "ground_radar_side", "quarry_machine_bottom")));
     }
 
     private BlockModelDefinitionGenerator obelisk() {
@@ -273,7 +278,20 @@ public class ElqModelProvider extends ModelProvider {
         machineItem(items, ModItems.ENHANCED_SATELLITE_DISH, "enhanced_satellite_dish_plating_side", -0.45f, 0.2f, 0.875f);
         machineItem(items, ModItems.ENDER_SATELLITE_DISH, "ender_satellite_dish_plating_side", -0.45f, 0.2f, 0.875f);
         machineItem(items, ModItems.GROUND_RADAR, "ground_radar_side", -0.45f, 0.3f, 0.86f);
-        machineItem(items, ModItems.LAUNCH_PAD, "launch_pad_side", -0.45f, 0.55f, 0.825f);
+        // the Launch Pad Controller with its mast, like the quarry controllers
+        Identifier padModel = ExtendedModelTemplateBuilder.builder()
+            .parent(CONTROLLER_TEMPLATE)
+            .requiredTextureSlot(TextureSlot.FRONT).requiredTextureSlot(TextureSlot.SIDE).requiredTextureSlot(TextureSlot.TOP)
+            .requiredTextureSlot(TextureSlot.BOTTOM).requiredTextureSlot(ANTENNA)
+            .transform(ItemDisplayContext.GUI, d -> d.rotation(30, 225, 0).translation(0, -1.25f, 0).scale(0.55f))
+            .build()
+            .create(rl("item/launch_pad_controller"), new TextureMapping()
+                .put(TextureSlot.FRONT, mat("launch_pad_front"))
+                .put(TextureSlot.SIDE, mat("launch_pad_side"))
+                .put(TextureSlot.TOP, mat("launch_pad_controller_top"))
+                .put(TextureSlot.BOTTOM, mat("quarry_machine_bottom"))
+                .put(ANTENNA, mat("launch_pad_controller_antenna")), models);
+        items.itemModelOutput.accept(ModItems.LAUNCH_PAD.get(), ItemModelUtils.plainModel(padModel));
     }
 
     private void machineItem(ItemModelGenerators items, DeferredItem<?> item, String particle, float guiX, float guiY, float guiScale) {

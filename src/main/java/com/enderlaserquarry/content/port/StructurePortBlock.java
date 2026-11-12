@@ -65,7 +65,8 @@ public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlo
     @Override
     protected boolean connectsTo(BlockState neighbour) {
         return switch (structure) {
-            case LAUNCH_PAD -> neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS) || neighbour.getBlock() instanceof LaunchPadBlock;
+            case LAUNCH_PAD -> neighbour.is(LaunchPadBlockEntity.FRAME_BLOCKS) || neighbour.getBlock() instanceof LaunchPadBlock
+                || neighbour.getBlock() instanceof com.enderlaserquarry.content.radar.GroundRadarBlock;
             case LASER_QUARRY -> QuarryPlatingBlock.isQuarryFloor(neighbour);
             case SATELLITE_DISH -> SatelliteDishPlatingBlock.isDishBase(neighbour);
         };

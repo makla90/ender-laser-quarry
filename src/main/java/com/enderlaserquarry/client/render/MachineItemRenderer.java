@@ -44,9 +44,7 @@ public final class MachineItemRenderer implements NoDataSpecialModelRenderer {
         } else {
             dish = null;
             dishRenderer = null;
-            boolean pad = block == ModBlocks.LAUNCH_PAD.get();
-            radarRenderer = new GroundRadarItemRenderer(context.entityModelSet(), () -> block,
-                pad ? LaunchPadBlockEntity.MINI_RADAR_SCALE : 1, pad ? 0.66f : 0.48f);
+            radarRenderer = new GroundRadarItemRenderer(context.entityModelSet(), () -> block, 1, 0.48f);
         }
     }
 

@@ -1,11 +1,13 @@
 package com.enderlaserquarry.content.radar;
 
 import com.enderlaserquarry.config.QuarryConfig;
+import com.enderlaserquarry.content.ConnectedFrameBlock;
 import com.enderlaserquarry.content.controller.QuarryControllerBlockEntity;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.launchpad.UplinkStatus;
 import com.enderlaserquarry.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -19,6 +21,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -122,6 +125,22 @@ public class GroundRadarBlockEntity extends BlockEntity {
         }
     }
 
+    // joined edges to the pad plating, for blocks placed without neighbour updates (/elq demo, structure templates)
+    public void updateConnections() {
+        BlockState state = getBlockState();
+        if (!state.hasProperty(ConnectedFrameBlock.NORTH)) {
+            return;
+        }
+        BlockState joined = state;
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            joined = joined.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side),
+                GroundRadarBlock.joinsPad(level.getBlockState(worldPosition.relative(side))));
+        }
+        if (joined != state) {
+            level.setBlock(worldPosition, joined, Block.UPDATE_CLIENTS);
+        }
+    }
+
     private void serverTick() {
         if (level == null || level.getGameTime() % SYNC_INTERVAL != 0) {
             return;
@@ -140,6 +159,7 @@ public class GroundRadarBlockEntity extends BlockEntity {
                 setStation(null);
             }
         }
+        updateConnections();
 
         LaunchPadBlockEntity pad = getSatellitePad();
         boolean nowPowered = pad != null && pad.getEnergy().getEnergyStored() >= Math.max(1, QuarryConfig.RADAR_UPLINK_USAGE.get());

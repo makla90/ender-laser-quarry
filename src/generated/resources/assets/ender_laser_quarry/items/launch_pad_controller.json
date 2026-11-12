@@ -1,10 +1,6 @@
 {
   "model": {
-    "type": "minecraft:special",
-    "base": "ender_laser_quarry:item/launch_pad_controller",
-    "model": {
-      "type": "ender_laser_quarry:machine_item",
-      "block": "ender_laser_quarry:launch_pad_controller"
-    }
+    "type": "minecraft:model",
+    "model": "ender_laser_quarry:item/launch_pad_controller"
   }
 }
