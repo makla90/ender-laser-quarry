@@ -35,10 +35,13 @@ public final class ModCreativeTabs {
             output.accept(ModItems.LASER_EMITTER.get());
             output.accept(ModItems.SIGNAL_TRANSCEIVER.get());
             output.accept(ModItems.REFLECTOR_MIRROR.get());
+            output.accept(ModItems.CHORUS_GYROSCOPE.get());
+            output.accept(ModItems.VOID_REFLECTOR.get());
             output.accept(ModItems.ROCKET.get());
             output.accept(ModItems.SATELLITE.get());
             output.accept(ModItems.ENHANCED_SATELLITE.get());
             output.accept(ModItems.ENDER_SATELLITE.get());
+            output.accept(ModItems.VOID_SATELLITE.get());
             output.accept(ModItems.CRYSTAL_OBELISK.get());
             output.accept(ModItems.QUARRY_PLATING.get());
             output.accept(ModItems.QUARRY_PORT.get());

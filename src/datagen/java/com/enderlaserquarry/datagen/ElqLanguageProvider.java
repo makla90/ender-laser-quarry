@@ -67,6 +67,8 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("item.ender_laser_quarry.signal_transceiver", "Signal Transceiver");
 
         add("item.ender_laser_quarry.reflector_mirror", "Reflector Mirror");
+        add("item.ender_laser_quarry.chorus_gyroscope", "Chorus Gyroscope");
+        add("item.ender_laser_quarry.void_reflector", "Void Reflector");
 
         add("block.ender_laser_quarry.launch_pad_plating", "Launch Pad Plating");
 
@@ -79,6 +81,9 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("item.ender_laser_quarry.enhanced_satellite", "Enhanced Satellite");
 
         add("item.ender_laser_quarry.ender_satellite", "Ender Satellite");
+        add("item.ender_laser_quarry.void_satellite", "Void Satellite");
+        add("tooltip.ender_laser_quarry.void_satellite", "In orbit it throws the Void Laser Crystal's beam out to the asteroids and scans space for them. Maps no ground, stays over its Launch Pad");
+        add("tooltip.ender_laser_quarry.void_satellite.needs", "Needs an Ender Quarry Controller and a Void Laser Crystal to mine");
 
         add("tooltip.ender_laser_quarry.satellite.area", "Maps %sx%s chunks around its Launch Pad");
 
@@ -118,7 +123,7 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("item.ender_laser_quarry.void_laser_crystal", "Void Laser Crystal");
 
-        add("tooltip.ender_laser_quarry.void_laser_crystal", "On a Crystal Obelisk, the satellite scans space for asteroids and the quarry mines those instead of the ground");
+        add("tooltip.ender_laser_quarry.void_laser_crystal", "With a Void Satellite in orbit, the quarry mines asteroids instead of the ground. Under any other satellite it mines the ground like a Laser Crystal");
         add("tooltip.ender_laser_quarry.void_laser_crystal.tier", "Needs an Ender Quarry Controller");
 
         add("tooltip.ender_laser_quarry.rocket", "Reusable. Flies satellites to orbit and back from a Launch Pad");
@@ -135,6 +140,7 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("message.ender_laser_quarry.launch.no_fuel", "Not enough Rocket Fuel (%s / %s mB)");
         add("message.ender_laser_quarry.launch.transfer_no_satellite", "No satellite in orbit to move");
         add("message.ender_laser_quarry.launch.transfer_tier", "A %s Satellite stays over its Launch Pad");
+        add("message.ender_laser_quarry.launch.transfer_void", "The Void Satellite stays over its Launch Pad");
         add("message.ender_laser_quarry.launch.transfer_too_far", "Too far: this satellite can go at most %s chunks from its Launch Pad");
         add("message.ender_laser_quarry.launch.transfer_same", "The satellite is already over that area");
         add("message.ender_laser_quarry.launch.transfer_stop_quarry", "Stop the quarry before moving its satellite");
@@ -168,8 +174,11 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("gui.ender_laser_quarry.status.no_dishes", "No working Satellite Dish feeds the crystal");
         add("gui.ender_laser_quarry.status.running_hot", "Running hot: no coolant, the crystal wears 3x faster. Pipe water into a Laser Quarry I/O Port");
         add("gui.ender_laser_quarry.status.no_controller", "Needs a Quarry Controller on the outer ring");
-        add("gui.ender_laser_quarry.status.void_needs_ender", "A Void Laser Crystal needs an Ender Quarry Controller");
+        add("gui.ender_laser_quarry.status.void_needs_ender", "Asteroid mining needs an Ender Quarry Controller");
         add("gui.ender_laser_quarry.status.asteroid_unmeasured", "Analyze this asteroid first (no rock data)");
+        add("gui.ender_laser_quarry.status.needs_void_satellite", "Asteroid mining needs the Void Satellite in orbit");
+        add("gui.ender_laser_quarry.status.needs_void_crystal", "Asteroid mining needs a Void Laser Crystal on the obelisk");
+        add("gui.ender_laser_quarry.status.void_satellite_up", "The Void Satellite can't mine the ground: launch a normal satellite");
 
         add("gui.ender_laser_quarry.launch_pad.pad.ready", "Pad: Ready");
         add("gui.ender_laser_quarry.launch_pad.pad.incomplete", "Pad: Incomplete");
@@ -225,7 +234,6 @@ public class ElqLanguageProvider extends LanguageProvider {
         add("message.ender_laser_quarry.controller.depth_stop_first", "Stop the quarry before changing the depth mode");
         add("message.ender_laser_quarry.controller.depth_needs_tier", "Depth modes need an Enhanced or Ender controller");
         add("message.ender_laser_quarry.controller.floor_needs_ender", "Only Ender controllers can pick their own Y");
-        add("message.ender_laser_quarry.controller.no_void_crystal", "Needs a Void Laser Crystal on the obelisk");
         add("message.ender_laser_quarry.controller.asteroid_queue_full", "Asteroid queue is full (max %s). Click a queued asteroid to remove it");
         add("message.ender_laser_quarry.controller.asteroid_gone", "That asteroid is gone");
         add("message.ender_laser_quarry.controller.analyze_first", "Analyze that asteroid before mining it");

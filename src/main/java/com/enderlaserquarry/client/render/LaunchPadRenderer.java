@@ -37,6 +37,7 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         EnderLaserQuarry.rl("textures/entity/satellite.png"),
         EnderLaserQuarry.rl("textures/entity/enhanced_satellite.png"),
         EnderLaserQuarry.rl("textures/entity/ender_satellite.png")};
+    private static final Identifier VOID_SATELLITE_TEXTURE = EnderLaserQuarry.rl("textures/entity/void_satellite.png");
 
     private static final int FLAME_OUTER = 0xFF6A10;
     private static final int FLAME_CORE = 0xFFE08A;
@@ -213,7 +214,9 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
 
     private void renderSatellite(LaunchPadBlockEntity pad, Level level, Vec3 pos, float partialTick, float time,
                                  PoseStack poseStack, MultiBufferSource buffers) {
-        Identifier texture = SATELLITE_TEXTURES[Math.min(pad.getDrawnSatelliteTier().ordinal(), SATELLITE_TEXTURES.length - 1)];
+        boolean voidSatellite = pad.isDrawnVoid();
+        Identifier texture = voidSatellite ? VOID_SATELLITE_TEXTURE
+            : SATELLITE_TEXTURES[Math.min(pad.getDrawnSatelliteTier().ordinal(), SATELLITE_TEXTURES.length - 1)];
         float transfer = pad.getSatelliteTransfer(partialTick);
         float scale = Mth.lerp(transfer, LaunchPadBlockEntity.SATELLITE_DOCKED_SCALE, LaunchPadBlockEntity.SATELLITE_ORBIT_SCALE);
         float wings = Mth.clamp((transfer - 0.2f) / 0.6f, 0, 1);
@@ -240,6 +243,7 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         satellite.navLeft.visible = false;
         satellite.navRight.visible = false;
         satellite.ring.visible = false;
+        satellite.endRods.visible = false;
         satellite.root.render(poseStack, buffers.getBuffer(RenderTypes.entityCutout(texture)), light, OverlayTexture.NO_OVERLAY);
         satellite.beacon.visible = true;
         satellite.scanner.visible = true;
@@ -247,6 +251,7 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         satellite.navLeft.visible = true;
         satellite.navRight.visible = true;
         satellite.ring.visible = true;
+        satellite.endRods.visible = true;
 
         var glow = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(texture));
         boolean blink = (level.getGameTime() % 30) < 4;
@@ -262,7 +267,13 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
             renderNavLights(poseStack, lights, level.getGameTime());
         }
         if (tier == QuarryTier.ENDER && wings > 0.33f) {
-            renderRing(poseStack, lights, time);
+            renderRing(poseStack, lights, time, voidSatellite);
+        }
+        if (voidSatellite) {
+            // end rod white with a slow violet breath
+            float breath = 0.5f + 0.5f * Mth.sin(time * 0.08f);
+            int rod = ARGB.color(255, (int) Mth.lerp(breath, 0xE8, 0xF8), (int) Mth.lerp(breath, 0xD8, 0xF4), 0xFF);
+            satellite.endRods.render(poseStack, lights, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, rod);
         }
         if (transfer >= 1 && !pad.isArriving()) {
             renderThrusterPuff(poseStack, buffers, time);
@@ -352,16 +363,17 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         poseStack.popPose();
     }
 
-    // Ender ring: teal segments with a bright pulse running around
-    private void renderRing(PoseStack poseStack, VertexConsumer glow, float time) {
+    // Ender ring: teal segments with a bright pulse running around (Void: violet)
+    private void renderRing(PoseStack poseStack, VertexConsumer glow, float time, boolean voidSatellite) {
         poseStack.pushPose();
         satellite.ring.translateAndRotate(poseStack);
         float head = (time * 0.15f) % SatelliteModel.RING_SEGMENTS;
         for (int i = 0; i < SatelliteModel.RING_SEGMENTS; i++) {
             float behind = Math.floorMod((int) Math.floor(head) - i, SatelliteModel.RING_SEGMENTS) + (head - (float) Math.floor(head));
             float bright = Math.max(0, 1 - behind / 3f);
-            int color = ARGB.color(255, (int) Mth.lerp(bright, 0x30, 0xE0), (int) Mth.lerp(bright, 0xE8, 0xFF),
-                (int) Mth.lerp(bright, 0xC8, 0xF8));
+            int color = voidSatellite
+                ? ARGB.color(255, (int) Mth.lerp(bright, 0x7A, 0xEC), (int) Mth.lerp(bright, 0x3C, 0xD0), (int) Mth.lerp(bright, 0xC8, 0xFF))
+                : ARGB.color(255, (int) Mth.lerp(bright, 0x30, 0xE0), (int) Mth.lerp(bright, 0xE8, 0xFF), (int) Mth.lerp(bright, 0xC8, 0xF8));
             satellite.ringSegments[i].render(poseStack, glow, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
         }
         poseStack.popPose();

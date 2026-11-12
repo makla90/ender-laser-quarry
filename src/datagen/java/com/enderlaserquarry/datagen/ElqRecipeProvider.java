@@ -1,6 +1,7 @@
 package com.enderlaserquarry.datagen;
 
 import com.enderio.enderio.content.machines.alloy.AlloySmeltingRecipe;
+import com.enderio.enderio.content.machines.soul_binder.SoulBindingRecipe;
 import com.enderlaserquarry.EnderLaserQuarry;
 import com.enderlaserquarry.content.TierUpgradeRecipe;
 import com.enderlaserquarry.init.ModItems;
@@ -27,6 +28,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -131,6 +133,9 @@ public class ElqRecipeProvider extends RecipeProvider {
             'B', of(ModItems.SATELLITE.get()), 'D', of(Items.DAYLIGHT_DETECTOR)), "EZE", "PBP", "EDE");
         upgrade(ModItems.ENDER_SATELLITE.get(), keys('E', endSteel, 'R', resonator, 'P', eio("vibrant_photovoltaic_module"),
             'B', of(ModItems.ENHANCED_SATELLITE.get()), 'C', c("gems/prescient_crystal")), "ERE", "PBP", "ECE");
+        // D14: the Void Satellite throws the beam out to the asteroids
+        upgrade(ModItems.VOID_SATELLITE.get(), keys('R', of(Items.END_ROD), 'V', of(ModItems.VOID_REFLECTOR.get()), 'G', of(ModItems.CHORUS_GYROSCOPE.get()),
+            'B', of(ModItems.ENDER_SATELLITE.get()), 'E', endSteel, 'D', of(Items.DRAGON_BREATH)), "RVR", "GBG", "EDE");
 
         // parts
         shaped(ModItems.LASER_EMITTER.get(), 1, keys('Q', fusedQuartz, 'R', redstoneAlloy, 'P', c("gems/pulsating_crystal"), 'C', conductive,
@@ -143,6 +148,11 @@ public class ElqRecipeProvider extends RecipeProvider {
                 " NR", "NCN", "IN "), new ItemStackTemplate(ModItems.LASER_LINKER.get())));
         alloy(ModItems.FOCUSING_LENS.get(), List.of(new SizedIngredient(fusedQuartz, 4), new SizedIngredient(of(Items.AMETHYST_SHARD), 2),
             new SizedIngredient(c("gems/diamond"), 1)));
+        shaped(ModItems.CHORUS_GYROSCOPE.get(), 1, keys('S', of(Items.SHULKER_SHELL), 'C', of(Items.POPPED_CHORUS_FRUIT), 'G', vibrantGear,
+            'E', endSteel), " S ", "CGC", "EEE");
+        // like Ender IO's prescient crystal, with an endermite soul
+        save(ModItems.VOID_REFLECTOR.get(), new SoulBindingRecipe(new ItemStackTemplate(ModItems.VOID_REFLECTOR.get()), of(ModItems.REFLECTOR_MIRROR.get()),
+            100_000, 8, Optional.of(Identifier.withDefaultNamespace("endermite")), Optional.empty(), Optional.empty(), false));
         alloy(ModItems.REFLECTOR_MIRROR.get(), List.of(new SizedIngredient(fusedQuartz, 1), new SizedIngredient(c("ingots/gold"), 3),
             new SizedIngredient(darkSteel, 1)));
     }

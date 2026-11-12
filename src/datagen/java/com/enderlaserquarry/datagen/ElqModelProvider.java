@@ -237,8 +237,9 @@ public class ElqModelProvider extends ModelProvider {
 
     private void itemModels(ItemModelGenerators items) {
         for (DeferredItem<?> item : List.of(ModItems.LASER_CRYSTAL, ModItems.PULSATING_LASER_CRYSTAL, ModItems.VOID_LASER_CRYSTAL,
-            ModItems.SATELLITE, ModItems.ENHANCED_SATELLITE, ModItems.ENDER_SATELLITE, ModItems.ROCKET, ModItems.ROCKET_ENGINE,
-            ModItems.PARABOLIC_DISH, ModItems.FOCUSING_LENS, ModItems.LASER_EMITTER, ModItems.SIGNAL_TRANSCEIVER, ModItems.REFLECTOR_MIRROR)) {
+            ModItems.SATELLITE, ModItems.ENHANCED_SATELLITE, ModItems.ENDER_SATELLITE, ModItems.VOID_SATELLITE, ModItems.ROCKET, ModItems.ROCKET_ENGINE,
+            ModItems.PARABOLIC_DISH, ModItems.FOCUSING_LENS, ModItems.LASER_EMITTER, ModItems.SIGNAL_TRANSCEIVER, ModItems.REFLECTOR_MIRROR,
+            ModItems.CHORUS_GYROSCOPE, ModItems.VOID_REFLECTOR)) {
             items.generateFlatItem(item.get(), ModelTemplates.FLAT_ITEM);
         }
         items.generateFlatItem(ModItems.LASER_LINKER.get(), ModelTemplates.FLAT_HANDHELD_ITEM);

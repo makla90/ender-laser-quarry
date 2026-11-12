@@ -1,0 +1,10 @@
+{
+  "type": "enderio:soul_binding",
+  "energy": 100000,
+  "entity_type": "minecraft:endermite",
+  "experience": 8,
+  "input": "ender_laser_quarry:reflector_mirror",
+  "output": {
+    "id": "ender_laser_quarry:void_reflector"
+  }
+}
