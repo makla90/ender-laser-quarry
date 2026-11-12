@@ -105,6 +105,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     private int pendingFloorTicks;
     // refresh, or scan space with a void crystal
     private Button refreshButton;
+    private NamedTankWidget dewTank;
     private final SpaceMapView spaceView = new SpaceMapView(MAP_SIZE);
     private float lastScanProgress = -1;
     // asteroid picked for Analyze, -1 = none
@@ -145,7 +146,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     // endregion
 
     public QuarryControllerScreen(QuarryControllerMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title, 267, 258);
+        super(menu, playerInventory, title, QuarryControllerMenu.GUI_WIDTH, 258);
         inventoryLabelX = QuarryControllerMenu.PLAYER_INV_X;
         inventoryLabelY = QuarryControllerMenu.PLAYER_INV_Y - 11;
     }
@@ -209,20 +210,28 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         addRenderableOnly(new UsageEnergyWidget(leftPos + QuarryControllerMenu.ENERGY_X, topPos + QuarryControllerMenu.ENERGY_Y, 9,
             QuarryControllerMenu.ENERGY_HEIGHT, menu::getEnergyStorage, menu::isCapacitorInstalled, () -> {
                 int own = menu.getOwnUsage();
-                return List.of(
-                    Component.translatable("gui.ender_laser_quarry.energy.usage", UsageEnergyWidget.FORMAT.format(own))
-                        .withStyle(ChatFormatting.AQUA),
-                    Component.translatable("gui.ender_laser_quarry.controller.intake", UsageEnergyWidget.FORMAT.format(menu.getEnergyIntake()))
-                        .withStyle(ChatFormatting.DARK_AQUA),
-                    Component.translatable("gui.ender_laser_quarry.controller.port_output", UsageEnergyWidget.FORMAT.format(menu.getPortItemRate()))
-                        .withStyle(ChatFormatting.DARK_AQUA));
+                List<Component> lines = new ArrayList<>();
+                lines.add(Component.translatable("gui.ender_laser_quarry.energy.usage", UsageEnergyWidget.FORMAT.format(own))
+                    .withStyle(ChatFormatting.AQUA));
+                if (menu.getPadEnergy() >= 0) {
+                    // the launch pad's Ground Radar, fed over the antenna link
+                    lines.add(Component.translatable("gui.ender_laser_quarry.controller.antenna_sent",
+                        UsageEnergyWidget.FORMAT.format(menu.getAntennaSent())).withStyle(ChatFormatting.AQUA));
+                }
+                lines.add(Component.translatable("gui.ender_laser_quarry.controller.intake", UsageEnergyWidget.FORMAT.format(menu.getEnergyIntake()))
+                    .withStyle(ChatFormatting.DARK_AQUA));
+                lines.add(Component.translatable("gui.ender_laser_quarry.controller.port_output", UsageEnergyWidget.FORMAT.format(menu.getPortItemRate()))
+                    .withStyle(ChatFormatting.DARK_AQUA));
+                return lines;
             }));
         // coolant
-        addRenderableOnly(new FluidStackWidget(leftPos + QuarryControllerMenu.COOLANT_X, topPos + QuarryControllerMenu.COOLANT_Y, 9,
-            QuarryControllerMenu.COOLANT_HEIGHT, menu::getCoolant));
+        addRenderableOnly(new NamedTankWidget(leftPos + QuarryControllerMenu.COOLANT_X, topPos + QuarryControllerMenu.COOLANT_Y, 9,
+            QuarryControllerMenu.COOLANT_HEIGHT, menu::getCoolant, "minecraft:water"));
         // liquid XP, for the crystal's Mending
-        addRenderableOnly(new FluidStackWidget(leftPos + QuarryControllerMenu.XP_X, topPos + QuarryControllerMenu.COOLANT_Y, 9,
-            QuarryControllerMenu.COOLANT_HEIGHT, menu::getXp));
+        addRenderableOnly(new NamedTankWidget(leftPos + QuarryControllerMenu.XP_X, topPos + QuarryControllerMenu.COOLANT_Y, 9,
+            QuarryControllerMenu.COOLANT_HEIGHT, menu::getXp, "enderio:fluid_xp_juice_still"));
+        dewTank = addRenderableOnly(new NamedTankWidget(leftPos + QuarryControllerMenu.DEW_X, topPos + QuarryControllerMenu.COOLANT_Y, 9,
+            QuarryControllerMenu.COOLANT_HEIGHT, this::dewInfo, "enderio:fluid_dew_of_the_void_still"));
 
         clearButton = addRenderableWidget(Button.builder(Component.translatable("gui.ender_laser_quarry.controller.clear"),
                 b -> send(QuarryActionPayload.Action.CLEAR_SELECTION))
@@ -607,6 +616,9 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             refreshButton.active = !voidMode || (!running && menu.getSpaceScanProgress() < 0 && menu.getAnalyzeId() < 0
                 && menu.getSatelliteDew() >= menu.getScanDew());
         }
+        if (dewTank != null) {
+            dewTank.visible = showsDew();
+        }
     }
 
     private void send(QuarryActionPayload.Action action) {
@@ -914,8 +926,18 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
         GuiPanels.playerInventory(g, leftPos + QuarryControllerMenu.PLAYER_INV_X, topPos + QuarryControllerMenu.PLAYER_INV_Y);
 
+        if (showsDew()) {
+            // amber frame while there isn't enough for one scan
+            if (menu.getSatelliteDew() < menu.getScanDew()) {
+                g.fill(leftPos + QuarryControllerMenu.DEW_X - 2, topPos + QuarryControllerMenu.COOLANT_Y - 2,
+                    leftPos + QuarryControllerMenu.DEW_X + 11, topPos + QuarryControllerMenu.COOLANT_Y + QuarryControllerMenu.COOLANT_HEIGHT + 2,
+                    0xFFE0A030);
+            }
+            GuiPanels.inset(g, leftPos + QuarryControllerMenu.DEW_X - 1, topPos + QuarryControllerMenu.COOLANT_Y - 1, 11,
+                QuarryControllerMenu.COOLANT_HEIGHT + 2);
+        }
+
         renderMinimap(g, mouseX, mouseY);
-        renderDewGauge(g);
     }
 
     private void renderMinimap(GuiGraphicsExtractor g, int mouseX, int mouseY) {
@@ -1501,7 +1523,9 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
                 : Component.translatable("gui.ender_laser_quarry.controller.analyzing", Math.round(menu.getAnalyzeProgress() * 100));
         } else if (scan >= 0) {
             status = menu.isScanStalled()
-                ? Component.translatable("gui.ender_laser_quarry.controller.space_scan_waiting")
+                ? Component.translatable(padPowerShort(menu.getScanEnergy() / menu.getScanTicksTotal())
+                    ? "gui.ender_laser_quarry.controller.space_scan_waiting_power"
+                    : "gui.ender_laser_quarry.controller.space_scan_waiting")
                 : Component.translatable("gui.ender_laser_quarry.controller.space_scan", Math.round(scan * 100));
         } else if (spaceView.asteroids().isEmpty()) {
             status = Component.translatable("gui.ender_laser_quarry.controller.space_scan_hint");
@@ -1562,37 +1586,40 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         g.pose().popMatrix();
     }
 
-    // Dew of the Void in the Void Satellite: a thin bar under the scan button
-    private static final int DEW_GAUGE_Y = 132;
-    private static final int DEW_GAUGE_W = 56;
-    private static final int DEW_GAUGE_H = 4;
+    // Dew of the Void in the Void Satellite: a 4th tank beside energy, coolant and XP
+    private static final java.util.function.Supplier<net.minecraft.world.level.material.Fluid> DEW_FLUID = com.google.common.base.Suppliers.memoize(
+        () -> net.minecraft.core.registries.BuiltInRegistries.FLUID.getValue(
+            Identifier.fromNamespaceAndPath("enderio", "fluid_dew_of_the_void_still")));
 
-    private void renderDewGauge(GuiGraphicsExtractor g) {
-        if (!menu.isVoidMode() || menu.getSatelliteDew() < 0) {
+    private boolean showsDew() {
+        return menu.isVoidMode() && menu.getSatelliteDew() >= 0;
+    }
+
+    private com.enderio.enderio.foundation.fluid.FluidStorageInfo dewInfo() {
+        int dew = Math.max(0, menu.getSatelliteDew());
+        return new com.enderio.enderio.foundation.fluid.FluidStorageInfo(
+            dew > 0 ? new net.neoforged.neoforge.fluids.FluidStack(DEW_FLUID.get(), dew) : net.neoforged.neoforge.fluids.FluidStack.EMPTY,
+            Math.max(1, menu.getDewCapacity()));
+    }
+
+    // one tick mark per scan on the tank's left edge, over the fluid
+    private void renderDewNotches(GuiGraphicsExtractor g) {
+        int scans = menu.getDewCapacity() / Math.max(1, menu.getScanDew());
+        if (scans < 2 || scans > 24) {
             return;
         }
-        int x = leftPos + QuarryControllerMenu.OUTPUT_X - 1;
-        int y = topPos + DEW_GAUGE_Y;
-        g.fill(x, y, x + DEW_GAUGE_W, y + DEW_GAUGE_H, 0xFF1A1420);
-        int filled = Math.round((DEW_GAUGE_W - 2) * Math.min(1f, menu.getSatelliteDew() / (float) Math.max(1, menu.getDewCapacity())));
-        boolean enough = menu.getSatelliteDew() >= menu.getScanDew();
-        if (filled > 0) {
-            g.fill(x + 1, y + 1, x + 1 + filled, y + DEW_GAUGE_H - 1, enough ? 0xFF8A5CE0 : 0xFFE0A030);
-        }
-        // one notch per scan
-        int scans = menu.getDewCapacity() / Math.max(1, menu.getScanDew());
-        if (scans > 1 && scans <= 16) {
-            for (int i = 1; i < scans; i++) {
-                int nx = x + 1 + Math.round((DEW_GAUGE_W - 2) * i / (float) scans);
-                g.fill(nx, y + 1, nx + 1, y + DEW_GAUGE_H - 1, 0x80000000);
-            }
+        int x = leftPos + QuarryControllerMenu.DEW_X;
+        int bottom = topPos + QuarryControllerMenu.COOLANT_Y + QuarryControllerMenu.COOLANT_HEIGHT;
+        for (int i = 1; i < scans; i++) {
+            int y = bottom - Math.round(QuarryControllerMenu.COOLANT_HEIGHT * i / (float) scans);
+            g.fill(x, y, x + 3, y + 1, 0xC0000000);
         }
     }
 
     private boolean isOverDewGauge(int mouseX, int mouseY) {
-        int x = leftPos + QuarryControllerMenu.OUTPUT_X - 1;
-        int y = topPos + DEW_GAUGE_Y;
-        return menu.getSatelliteDew() >= 0 && mouseX >= x && mouseX < x + DEW_GAUGE_W && mouseY >= y - 1 && mouseY < y + DEW_GAUGE_H + 1;
+        int x = leftPos + QuarryControllerMenu.DEW_X;
+        int y = topPos + QuarryControllerMenu.COOLANT_Y;
+        return showsDew() && mouseX >= x - 1 && mouseX < x + 10 && mouseY >= y - 1 && mouseY < y + QuarryControllerMenu.COOLANT_HEIGHT + 1;
     }
 
     private List<Component> dewLines() {
@@ -1607,6 +1634,25 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         return lines;
     }
 
+    // where scans and Analyze take their power from: the linked launch pad, topped up over the antenna
+    private List<Component> padPowerLines() {
+        List<Component> lines = new ArrayList<>();
+        int stored = menu.getPadEnergy();
+        if (stored < 0) {
+            lines.add(Component.translatable("gui.ender_laser_quarry.controller.no_pad_power").withStyle(ChatFormatting.RED));
+            return lines;
+        }
+        lines.add(Component.translatable("gui.ender_laser_quarry.controller.pad_power", formatMb(stored), formatMb(menu.getPadCapacity()))
+            .withStyle(stored > 0 ? ChatFormatting.AQUA : ChatFormatting.RED));
+        lines.add(Component.translatable("gui.ender_laser_quarry.controller.pad_power_hint").withStyle(ChatFormatting.GRAY));
+        return lines;
+    }
+
+    // a scan / analysis that waits: say so when it's the launch pad's power
+    private boolean padPowerShort(int perTick) {
+        return menu.getPadEnergy() >= 0 && menu.getPadEnergy() < perTick;
+    }
+
     private static String formatMb(int mb) {
         return java.text.NumberFormat.getIntegerInstance(java.util.Locale.ROOT).format(mb);
     }
@@ -1615,9 +1661,28 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         renderPlannerIcon(g);
+        if (showsDew()) {
+            renderDewNotches(g);
+        }
 
-        if (menu.isVoidMode() && (isOverDewGauge(mouseX, mouseY) || (refreshButton != null && refreshButton.isMouseOver(mouseX, mouseY)))) {
+        if (menu.isVoidMode() && isOverDewGauge(mouseX, mouseY)) {
             g.setComponentTooltipForNextFrame(font, dewLines(), mouseX, mouseY);
+            return;
+        }
+        if (menu.isVoidMode() && refreshButton != null && refreshButton.isMouseOver(mouseX, mouseY)) {
+            List<Component> lines = dewLines();
+            lines.add(Component.translatable("gui.ender_laser_quarry.controller.scan_cost", formatMb(menu.getScanEnergy()),
+                menu.getScanTicksTotal() / 20, formatMb(menu.getScanEnergy() / menu.getScanTicksTotal())).withStyle(ChatFormatting.DARK_AQUA));
+            lines.addAll(padPowerLines());
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
+            return;
+        }
+        if (menu.isVoidMode() && analyzeButton != null && analyzeButton.visible && analyzeButton.isMouseOver(mouseX, mouseY)) {
+            List<Component> lines = new ArrayList<>();
+            lines.add(Component.translatable("gui.ender_laser_quarry.controller.analyze_cost", formatMb(menu.getAnalyzeEnergy()),
+                Math.max(1, menu.getAnalyzeTicks() / 20)).withStyle(ChatFormatting.DARK_AQUA));
+            lines.addAll(padPowerLines());
+            g.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
             return;
         }
 

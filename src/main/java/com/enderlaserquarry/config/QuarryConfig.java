@@ -78,6 +78,7 @@ public final class QuarryConfig {
     public static final ModConfigSpec.IntValue CONTROLLER_ENERGY_INTAKE;
     public static final ModConfigSpec.IntValue CONTROLLER_BUFFER_TICKS;
     public static final ModConfigSpec.IntValue CONTROLLER_USAGE;
+    public static final ModConfigSpec.IntValue CONTROLLER_ANTENNA_POWER;
     public static final ModConfigSpec.BooleanValue LOAD_BASE;
     public static final ModConfigSpec.IntValue PROBLEM_TIMEOUT;
     public static final ModConfigSpec.ConfigValue<String> CLAIM_CHECK_MODE;
@@ -174,12 +175,16 @@ public final class QuarryConfig {
         CONTROLLER_FLUID_PER_PORT = builder.comment("mB per tick each Laser Quarry I/O Port can fill into the controller tanks, times L².")
             .defineInRange("fluidPerPort", 100, 1, 1_000_000);
         CONTROLLER_ENERGY_INTAKE = builder.comment("µI per tick the controller takes in through all its ports together, times L². It powers the controller (the",
-                "dishes and the launch pad have their own ports).")
+                "dishes have their own ports; the launch pad gets power from it over the antenna link, see antennaPowerRate).")
             .defineInRange("energyIntake", 60_000, 1, 10_000_000);
         CONTROLLER_BUFFER_TICKS = builder.comment("Energy buffer = this many ticks of intake.")
             .defineInRange("bufferTicks", 20, 1, 1_000);
         CONTROLLER_USAGE = builder.comment("µI/t the controller itself uses while it runs (powering up or mining), times L.")
             .defineInRange("usage", 40, 0, Integer.MAX_VALUE);
+        CONTROLLER_ANTENNA_POWER = builder.comment("Max µI/t the controller sends over its antenna link to the linked launch pad, for the Ground Radar there",
+                "(uplink, space scans, Analyze). Only what the pad has room for, and only what the controller doesn't need itself. 0 = off:",
+                "then the launch pad is powered through its own I/O ports only.")
+            .defineInRange("antennaPowerRate", 10_000, 0, Integer.MAX_VALUE);
         builder.pop();
 
         builder.push("chunk_loading");
@@ -200,7 +205,8 @@ public final class QuarryConfig {
         builder.pop();
 
         builder.push("ground_radar");
-        RADAR_CAPACITY = builder.comment("Energy buffer of the launch pad, it powers the ground radar on its ring.")
+        RADAR_CAPACITY = builder.comment("Energy buffer of the launch pad, it powers the ground radar on its ring. Filled by the linked quarry controller over its antenna",
+                "and through the pad's own I/O ports.")
             .defineInRange("capacity", 100_000, 1, Integer.MAX_VALUE);
         RADAR_MAX_INPUT = builder.comment("Max µI/t (RF/t) the launch pad takes in through its I/O ports.")
             .defineInRange("maxInput", 50_000, 1, Integer.MAX_VALUE);

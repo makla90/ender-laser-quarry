@@ -236,6 +236,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     // Usage for the GUI, averaged over USAGE_WINDOW
     private int ownUsedSum;
     private int ownUsage;
+    private int antennaSentSum;
+    private int antennaSent;
     private long liquidsAndBlocksWorn;
     private long liquidsDeleted;
     private long intakeTick = NEVER_LIMITED;
@@ -393,7 +395,30 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         if (level.getGameTime() % USAGE_WINDOW == 0) {
             ownUsage = ownUsedSum / USAGE_WINDOW;
             ownUsedSum = 0;
+            antennaSent = antennaSentSum / USAGE_WINDOW;
+            antennaSentSum = 0;
         }
+    }
+
+    // over the antenna link to the launch pad, for its Ground Radar; keeps this tick's own use back
+    private void feedPad() {
+        int rate = QuarryConfig.CONTROLLER_ANTENNA_POWER.get();
+        LaunchPadBlockEntity pad = rate > 0 ? getLinkedPad() : null;
+        if (pad == null) {
+            return;
+        }
+        var buffer = getEnergyStorage();
+        int spare = buffer.getAmountAsInt() - (running ? getMaxEnergyUse() : 0);
+        int sent = pad.receiveAntennaPower(Math.min(rate, spare));
+        if (sent > 0) {
+            buffer.set(buffer.getAmountAsInt() - sent);
+            antennaSentSum += sent;
+        }
+    }
+
+    // µI/t sent to the launch pad, 20-tick average
+    public int getAntennaSent() {
+        return antennaSent;
     }
 
     // endregion
@@ -991,6 +1016,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         updateUsage();
         tickSpaceScan(serverLevel);
         tickAnalyze(serverLevel);
+        feedPad();
         tickChunkLoading(serverLevel);
 
         if (!running) {
