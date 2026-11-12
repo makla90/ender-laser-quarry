@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.function.Function;
 
 /**
- * Our own render types.
+ * Our own render types, and the beams: lightning without depth writes.
  */
 public final class ModRenderTypes {
 
@@ -55,6 +55,20 @@ public final class ModRenderTypes {
     // dish base light strips
     public static RenderType casingOverlay(ResourceLocation texture) {
         return CASING_OVERLAY.apply(texture);
+    }
+
+    private static final RenderType BEAM = RenderType.create(
+        "ender_laser_quarry_beam", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 1536, false, true,
+        RenderType.CompositeState.builder()
+            .setShaderState(RenderStateShard.RENDERTYPE_LIGHTNING_SHADER)
+            .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+            .setTransparencyState(RenderStateShard.LIGHTNING_TRANSPARENCY)
+            .setOutputState(RenderStateShard.WEATHER_TARGET)
+            .createCompositeState(false));
+
+    // every beam, drawn last in the frame by LateBeams
+    public static RenderType beam() {
+        return BEAM;
     }
 
     private ModRenderTypes() {
