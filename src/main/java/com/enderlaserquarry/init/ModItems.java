@@ -37,6 +37,8 @@ public final class ModItems {
     public static final DeferredItem<Item> LASER_EMITTER = ITEMS.registerSimpleItem("laser_emitter");
     public static final DeferredItem<Item> SIGNAL_TRANSCEIVER = ITEMS.registerSimpleItem("signal_transceiver");
     public static final DeferredItem<Item> REFLECTOR_MIRROR = ITEMS.registerSimpleItem("reflector_mirror");
+    public static final DeferredItem<Item> CHORUS_GYROSCOPE = ITEMS.registerSimpleItem("chorus_gyroscope");
+    public static final DeferredItem<Item> VOID_REFLECTOR = ITEMS.registerSimpleItem("void_reflector");
 
     public static final DeferredItem<RocketItem> ROCKET = ITEMS.registerItem("rocket",
         RocketItem::new, new Item.Properties().stacksTo(1));
@@ -48,6 +50,8 @@ public final class ModItems {
         props -> new SatelliteItem(QuarryTier.ENHANCED, props), new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<SatelliteItem> ENDER_SATELLITE = ITEMS.registerItem("ender_satellite",
         props -> new SatelliteItem(QuarryTier.ENDER, props), new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+    public static final DeferredItem<SatelliteItem> VOID_SATELLITE = ITEMS.registerItem("void_satellite",
+        props -> new SatelliteItem(QuarryTier.ENDER, true, props), new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
 
     public static DeferredItem<SatelliteItem> satellite(QuarryTier tier) {
         return switch (tier) {

@@ -126,7 +126,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         QuarryStates.PAD_OUT_OF_RANGE, QuarryStates.NO_SATELLITE, QuarryStates.SATELLITE_OFFLINE, QuarryStates.SATELLITE_MOVING, QuarryStates.OBELISK_NO_SKY,
         QuarryStates.OBELISK_INCOMPLETE, QuarryStates.NO_CRYSTAL, QuarryStates.CRYSTAL_BROKEN, QuarryStates.CRYSTAL_TIER_TOO_LOW, QuarryStates.NO_DISHES, QuarryStates.NO_RADAR, QuarryStates.RADAR_NO_POWER, QuarryStates.NO_CONTROLLER,
         QuarryStates.TARGET_OUT_OF_RANGE, QuarryStates.NO_TARGET, QuarryStates.OUTPUT_LIMITED, QuarryStates.INTAKE_LIMITED, QuarryStates.FINISHED, QuarryStates.POWERING_UP,
-        QuarryStates.VOID_NEEDS_ENDER, QuarryStates.ASTEROID_UNMEASURED,
+        QuarryStates.VOID_NEEDS_ENDER, QuarryStates.ASTEROID_UNMEASURED, QuarryStates.NEEDS_VOID_SATELLITE, QuarryStates.NEEDS_VOID_CRYSTAL,
+        QuarryStates.VOID_SATELLITE_UP,
         MachineState.NO_CAPACITOR, MachineState.NO_POWER, MachineState.FULL_OUTPUT),
         Stream.concat(QuarryStates.allNeedsSatellite().stream(), QuarryStates.allQuarryNeedsPlating().stream())).toList();
 
@@ -137,6 +138,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     // antenna in the middle of the top, tip LED centre
     private static final double ANTENNA_TIP_Y = 24.75 / 16;
     private static final String RUNNING = "Running";
+    private static final String RUNNING_VOID = "RunningVoid";
     private static final String CURSOR_Y = "CursorY";
     private static final String CURSOR_INDEX = "CursorIndex";
     private static final String TOP_RESOLVED = "TopResolved";
@@ -161,6 +163,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private BlockPos padPos;
     private final ChunkQueue queue = new ChunkQueue();
     private boolean running;
+    // started on asteroids (Void Satellite up) or on the ground
+    private boolean runningVoid;
 
     // Cursor: layer + index in the layer (x + z * 16, or the wall column while walling)
     private int cursorY;
@@ -876,6 +880,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         if (isVoidMode()) {
             if (!asteroidQueue.isEmpty()) {
                 running = true;
+                runningVoid = true;
                 setChanged();
             }
             return;
@@ -883,6 +888,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         if (queue.isEmpty()) {
             return;
         }
+        runningVoid = false;
 
         if (queue.isFinished()) {
             queue.rewind();
@@ -975,7 +981,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
                 // say it before Start is pressed
                 setProblem(QuarryStates.CRYSTAL_TIER_TOO_LOW);
             } else if (isVoidMode()) {
-                setProblem(asteroidQueue.isEmpty() ? QuarryStates.NO_TARGET : null);
+                setProblem(obelisk != null && !obelisk.hasVoidCrystal() ? QuarryStates.NEEDS_VOID_CRYSTAL
+                    : asteroidQueue.isEmpty() ? QuarryStates.NO_TARGET : null);
             } else if (queue.isEmpty()) {
                 setProblem(QuarryStates.NO_TARGET);
             } else {
@@ -1054,7 +1061,12 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
             return;
         }
 
-        if (obelisk.hasVoidCrystal()) {
+        // the satellite in orbit decides: started on asteroids, it waits for the Void Satellite (and the other way round)
+        if (runningVoid != pad.isVoidSatelliteUp()) {
+            fail(runningVoid ? QuarryStates.NEEDS_VOID_SATELLITE : QuarryStates.VOID_SATELLITE_UP);
+            return;
+        }
+        if (runningVoid) {
             tickVoidMining(serverLevel, obelisk, pad);
             return;
         }
@@ -1587,8 +1599,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     }
 
     public boolean isVoidMode() {
-        CrystalObeliskBlockEntity obelisk = getObelisk();
-        return obelisk != null && obelisk.hasVoidCrystal();
+        LaunchPadBlockEntity pad = getLinkedPad();
+        return pad != null && pad.isVoidSatelliteUp();
     }
 
     public List<Integer> getAsteroidQueue() {
@@ -1609,8 +1621,9 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
 
     @Nullable
     private Component getVoidProblem() {
+        // the Void Satellite looks after the field, the crystal is only needed to mine
         if (!isVoidMode()) {
-            return Component.translatable("message.ender_laser_quarry.controller.no_void_crystal");
+            return QuarryStates.NEEDS_VOID_SATELLITE.component();
         }
         if (getTier() != QuarryTier.ENDER) {
             return QuarryStates.VOID_NEEDS_ENDER.component();
@@ -1798,6 +1811,10 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private void tickVoidMining(ServerLevel serverLevel, CrystalObeliskBlockEntity obelisk, LaunchPadBlockEntity pad) {
         if (getTier() != QuarryTier.ENDER) {
             fail(QuarryStates.VOID_NEEDS_ENDER);
+            return;
+        }
+        if (!obelisk.hasVoidCrystal()) {
+            fail(QuarryStates.NEEDS_VOID_CRYSTAL);
             return;
         }
 
@@ -2125,6 +2142,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
         queue.save(tag);
         tag.putBoolean(RUNNING, running);
+        tag.putBoolean(RUNNING_VOID, runningVoid);
         tag.putInt(CURSOR_Y, cursorY);
         tag.putInt(CURSOR_INDEX, cursorIndex);
         tag.putBoolean(TOP_RESOLVED, topResolved);
@@ -2156,6 +2174,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         padPos = NbtUtils.readBlockPos(tag, PAD_POS).orElse(null);
         queue.load(tag);
         running = tag.getBoolean(RUNNING);
+        runningVoid = tag.getBoolean(RUNNING_VOID);
         cursorY = tag.contains(CURSOR_Y) ? tag.getInt(CURSOR_Y) : Integer.MAX_VALUE;
         cursorIndex = tag.getInt(CURSOR_INDEX);
         topResolved = tag.getBoolean(TOP_RESOLVED);

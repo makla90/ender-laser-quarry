@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "minecraft:popped_chorus_fruit"
+    },
+    "E": {
+      "tag": "c:ingots/end_steel"
+    },
+    "G": {
+      "tag": "c:gears/vibrant"
+    },
+    "S": {
+      "item": "minecraft:shulker_shell"
+    }
+  },
+  "pattern": [
+    " S ",
+    "CGC",
+    "EEE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:chorus_gyroscope"
+  }
+}

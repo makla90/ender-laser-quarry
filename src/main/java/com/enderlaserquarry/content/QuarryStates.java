@@ -101,6 +101,10 @@ public final class QuarryStates {
     // Void Laser Crystal
     public static final MachineState VOID_NEEDS_ENDER = error("void_needs_ender");
     public static final MachineState ASTEROID_UNMEASURED = error("asteroid_unmeasured");
+    // the satellite in orbit decides between ground and asteroids
+    public static final MachineState NEEDS_VOID_SATELLITE = error("needs_void_satellite");
+    public static final MachineState NEEDS_VOID_CRYSTAL = error("needs_void_crystal");
+    public static final MachineState VOID_SATELLITE_UP = error("void_satellite_up");
 
     private static MachineState error(String key) {
         return new MachineState(MachineStateType.ERROR, Component.translatable("gui.ender_laser_quarry.status." + key));

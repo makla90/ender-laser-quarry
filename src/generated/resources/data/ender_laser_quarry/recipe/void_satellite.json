@@ -1,0 +1,33 @@
+{
+  "type": "ender_laser_quarry:tier_upgrade",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "ender_laser_quarry:ender_satellite"
+    },
+    "D": {
+      "item": "minecraft:dragon_breath"
+    },
+    "E": {
+      "tag": "c:ingots/end_steel"
+    },
+    "G": {
+      "item": "ender_laser_quarry:chorus_gyroscope"
+    },
+    "R": {
+      "item": "minecraft:end_rod"
+    },
+    "V": {
+      "item": "ender_laser_quarry:void_reflector"
+    }
+  },
+  "pattern": [
+    "RVR",
+    "GBG",
+    "EDE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:void_satellite"
+  }
+}

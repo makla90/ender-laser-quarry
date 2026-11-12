@@ -54,6 +54,8 @@ public final class QuarryConfig {
     public static final ModConfigSpec.DoubleValue VOID_END_CHANCE;
     public static final ModConfigSpec.IntValue VOID_ANALYZE_TICKS;
     public static final ModConfigSpec.IntValue VOID_ANALYZE_ENERGY;
+    public static final ModConfigSpec.IntValue VOID_SATELLITE_LAUNCH_FUEL;
+    public static final ModConfigSpec.IntValue VOID_SATELLITE_RETURN_FUEL;
     public static final ModConfigSpec.IntValue SAMPLING_QUICK_SPOTS;
     public static final ModConfigSpec.IntValue SAMPLING_FULL_SPOTS;
     public static final ModConfigSpec.BooleanValue SAMPLING_REFINE;
@@ -205,6 +207,15 @@ public final class QuarryConfig {
         SCAN_TICKS_PER_CHUNK = builder.comment("Ticks needed to scan one chunk while the uplink is online. Once the area is mapped",
                 "the satellite keeps re-imaging it at the same pace, so the minimap stays current.")
             .defineInRange("ticksPerChunk", 5, 1, 1200);
+        builder.pop();
+
+        builder.comment("Void Satellite (an upgraded Ender Satellite): with a Void Laser Crystal on the obelisk the quarry mines",
+            "asteroids. It counts as an Ender satellite for the tier rules, maps no ground and stays over its launch pad.")
+            .push("void_satellite");
+        VOID_SATELLITE_LAUNCH_FUEL = builder.comment("Rocket fuel in mB to launch it.")
+            .defineInRange("launchFuel", 8_000, 0, 1_000_000);
+        VOID_SATELLITE_RETURN_FUEL = builder.comment("Rocket fuel in mB for a flight to it while it is up (recovery).")
+            .defineInRange("returnFuel", 4_000, 0, 1_000_000);
         builder.pop();
 
         builder.comment("Laser crystals wear while mining: one durability point per this many blocks (solid blocks, voided ones too,",

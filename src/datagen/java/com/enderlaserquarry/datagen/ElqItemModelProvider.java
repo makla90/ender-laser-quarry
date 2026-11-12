@@ -23,8 +23,9 @@ public class ElqItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         for (DeferredItem<?> item : List.of(ModItems.LASER_CRYSTAL, ModItems.PULSATING_LASER_CRYSTAL, ModItems.VOID_LASER_CRYSTAL,
-            ModItems.SATELLITE, ModItems.ENHANCED_SATELLITE, ModItems.ENDER_SATELLITE, ModItems.ROCKET, ModItems.ROCKET_ENGINE,
-            ModItems.PARABOLIC_DISH, ModItems.FOCUSING_LENS, ModItems.LASER_EMITTER, ModItems.SIGNAL_TRANSCEIVER, ModItems.REFLECTOR_MIRROR)) {
+            ModItems.SATELLITE, ModItems.ENHANCED_SATELLITE, ModItems.ENDER_SATELLITE, ModItems.VOID_SATELLITE, ModItems.ROCKET, ModItems.ROCKET_ENGINE,
+            ModItems.PARABOLIC_DISH, ModItems.FOCUSING_LENS, ModItems.LASER_EMITTER, ModItems.SIGNAL_TRANSCEIVER, ModItems.REFLECTOR_MIRROR,
+            ModItems.CHORUS_GYROSCOPE, ModItems.VOID_REFLECTOR)) {
             basicItem(item.get());
         }
         handheldItem(ModItems.LASER_LINKER.get());

@@ -142,6 +142,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private static final String BEAM_TIER = "BeamTier";
     private static final String BEAM_GLOW = "BeamGlow";
     private static final String DRAWN_TIER = "DrawnSatelliteTier";
+    private static final String DRAWN_VOID = "DrawnVoid";
+    private static final String VOID_UP = "VoidUp";
     private static final String SCAN_IMAGES = "ScanImages";
     private static final String ASTEROIDS = "Asteroids";
     private static final String PAD_CENTER = "PadCenter";
@@ -182,6 +184,9 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private boolean hasPayload;
     private boolean inOrbit;
     private QuarryTier drawnSatelliteTier = QuarryTier.BASIC;
+    private boolean drawnVoid;
+    // a Void Satellite in orbit (synced: the controller GUI shows the space map then)
+    private boolean voidUp;
     private boolean rocketOnPad;
 
     // The linked quarry controller
@@ -663,7 +668,10 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         if (tier == null) {
             return launchError("transfer_no_satellite");
         }
-        int range = tier.transferRange();
+        if (isVoidSatelliteUp()) {
+            return launchError("transfer_void");
+        }
+        int range = ((SatelliteItem) orbiting.getItem()).transferRange();
         if (range <= 0) {
             return Component.translatable("message.ender_laser_quarry.launch.transfer_tier", tier.displayName());
         }
@@ -708,21 +716,18 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     // a transfer flies up lightly loaded, like a recovery
     public int getTransferBaseCost() {
-        QuarryTier tier = getSatelliteTier();
-        return (tier != null ? tier : QuarryTier.BASIC).returnFuel();
+        return orbiting.getItem() instanceof SatelliteItem satellite ? satellite.returnFuel() : QuarryTier.BASIC.returnFuel();
     }
 
     /**
-     * Rocket fuel the next Launch press burns: the satellite in the slot goes up (its tier's launchFuel), or the one in orbit
-     * comes back (its tier's returnFuel, the rocket goes up empty). -1 = nothing to fly.
+     * Rocket fuel the next Launch press burns: the satellite in the slot goes up (its launchFuel), or the one in orbit
+     * comes back (its returnFuel, the rocket goes up empty). -1 = nothing to fly.
      */
     public int getLaunchCost() {
         if (!orbiting.isEmpty()) {
-            QuarryTier tier = getSatelliteTier();
-            return (tier != null ? tier : QuarryTier.BASIC).returnFuel();
+            return getTransferBaseCost();
         }
-        QuarryTier tier = SatelliteItem.tierOf(SATELLITE.getItemStack(this));
-        return tier != null ? tier.launchFuel() : -1;
+        return SATELLITE.getItemStack(this).getItem() instanceof SatelliteItem satellite ? satellite.launchFuel() : -1;
     }
 
     // ticks the satellite needs to fly over
@@ -1036,8 +1041,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             setBeamTarget(null);
         }
 
-        // no mapping while it flies over
-        if (status == UplinkStatus.ONLINE && !arriving && ++scanTicks >= QuarryConfig.SCAN_TICKS_PER_CHUNK.get()) {
+        // no mapping while it flies over, and the Void Satellite maps no ground
+        if (status == UplinkStatus.ONLINE && !arriving && !isVoidSatelliteUp() && ++scanTicks >= QuarryConfig.SCAN_TICKS_PER_CHUNK.get()) {
             scanTicks = 0;
             if (!isScanComplete()) {
                 scanStep();
@@ -1161,7 +1166,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
 
     @Nullable
     public ChunkPos getScanningChunk() {
-        if (uplink != UplinkStatus.ONLINE || !inOrbit || arriving || isScanComplete()) {
+        if (uplink != UplinkStatus.ONLINE || !inOrbit || arriving || isVoidSatelliteUp() || isScanComplete()) {
             return null;
         }
         int[] offset = ScanCoverage.of(scanRadius).offset(scanIndex);
@@ -1194,10 +1199,20 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         return drawnSatelliteTier;
     }
 
+    // the satellite on the rocket, else the one in orbit, is the Void Satellite
+    public boolean isDrawnVoid() {
+        return drawnVoid;
+    }
+
+    // Client and server
+    public boolean isVoidSatelliteUp() {
+        return level != null && !level.isClientSide ? SatelliteItem.isVoid(orbiting) : voidUp;
+    }
+
     // A bigger satellite keeps mapping outwards, a smaller one keeps the inner rings
     private boolean updateScanRadius() {
         QuarryTier tier = getSatelliteTier();
-        int range = tier != null ? tier.transferRange() : transferRange;
+        int range = orbiting.getItem() instanceof SatelliteItem satellite ? satellite.transferRange() : transferRange;
         boolean rangeChanged = range != transferRange;
         transferRange = range;
         int radius = tier != null ? tier.chunkRadius() : scanRadius;
@@ -1705,6 +1720,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         tag.putInt(SCAN_RADIUS, scanRadius);
         QuarryTier drawn = SatelliteItem.tierOf(!payload.isEmpty() ? payload : orbiting);
         tag.putInt(DRAWN_TIER, drawn == null ? 0 : drawn.ordinal());
+        tag.putBoolean(DRAWN_VOID, SatelliteItem.isVoid(!payload.isEmpty() ? payload : orbiting));
+        tag.putBoolean(VOID_UP, SatelliteItem.isVoid(orbiting));
         if (beamTarget != null) {
             tag.put(BEAM_TARGET, NbtUtils.writeBlockPos(beamTarget));
         }
@@ -1753,6 +1770,8 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         scanIndex = tag.getInt(SCAN_INDEX);
         scanRadius = tag.contains(SCAN_RADIUS) ? tag.getInt(SCAN_RADIUS) : scanRadius;
         drawnSatelliteTier = QuarryTier.values()[Math.floorMod(tag.getInt(DRAWN_TIER), QuarryTier.values().length)];
+        drawnVoid = tag.getBoolean(DRAWN_VOID);
+        voidUp = tag.getBoolean(VOID_UP);
         beamTarget = NbtUtils.readBlockPos(tag, BEAM_TARGET).orElse(null);
         beamTier = QuarryTier.values()[Math.floorMod(tag.getInt(BEAM_TIER), QuarryTier.values().length)];
         beamGlow = tag.contains(BEAM_GLOW) ? CrystalGlow.values()[Math.floorMod(tag.getInt(BEAM_GLOW), CrystalGlow.values().length)] : CrystalGlow.LASER;

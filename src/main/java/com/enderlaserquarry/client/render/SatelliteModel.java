@@ -52,6 +52,8 @@ public final class SatelliteModel {
     public final ModelPart scanner;
     public final ModelPart navLeft;
     public final ModelPart navRight;
+    // Void only: two end rods on the top deck, drawn glowing
+    public final ModelPart endRods;
     // Ender only
     public final ModelPart ring;
     public final ModelPart[] ringSegments = new ModelPart[RING_SEGMENTS];
@@ -74,6 +76,7 @@ public final class SatelliteModel {
         this.scanner = root.getChild("scanner");
         this.navLeft = outerLeft.getChild("nav");
         this.navRight = outerRight.getChild("nav");
+        this.endRods = root.getChild("end_rods");
         this.ring = root.getChild("ring");
         for (int i = 0; i < RING_SEGMENTS; i++) {
             ringSegments[i] = ring.getChild("segment" + i);
@@ -178,6 +181,13 @@ public final class SatelliteModel {
             ring.addOrReplaceChild("segment" + i, CubeListBuilder.create()
                 .texOffs(96, 100).addBox(-3.4f, -0.5f, 7.2f, 6.8f, 1, 1), PartPose.rotation(0, i * Mth.TWO_PI / RING_SEGMENTS, 0));
         }
+
+        // Void: end rods on the deck, a little foot and a long glowing rod
+        root.addOrReplaceChild("end_rods", CubeListBuilder.create()
+            .texOffs(96, 96).addBox(-3.75f, 5, -0.75f, 1.5f, 0.5f, 1.5f)
+            .texOffs(96, 96).addBox(-3.5f, 5.5f, -0.5f, 1, 7, 1)
+            .texOffs(96, 96).addBox(2.25f, 5, -0.75f, 1.5f, 0.5f, 1.5f)
+            .texOffs(96, 96).addBox(2.5f, 5.5f, -0.5f, 1, 7, 1), PartPose.ZERO);
 
         // mirror, face towards -Y
         PartDefinition mirror = root.addOrReplaceChild("mirror", CubeListBuilder.create()

@@ -1,4 +1,5 @@
-// 1.21.1	2026-11-09T14:07:42.1292984	Item Models: ender_laser_quarry
+// 1.21.1	2026-11-12T14:34:21.7381801	Item Models: ender_laser_quarry
+af4766d1d4b552be895d369be0b22f352d746e2e assets/ender_laser_quarry/models/item/chorus_gyroscope.json
 b0990a20e04e17330817b1e600dd0dc44ae50415 assets/ender_laser_quarry/models/item/crystal_obelisk.json
 c400e768f1c5b04c40f7980c08e59cc9dbd3a290 assets/ender_laser_quarry/models/item/ender_laser_quarry_plating.json
 d53e1fc06433311e4bc6d63ab14e2feda54a1cf6 assets/ender_laser_quarry/models/item/ender_quarry_controller.json
@@ -32,3 +33,5 @@ e113fada339c613612baf40fc7d6ebdd91452e0e assets/ender_laser_quarry/models/item/l
 08c85cba52c3a3907965ba22aac3e184c71a941b assets/ender_laser_quarry/models/item/satellite_dish_port.json
 2728e08d58391bf6d8c5ccb3511815ce7ca121e3 assets/ender_laser_quarry/models/item/signal_transceiver.json
 70de6e7b9e4c91c4ae047c768eedb6c06a96f417 assets/ender_laser_quarry/models/item/void_laser_crystal.json
+ca31023a74986760028d3a8a0d45a1584b3190b2 assets/ender_laser_quarry/models/item/void_reflector.json
+b69134e430dfa173de59ea84ba34c7df403269ad assets/ender_laser_quarry/models/item/void_satellite.json

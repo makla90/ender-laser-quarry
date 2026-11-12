@@ -1,4 +1,5 @@
-// 1.21.1	2026-11-09T14:07:42.1465846	Recipes
+// 1.21.1	2026-11-12T14:34:21.7381801	Recipes
+e26de6d1905d3c48f7bfcda5f72b3c2c991548a3 data/ender_laser_quarry/recipe/chorus_gyroscope.json
 66be604f0413f89179d5985df35b549f1a8e2393 data/ender_laser_quarry/recipe/crystal_obelisk.json
 162d86e5c9bcd176d45039538225118289468366 data/ender_laser_quarry/recipe/ender_laser_quarry_plating.json
 b82a84b4c7994319a9adf9c8841bfd448dbe231b data/ender_laser_quarry/recipe/ender_quarry_controller.json
@@ -32,3 +33,5 @@ f0ba74fdedb8b1af44f3789a4270e12163cbfcc3 data/ender_laser_quarry/recipe/satellit
 bd977d885fd17847407c0da1cd2b73b077d131a2 data/ender_laser_quarry/recipe/satellite_dish_port.json
 60115cc4e84844d88400eb957f96efcfabe2a02f data/ender_laser_quarry/recipe/signal_transceiver.json
 401bc49b815cfc373f827f795edef995072b2b9b data/ender_laser_quarry/recipe/void_laser_crystal.json
+e2ec1b5b41d45e9a935322df64acb2119da94cc7 data/ender_laser_quarry/recipe/void_reflector.json
+34c8305e03439283b6510c0f20495188116b571a data/ender_laser_quarry/recipe/void_satellite.json
