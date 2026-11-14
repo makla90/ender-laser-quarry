@@ -119,7 +119,7 @@ public class ElqBlockStateProvider extends BlockStateProvider {
 
     private ModelFile quarryPortModel(String name, String top, String t, BlockState state) {
         return model(name, () -> port(name, t + "laser_quarry_port_side",
-            cube(models().nested().parent(models().getExistingFile(mcLoc("block/cube"))),
+            cube(state == null ? models().nested().parent(models().getExistingFile(mcLoc("block/cube"))) : cellCube(models().nested().parent(BLOCK)),
                 t + "laser_quarry_port_side", top, t + "laser_quarry_port_bottom", t + "laser_quarry_port_side", state)));
     }
 
@@ -127,7 +127,9 @@ public class ElqBlockStateProvider extends BlockStateProvider {
         String base = t + "satellite_dish_plating";
         cubeBottomTop(base, base + "_top", base + "_side", t + "satellite_dish_bottom");
         MultiPartBlockStateBuilder parts = getMultipartBuilder(block);
-        parts.part().modelFile(cubeBottomTop(base + "_joined", base + "_top_nesw", base + "_side", t + "satellite_dish_bottom")).addModel().end();
+        String joined = base + "_joined";
+        parts.part().modelFile(model(joined, () -> bottomTop(cellBottomTop(models().getBuilder(joined).parent(BLOCK)),
+            base + "_top_nesw", base + "_side", t + "satellite_dish_bottom").texture("particle", tex(base + "_side")))).addModel().end();
         withPieces(parts, base, false, "", base + "_side", UnaryOperator.identity());
     }
 
@@ -146,17 +148,24 @@ public class ElqBlockStateProvider extends BlockStateProvider {
     }
 
     private ModelFile dishPortModel(String name, String t, String top) {
+        // the unconnected one (item) keeps a plain cube
+        boolean joined = name.endsWith("_joined");
         return model(name, () -> port(name, t + "satellite_dish_port_side",
-            bottomTop(models().nested().parent(models().getExistingFile(mcLoc("block/cube_bottom_top"))),
+            bottomTop(joined ? cellBottomTop(models().nested().parent(BLOCK)) : models().nested().parent(models().getExistingFile(mcLoc("block/cube_bottom_top"))),
                 top, t + "satellite_dish_port_side", t + "satellite_dish_port_bottom")));
     }
 
     // every ConnectedTop piece of <family>_edge_<side><glow>, shown while its side is open (and its neighbours fit)
     private void withPieces(MultiPartBlockStateBuilder parts, String family, boolean strip, String glow, String particle,
                             UnaryOperator<MultiPartBlockStateBuilder.PartBuilder> extra) {
-        for (ConnectedTop.Piece piece : ConnectedTop.pieces(strip)) {
+        List<ConnectedTop.Piece> pieces = ConnectedTop.pieces(strip);
+        List<ConnectedTop.Cell> cells = ConnectedTop.cells(strip);
+        for (int p = 0; p < pieces.size(); p++) {
+            ConnectedTop.Piece piece = pieces.get(p);
+            int bit = 1 << p;
             MultiPartBlockStateBuilder.PartBuilder part = extra.apply(parts.part().modelFile(pieceModel(family + "_piece_" + piece.name() + glow,
-                family + "_edge_" + ConnectedTop.letter(piece.side()) + glow, particle, piece.rects())).addModel())
+                family + "_edge_" + ConnectedTop.letter(piece.side()) + glow, particle,
+                cells.stream().filter(c -> (c.pieces() & bit) != 0).map(ConnectedTop.Cell::rect).toList())).addModel())
                 .condition(joinProperty(piece.side()), false);
             piece.neighbours().forEach((side, joined) -> part.condition(joinProperty(side), joined));
             part.end();
@@ -165,21 +174,47 @@ public class ElqBlockStateProvider extends BlockStateProvider {
 
     // faces lying on the block's top, each showing the same spot of the texture
     private ModelFile pieceModel(String name, String texture, String particle, List<ConnectedTop.Rect> rects) {
-        return model(name, () -> {
-            BlockModelBuilder builder = models().getBuilder(name).renderType("cutout")
-                .texture("overlay", tex(texture)).texture("particle", tex(particle));
-            for (ConnectedTop.Rect r : rects) {
-                builder.element().from(r.x0(), 16, r.y0()).to(r.x1(), 16, r.y1())
-                    .face(Direction.UP).uvs(r.x0(), r.y0(), r.x1(), r.y1()).texture("#overlay").cullface(Direction.UP).end()
-                    .end();
-            }
-            return builder;
+        return model(name, () -> topCells(models().getBuilder(name).renderType("cutout")
+            .texture("overlay", tex(texture)).texture("particle", tex(particle)), rects, "#overlay"));
+    }
+
+    private static BlockModelBuilder topCells(BlockModelBuilder builder, List<ConnectedTop.Rect> rects, String texture) {
+        for (ConnectedTop.Rect r : rects) {
+            builder.element().from(r.x0(), 16, r.y0()).to(r.x1(), 16, r.y1())
+                .face(Direction.UP).uvs(r.x0(), r.y0(), r.x1(), r.y1()).texture(texture).cullface(Direction.UP).end()
+                .end();
+        }
+        return builder;
+    }
+
+    // a cube whose top is cut into the ConnectedTop cells, so the pieces drawn over it don't flicker; faces = texture refs
+    private static BlockModelBuilder cellTopCube(BlockModelBuilder builder, boolean strip, Function<Direction, String> faces) {
+        var cube = builder.element().from(0, 0, 0).to(16, 16, 16);
+        for (Direction side : List.of(Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST)) {
+            cube.face(side).texture(faces.apply(side)).cullface(side).end();
+        }
+        cube.end();
+        return topCells(builder, ConnectedTop.cells(strip).stream().map(ConnectedTop.Cell::rect).toList(), faces.apply(Direction.UP));
+    }
+
+    private static BlockModelBuilder cellCube(BlockModelBuilder builder) {
+        return cellTopCube(builder, true, side -> "#" + side.getSerializedName());
+    }
+
+    private static BlockModelBuilder cellBottomTop(BlockModelBuilder builder) {
+        return cellTopCube(builder, false, side -> switch (side) {
+            case UP -> "#top";
+            case DOWN -> "#bottom";
+            default -> "#side";
         });
     }
 
-    // quarry plating cube; the side faces show where the grooves end next to joined neighbours (none for the item)
+    // quarry plating cube; the side faces show where the grooves end next to joined neighbours (none for the item, which
+    // keeps a plain cube)
     private ModelFile quarryCube(String name, String top, String side, String bottom, BlockState state) {
-        return model(name, () -> cube(models().withExistingParent(name, mcLoc("block/cube")), side, top, bottom, side, state));
+        return model(name, () -> state == null
+            ? cube(models().withExistingParent(name, mcLoc("block/cube")), side, top, bottom, side, null)
+            : cube(cellCube(models().getBuilder(name).parent(BLOCK)), side, top, bottom, side, state));
     }
 
     // one state per combination of joined sides, everything else at its default

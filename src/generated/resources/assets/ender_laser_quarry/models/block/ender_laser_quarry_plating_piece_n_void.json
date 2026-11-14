@@ -13,6 +13,114 @@
         0
       ],
       "to": [
+        1,
+        16,
+        1
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        1,
+        16,
+        0
+      ],
+      "to": [
+        3,
+        16,
+        1
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        3,
+        16,
+        0
+      ],
+      "to": [
+        4,
+        16,
+        1
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        4,
+        16,
+        0
+      ],
+      "to": [
+        12,
+        16,
+        1
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        12,
+        16,
+        0
+      ],
+      "to": [
+        13,
+        16,
+        1
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        13,
+        16,
+        0
+      ],
+      "to": [
+        15,
+        16,
+        1
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        15,
+        16,
+        0
+      ],
+      "to": [
         16,
         16,
         1
@@ -27,6 +135,42 @@
       },
       "from": [
         3,
+        16,
+        3
+      ],
+      "to": [
+        4,
+        16,
+        4
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        4,
+        16,
+        3
+      ],
+      "to": [
+        12,
+        16,
+        4
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        12,
         16,
         3
       ],
