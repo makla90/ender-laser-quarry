@@ -1,7 +1,7 @@
 package com.enderlaserquarry.content.obelisk;
 
 import com.enderlaserquarry.content.QuarryTier;
-import net.minecraft.ChatFormatting;
+import com.enderlaserquarry.content.Tooltips;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -21,9 +21,12 @@ public class VoidLaserCrystalItem extends LaserCrystalItem {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.void_laser_crystal").withStyle(ChatFormatting.GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.void_laser_crystal.tier").withStyle(ChatFormatting.GREEN));
-        addEnchantHint(stack, tooltip);
-        addWearHint(stack, tooltip);
+        tooltip.accept(Tooltips.line("void_laser_crystal"));
+        addState(stack, tooltip);
+        if (Tooltips.details(flag, tooltip)) {
+            tooltip.accept(Tooltips.line("void_laser_crystal.ground"));
+            tooltip.accept(Tooltips.line("void_laser_crystal.tier"));
+            addDetails(stack, tooltip);
+        }
     }
 }

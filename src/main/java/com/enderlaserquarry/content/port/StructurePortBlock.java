@@ -6,7 +6,7 @@ import com.enderlaserquarry.content.dish.SatelliteDishPlatingBlock;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlock;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.content.obelisk.QuarryPlatingBlock;
-import net.minecraft.ChatFormatting;
+import com.enderlaserquarry.content.Tooltips;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -83,7 +83,12 @@ public class StructurePortBlock extends ConnectedFrameBlock implements EntityBlo
 
     @Override
     public void appendTooltip(ItemStack stack, Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.port." + structure.name().toLowerCase()).withStyle(ChatFormatting.GRAY));
+        String key = "port." + structure.name().toLowerCase();
+        tooltip.accept(Tooltips.line(key));
+        if (Tooltips.details(flag, tooltip)) {
+            tooltip.accept(Tooltips.line(key + ".place"));
+            tooltip.accept(Tooltips.line("port.wrench"));
+        }
     }
 
     @Override

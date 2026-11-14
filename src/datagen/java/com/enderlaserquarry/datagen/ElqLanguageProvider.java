@@ -23,12 +23,17 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("block.ender_laser_quarry.ender_satellite_dish", "Ender Satellite Dish");
 
-        add("tooltip.ender_laser_quarry.dish.speed", "%s / %s / %s blocks/t with a Basic / Double-Layer / Octadic Capacitor");
-        add("tooltip.ender_laser_quarry.dish.endergy", "Takes Endergy capacitors: %s blocks/t with a Stellar Capacitor");
-        add("tooltip.ender_laser_quarry.dish.no_endergy", "Endergy capacitors need an Ender Satellite Dish");
+        add("tooltip.ender_laser_quarry.hold_shift", "Hold %s for details");
+        add("tooltip.ender_laser_quarry.shift", "Shift");
+
+        add("tooltip.ender_laser_quarry.dish", "Beams power into a Crystal Obelisk. More dishes make the quarry faster");
+        add("tooltip.ender_laser_quarry.dish.capacitor", "Faster with a better capacitor: Basic, Double-Layer, Octadic");
+        add("tooltip.ender_laser_quarry.dish.endergy", "Also takes Endergy capacitors for even more speed");
+        add("tooltip.ender_laser_quarry.dish.no_endergy", "Endergy capacitors only work in an Ender Satellite Dish");
         add("tooltip.ender_laser_quarry.dish.range", "Reaches a Crystal Obelisk up to %s blocks away");
+        add("tooltip.ender_laser_quarry.dish.plating", "Sits in the middle of a 3x3 of %s Satellite Dish Plating or better");
+        add("tooltip.ender_laser_quarry.dish.port", "Powered through a Satellite Dish I/O Port in that plating");
         add("tooltip.ender_laser_quarry.dish.controller", "Works with a %s Quarry Controller or better");
-        add("tooltip.ender_laser_quarry.dish.plating", "Needs %s Satellite Dish Plating or better around it");
 
         add("message.ender_laser_quarry.linker.dish_tier_too_high", "A %s controller can't use %s dishes");
 
@@ -44,11 +49,12 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("tier.ender_laser_quarry.ender", "Ender");
 
-        add("tooltip.ender_laser_quarry.controller.stats", "Up to %s chunks, %s dishes, %s blocks/t");
-        add("tooltip.ender_laser_quarry.controller.area", "Sees and lasers %sx%s chunks around the Launch Pad");
-        add("tooltip.ender_laser_quarry.controller.link_range", "Launch Pad up to %s blocks away");
-        add("tooltip.ender_laser_quarry.controller.satellite", "Needs a %s Satellite or better");
-        add("tooltip.ender_laser_quarry.controller.plating", "Needs %s Laser Quarry Plating or better in the floor");
+        add("tooltip.ender_laser_quarry.controller", "The heart of the laser quarry: pick the chunks to mine on its map");
+        add("tooltip.ender_laser_quarry.controller.stats", "Mines up to %s chunks in one go, powered by up to %s dishes");
+        add("tooltip.ender_laser_quarry.controller.area", "Its map covers %sx%s chunks around the satellite");
+        add("tooltip.ender_laser_quarry.controller.link_range", "Links to a Launch Pad Controller up to %s blocks away");
+        add("tooltip.ender_laser_quarry.controller.plating", "Goes on the outer ring of a 5x5 %s Laser Quarry Plating floor or better");
+        add("tooltip.ender_laser_quarry.controller.satellite", "Needs a %s Satellite or better in orbit");
 
         add("gui.ender_laser_quarry.status.needs_satellite", "Needs a %s Satellite or better in orbit");
 
@@ -82,11 +88,14 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("item.ender_laser_quarry.ender_satellite", "Ender Satellite");
         add("item.ender_laser_quarry.void_satellite", "Void Satellite");
-        add("tooltip.ender_laser_quarry.void_satellite", "In orbit it throws the Void Laser Crystal's beam out to the asteroids and scans space for them. Maps no ground, stays over its Launch Pad");
-        add("tooltip.ender_laser_quarry.void_satellite.needs", "Needs an Ender Quarry Controller and a Void Laser Crystal to mine");
-        add("tooltip.ender_laser_quarry.void_satellite.dew", "Dew of the Void: %s / %s mB (space scans)");
+        add("tooltip.ender_laser_quarry.void_satellite", "In orbit it points the quarry laser at asteroids instead of the ground");
+        add("tooltip.ender_laser_quarry.void_satellite.dew", "Dew of the Void: %s / %s mB");
+        add("tooltip.ender_laser_quarry.void_satellite.scan", "Finds asteroids with space scans, which use up Dew of the Void");
+        add("tooltip.ender_laser_quarry.void_satellite.no_ground", "Maps no ground and stays over its Launch Pad");
+        add("tooltip.ender_laser_quarry.void_satellite.needs", "Mines with an Ender Quarry Controller and a Void Laser Crystal");
 
         add("tooltip.ender_laser_quarry.satellite.area", "Maps %sx%s chunks around its Launch Pad");
+        add("tooltip.ender_laser_quarry.satellite.controller", "Works with a %s Quarry Controller or below");
 
         add("block.ender_laser_quarry.crystal_obelisk", "Crystal Obelisk");
 
@@ -108,28 +117,33 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("block.ender_laser_quarry.ender_satellite_dish_plating", "Ender Satellite Dish Plating");
 
-        add("tooltip.ender_laser_quarry.port.launch_pad", "Replaces a Launch Pad Plating on the outer ring: pipe in Rocket Fuel, rockets and satellites, and power for the Ground Radar on the ring. Yeta Wrench a side to set it: none / push / pull / both / disabled");
-        add("tooltip.ender_laser_quarry.port.laser_quarry", "Replaces a Laser Quarry Plating of any tier (it takes that plating's look): power the quarry (the Controller; each Satellite Dish is powered through its own Satellite Dish I/O Port), get the mined items out (the only way: the controller has no IO). Yeta Wrench a side to set it: none / push / pull / both / disabled");
-        add("tooltip.ender_laser_quarry.port.satellite_dish", "Replaces a Satellite Dish Plating of any tier (it takes that plating's look) around a dish: the only way to power the dish. Yeta Wrench a side to set it: none / push / pull / both / disabled");
+        add("tooltip.ender_laser_quarry.port.launch_pad", "Feeds the Launch Pad: Rocket Fuel, rockets, satellites and power for its Ground Radar");
+        add("tooltip.ender_laser_quarry.port.launch_pad.place", "Takes the place of a Launch Pad Plating on the outer ring");
+        add("tooltip.ender_laser_quarry.port.laser_quarry", "The quarry's only way in and out: power in, mined items out");
+        add("tooltip.ender_laser_quarry.port.laser_quarry.place", "Takes the place of any Laser Quarry Plating and looks like it. Dishes get their power through their own ports");
+        add("tooltip.ender_laser_quarry.port.satellite_dish", "The only way to power a Satellite Dish");
+        add("tooltip.ender_laser_quarry.port.satellite_dish.place", "Takes the place of any Satellite Dish Plating around the dish and looks like it");
+        add("tooltip.ender_laser_quarry.port.wrench", "Use a Yeta Wrench on a side to set it to push, pull, both, none or disabled");
 
         add("item.ender_laser_quarry.pulsating_laser_crystal", "Pulsating Laser Crystal");
 
-        add("tooltip.ender_laser_quarry.pulsating_laser_crystal.tier", "Only powers a Basic Quarry Controller");
+        add("tooltip.ender_laser_quarry.pulsating_laser_crystal.tier", "Only works with a Basic Quarry Controller");
 
         add("item.ender_laser_quarry.laser_crystal", "Laser Crystal");
 
-        add("tooltip.ender_laser_quarry.laser_crystal", "Combines the lasers of several Satellite Dishes on a Crystal Obelisk");
-        add("tooltip.ender_laser_quarry.laser_crystal.enchantable", "Enchant it with Silk Touch or Fortune: the laser mines with it");
-        add("tooltip.ender_laser_quarry.laser_crystal.enchant_cost", "Enchanted: the laser uses %sx energy per block");
+        add("tooltip.ender_laser_quarry.laser_crystal", "Goes on the Crystal Obelisk and bundles the dish lasers into one beam");
+        add("tooltip.ender_laser_quarry.laser_crystal.enchantable", "Enchant it with Silk Touch or Fortune and the laser mines with it");
+        add("tooltip.ender_laser_quarry.laser_crystal.enchant_cost", "Enchanted: mining costs %sx the energy");
 
         add("item.ender_laser_quarry.void_laser_crystal", "Void Laser Crystal");
 
-        add("tooltip.ender_laser_quarry.void_laser_crystal", "With a Void Satellite in orbit, the quarry mines asteroids instead of the ground. Under any other satellite it mines the ground like a Laser Crystal");
+        add("tooltip.ender_laser_quarry.void_laser_crystal", "With a Void Satellite in orbit, the quarry mines asteroids");
+        add("tooltip.ender_laser_quarry.void_laser_crystal.ground", "Under any other satellite it mines the ground like a Laser Crystal");
         add("tooltip.ender_laser_quarry.void_laser_crystal.tier", "Needs an Ender Quarry Controller");
 
         add("tooltip.ender_laser_quarry.rocket", "Reusable. Flies satellites to orbit and back from a Launch Pad");
 
-        add("tooltip.ender_laser_quarry.satellite", "In orbit it maps the chunks around its Launch Pad and bounces the quarry laser down onto them");
+        add("tooltip.ender_laser_quarry.satellite", "In orbit it maps the land around its Launch Pad and bounces the quarry laser down onto it");
         add("tooltip.ender_laser_quarry.satellite.launch", "Launch it from a Launch Pad with a Rocket");
 
         add("message.ender_laser_quarry.launch.busy", "A flight is already underway");
@@ -290,7 +304,8 @@ public class ElqLanguageProvider extends LanguageProvider {
 
         add("tooltip.ender_laser_quarry.laser_crystal.broken", "Broken: stops working until repaired");
         add("tooltip.ender_laser_quarry.laser_crystal.worn", "Worn: repair it soon");
-        add("tooltip.ender_laser_quarry.laser_crystal.wear", "Wears 1 durability per %s blocks mined. Repair: anvil, or Mending with liquid XP in the controller");
+        add("tooltip.ender_laser_quarry.laser_crystal.wear", "Loses 1 durability every %s blocks it mines, but never breaks");
+        add("tooltip.ender_laser_quarry.laser_crystal.repair", "Repair it on an anvil, or with Mending and liquid XP in the Quarry Controller");
 
         add("gui.ender_laser_quarry.obelisk.durability", "Durability: %s / %s");
 

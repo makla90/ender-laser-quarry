@@ -4,7 +4,7 @@ import com.enderio.enderio.foundation.block.MachineBlock;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
 import com.enderlaserquarry.init.ModBlockEntities;
-import net.minecraft.ChatFormatting;
+import com.enderlaserquarry.content.Tooltips;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -32,15 +32,17 @@ public class SatelliteDishBlock extends MachineBlock<SatelliteDishBlockEntity> i
 
     @Override
     public void appendTooltip(ItemStack stack, Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.speed", SatelliteDishBlockEntity.blocksPerTick(1, tier),
-            SatelliteDishBlockEntity.blocksPerTick(2, tier), SatelliteDishBlockEntity.blocksPerTick(3, tier)).withStyle(ChatFormatting.GRAY));
-        if (EndergyCapacitors.isLoaded()) {
-            tooltip.accept((tier == QuarryTier.ENDER
-                ? Component.translatable("tooltip.ender_laser_quarry.dish.endergy", SatelliteDishBlockEntity.blocksPerTick(5, tier))
-                : Component.translatable("tooltip.ender_laser_quarry.dish.no_endergy")).withStyle(ChatFormatting.GRAY));
+        tooltip.accept(Tooltips.line("dish"));
+        if (!Tooltips.details(flag, tooltip)) {
+            return;
         }
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.range", tier.dishRange()).withStyle(ChatFormatting.GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.controller", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.dish.plating", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Tooltips.line("dish.capacitor"));
+        if (EndergyCapacitors.isLoaded()) {
+            tooltip.accept(Tooltips.line(tier == QuarryTier.ENDER ? "dish.endergy" : "dish.no_endergy"));
+        }
+        tooltip.accept(Tooltips.line("dish.range", tier.dishRange()));
+        tooltip.accept(Tooltips.line("dish.plating", tier.displayName()));
+        tooltip.accept(Tooltips.line("dish.port"));
+        tooltip.accept(Tooltips.line("dish.controller", tier.displayName()));
     }
 }

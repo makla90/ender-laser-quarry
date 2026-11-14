@@ -4,7 +4,7 @@ import com.enderio.enderio.foundation.block.MachineBlock;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
 import com.enderlaserquarry.init.ModBlockEntities;
-import net.minecraft.ChatFormatting;
+import com.enderlaserquarry.content.Tooltips;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -47,14 +47,15 @@ public class QuarryControllerBlock extends MachineBlock<QuarryControllerBlockEnt
 
     @Override
     public void appendTooltip(ItemStack stack, Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Tooltips.line("controller"));
+        if (!Tooltips.details(flag, tooltip)) {
+            return;
+        }
         int across = tier.chunkRadius() * 2 + 1;
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.controller.stats", tier.maxChunks(), tier.maxDishes(),
-            tier.maxBlocksPerTick()).withStyle(ChatFormatting.GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.controller.area", across, across).withStyle(ChatFormatting.GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.controller.link_range", tier.linkRange()).withStyle(ChatFormatting.GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.controller.satellite", tier.displayName())
-            .withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.accept(Component.translatable("tooltip.ender_laser_quarry.controller.plating", tier.displayName())
-            .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.accept(Tooltips.line("controller.stats", tier.maxChunks(), tier.maxDishes()));
+        tooltip.accept(Tooltips.line("controller.area", across, across));
+        tooltip.accept(Tooltips.line("controller.link_range", tier.linkRange()));
+        tooltip.accept(Tooltips.line("controller.plating", tier.displayName()));
+        tooltip.accept(Tooltips.line("controller.satellite", tier.displayName()));
     }
 }

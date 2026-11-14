@@ -17,6 +17,7 @@ import com.enderlaserquarry.client.screen.CrystalObeliskScreen;
 import com.enderlaserquarry.client.screen.LaunchPadScreen;
 import com.enderlaserquarry.client.screen.QuarryControllerScreen;
 import com.enderlaserquarry.client.screen.SatelliteDishScreen;
+import com.enderlaserquarry.content.Tooltips;
 import com.enderlaserquarry.content.launchpad.LaunchPadBlockEntity;
 import com.enderlaserquarry.init.ModBlockEntities;
 import com.enderlaserquarry.init.ModBlocks;
@@ -26,6 +27,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
@@ -39,6 +41,12 @@ import java.util.function.Supplier;
 
 @EventBusSubscriber(modid = EnderLaserQuarry.MOD_ID, value = Dist.CLIENT)
 public final class ClientSetup {
+
+    @SubscribeEvent
+    public static void clientSetup(FMLClientSetupEvent event) {
+        // PORT: Screen.hasShiftDown() on 1.21.1
+        Tooltips.shiftDown = () -> Minecraft.getInstance().hasShiftDown();
+    }
 
     @SubscribeEvent
     public static void registerModels(ModelEvent.RegisterStandalone event) {
