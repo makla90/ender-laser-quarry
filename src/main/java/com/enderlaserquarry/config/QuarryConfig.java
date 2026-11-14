@@ -215,8 +215,9 @@ public final class QuarryConfig {
         builder.pop();
 
         builder.push("satellite");
-        SCAN_TICKS_PER_CHUNK = builder.comment("Ticks needed to scan one chunk while the uplink is online. Once the area is mapped",
-                "the satellite keeps re-imaging it at the same pace, so the minimap stays current.")
+        SCAN_TICKS_PER_CHUNK = builder.comment("Ticks a Basic satellite needs to scan one chunk while the uplink is online. Bigger",
+                "satellites scan proportionally faster, so every tier maps its whole area in about the same time. Once the area is",
+                "mapped the satellite keeps re-imaging it at the same pace, so the minimap stays current.")
             .defineInRange("ticksPerChunk", 5, 1, 1200);
         builder.pop();
 
