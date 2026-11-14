@@ -148,20 +148,20 @@ public class ElqModelProvider extends ModelProvider {
         Block block = ModBlocks.QUARRY_PORT.get();
         quarryCube("laser_quarry_port", "laser_quarry_plating_top", "laser_quarry_port_side", "laser_quarry_port_bottom", null);
         MultiPartGenerator parts = MultiPartGenerator.multiPart(block);
-        // pieces first: Ender IO's IO overlay of the base goes on top of them
-        for (QuarryTier tier : QuarryTier.values()) {
-            String t = TIER_PREFIX[tier.ordinal()];
-            for (CrystalGlow glow : CrystalGlow.values()) {
-                withPieces(parts, t + "laser_quarry_plating", true, glowSuffix(glow), t + "laser_quarry_plating_side",
-                    c -> c.term(TieredPortBlock.TIER, tier).term(CrystalGlow.PROPERTY, glow));
-            }
-        }
+        // base first, the pieces lie on the same cells and the later quad wins; Ender IO's IO overlay floats just above
         for (QuarryTier tier : QuarryTier.values()) {
             String t = TIER_PREFIX[tier.ordinal()];
             for (BlockState state : joinStates(block)) {
                 parts.with(joins(state, BlockModelGenerators.condition().term(TieredPortBlock.TIER, tier)),
                     ioOverlay(quarryCube(t + "laser_quarry_port_frame" + connection(state), t + "laser_quarry_plating_top_nesw",
                         t + "laser_quarry_port_side", t + "laser_quarry_port_bottom", state)));
+            }
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            for (CrystalGlow glow : CrystalGlow.values()) {
+                withPieces(parts, t + "laser_quarry_plating", true, glowSuffix(glow), t + "laser_quarry_plating_side",
+                    c -> c.term(TieredPortBlock.TIER, tier).term(CrystalGlow.PROPERTY, glow));
             }
         }
         return parts;
@@ -178,14 +178,15 @@ public class ElqModelProvider extends ModelProvider {
     private BlockModelDefinitionGenerator dishPort() {
         bottomTop("satellite_dish_port", "satellite_dish_plating_top", "satellite_dish_port_side", "satellite_dish_port_bottom");
         MultiPartGenerator parts = MultiPartGenerator.multiPart(ModBlocks.SATELLITE_DISH_PORT.get());
-        for (QuarryTier tier : QuarryTier.values()) {
-            String t = TIER_PREFIX[tier.ordinal()];
-            withPieces(parts, t + "satellite_dish_plating", false, "", t + "satellite_dish_plating_side", c -> c.term(TieredPortBlock.TIER, tier));
-        }
+        // base first, see quarryPort
         for (QuarryTier tier : QuarryTier.values()) {
             String t = TIER_PREFIX[tier.ordinal()];
             parts.with(BlockModelGenerators.condition(TieredPortBlock.TIER, tier), ioOverlay(cellBottomTop(t + "satellite_dish_port_joined",
                 t + "satellite_dish_plating_top_nesw", t + "satellite_dish_port_side", t + "satellite_dish_port_bottom")));
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            withPieces(parts, t + "satellite_dish_plating", false, "", t + "satellite_dish_plating_side", c -> c.term(TieredPortBlock.TIER, tier));
         }
         return parts;
     }
@@ -318,9 +319,9 @@ public class ElqModelProvider extends ModelProvider {
 
     private BlockModelDefinitionGenerator launchPadPort() {
         bottomTop("launch_pad_port", "launch_pad_plating_top", "launch_pad_port_side", "launch_pad_port_bottom");
-        // base last, so Ender IO's IO overlay is drawn over the edges
-        return withPadEdges(MultiPartGenerator.multiPart(ModBlocks.LAUNCH_PAD_PORT.get()))
-            .with(ioOverlay(bottomTop("launch_pad_port_joined", "launch_pad_plating_top_nesw", "launch_pad_port_side", "launch_pad_port_bottom")));
+        // base first, the edges lie on its top; Ender IO's IO overlay floats just above both
+        return withPadEdges(MultiPartGenerator.multiPart(ModBlocks.LAUNCH_PAD_PORT.get())
+            .with(ioOverlay(bottomTop("launch_pad_port_joined", "launch_pad_plating_top_nesw", "launch_pad_port_side", "launch_pad_port_bottom"))));
     }
 
     // the top keeps its world alignment (uvlock) when the front turns, so the edges line up

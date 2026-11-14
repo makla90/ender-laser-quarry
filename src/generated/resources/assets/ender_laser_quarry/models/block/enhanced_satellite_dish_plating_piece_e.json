@@ -33,6 +33,60 @@
       "to": [
         16,
         16,
+        2
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        15,
+        16,
+        2
+      ],
+      "to": [
+        16,
+        16,
+        13
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        15,
+        16,
+        13
+      ],
+      "to": [
+        16,
+        16,
+        14
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        15,
+        16,
+        14
+      ],
+      "to": [
+        16,
+        16,
         15
       ]
     },
