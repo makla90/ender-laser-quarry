@@ -205,12 +205,13 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
     private int scanIndex;
     // from the satellite tier, kept after recovery
     private int scanRadius = QuarryTier.BASIC.defaultChunkRadius();
-    private int scanTicks;
+    // chunk steps owed, see getScanRate
+    private double scanBudget;
     private final ScanImageStore scanImages = new ScanImageStore();
     private final AsteroidField asteroids = new AsteroidField(this::setChanged);
     private int refreshIndex;
-    // scan step waiting for an unloaded chunk to come in
-    private int scanWaitTicks;
+    // game time the scan started waiting for an unloaded chunk to come in
+    private long scanWaitStart = NEVER;
 
     // Orbit transfer: the centre of the satellite's area in chunks from the pad's chunk, and the move under way
     private int orbitDx;
@@ -914,7 +915,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         // map the new area from its middle outwards, known chunks fly by
         scanIndex = 0;
         refreshIndex = 0;
-        scanWaitTicks = 0;
+        scanWaitStart = NEVER;
         setChanged();
         syncToClients();
         serverLevel.playSound(null, getPadCenter(), SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 2f, 1.3f);
@@ -1215,25 +1216,39 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         }
 
         // no mapping while it flies over, and the Void Satellite maps no ground
-        if (status == UplinkStatus.ONLINE && !arriving && !isVoidSatelliteUp() && ++scanTicks >= QuarryConfig.SCAN_TICKS_PER_CHUNK.get()) {
-            scanTicks = 0;
-            if (!isScanComplete()) {
-                scanStep();
-            } else {
-                // all mapped, keep refreshing so the map stays current
-                refreshIndex = (refreshIndex + 1) % getScanTotal();
-                int[] offset = ScanCoverage.of(scanRadius).offset(refreshIndex);
-                ChunkPos center = getOrbitChunk();
-                recordScanImage(new ChunkPos(center.x + offset[0], center.z + offset[1]));
+        if (status == UplinkStatus.ONLINE && !arriving && !isVoidSatelliteUp()) {
+            scanBudget += getScanRate();
+            while (scanBudget >= 1) {
+                scanBudget -= 1;
+                if (!isScanComplete()) {
+                    if (!scanStep()) {
+                        // waiting for a chunk to load: no catching up afterwards
+                        scanBudget = 0;
+                        break;
+                    }
+                } else {
+                    // all mapped, keep refreshing so the map stays current
+                    refreshIndex = (refreshIndex + 1) % getScanTotal();
+                    int[] offset = ScanCoverage.of(scanRadius).offset(refreshIndex);
+                    ChunkPos center = getOrbitChunk();
+                    recordScanImage(new ChunkPos(center.x + offset[0], center.z + offset[1]));
+                }
             }
         }
     }
 
+    // Chunk steps per tick. Bigger areas scan faster, so every tier maps its whole area in about the time a Basic
+    // satellite needs. New chunks still load one at a time, so fresh terrain is paced by world generation.
+    public double getScanRate() {
+        int basicTotal = ScanCoverage.of(QuarryTier.BASIC.chunkRadius()).total();
+        return Math.max(1.0, (double) getScanTotal() / basicTotal) / QuarryConfig.SCAN_TICKS_PER_CHUNK.get();
+    }
+
     // Maps the next chunk. One fresh picture per step; chunks with a picture from an earlier visit fly by, new unloaded
-    // ones are loaded for a moment (like a player walking past), given up after SCAN_LOAD_WAIT
-    private void scanStep() {
+    // ones are loaded for a moment (like a player walking past), given up after SCAN_LOAD_WAIT. False while waiting for one.
+    private boolean scanStep() {
         if (!(level instanceof ServerLevel serverLevel)) {
-            return;
+            return false;
         }
         boolean advanced = false;
         for (int i = 0; i < KNOWN_PER_STEP && !isScanComplete(); i++) {
@@ -1242,15 +1257,18 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
                 break;
             }
             LevelChunk loaded = serverLevel.getChunkSource().getChunkNow(chunk.x, chunk.z);
-            if (loaded == null && scanImages.get(chunk) == null && scanWaitTicks < SCAN_LOAD_WAIT) {
+            long now = serverLevel.getGameTime();
+            if (loaded == null && scanImages.get(chunk) == null && (scanWaitStart == NEVER || now - scanWaitStart < SCAN_LOAD_WAIT)) {
+                if (scanWaitStart == NEVER) {
+                    scanWaitStart = now;
+                }
                 serverLevel.getChunkSource().addRegionTicket(SCAN_TICKET, chunk, 0, chunk);
-                scanWaitTicks += QuarryConfig.SCAN_TICKS_PER_CHUNK.get();
                 break;
             }
             if (loaded != null) {
                 scanImages.put(chunk, MinimapSnapshot.captureChunk(serverLevel, loaded));
             }
-            scanWaitTicks = 0;
+            scanWaitStart = NEVER;
             scanIndex++;
             advanced = true;
             // a known chunk (not loaded, old picture) costs nothing, go on
@@ -1262,6 +1280,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
             setChanged();
             syncToClients();
         }
+        return advanced || isScanComplete();
     }
 
     // Unloaded chunks are skipped (never load chunks for this), the refresh picks them up later
