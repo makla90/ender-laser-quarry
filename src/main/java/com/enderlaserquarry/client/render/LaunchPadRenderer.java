@@ -343,8 +343,11 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         poseStack.popPose();
 
         if (reflecting) {
-            TierBeamRenderer.renderDownlink(poseStack, buffers, mirrorPos, targetCentre, pad.getBeamTier(), pad.getBeamGlow(), time,
-                targetCentre.y < mirrorPos.y);
+            if (targetCentre.y > mirrorPos.y) {
+                TierBeamRenderer.renderSpaceBeam(poseStack, buffers, mirrorPos, targetCentre, pad.getBeamTier(), pad.getBeamGlow(), time);
+            } else {
+                TierBeamRenderer.renderDownlink(poseStack, buffers, mirrorPos, targetCentre, pad.getBeamTier(), pad.getBeamGlow(), time, true);
+            }
         }
 
         if (scanning != null) {

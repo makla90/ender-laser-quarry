@@ -49,6 +49,18 @@ public final class TierBeamRenderer {
     /** Crystal -> satellite: the classic beam plus rings rising around it from Enhanced on, more and bolder on Ender. */
     public static void renderUplink(PoseStack poseStack, MultiBufferSource buffers, Vec3 from, Vec3 to, QuarryTier tier, CrystalGlow glow,
                                     float width, float time) {
+        renderRingedBeam(poseStack, buffers, from, to, tier, glow, width, time, false);
+    }
+
+    /** Satellite -> space while mining asteroids: the uplink goes on, its rings keep travelling outwards. */
+    public static void renderSpaceBeam(PoseStack poseStack, MultiBufferSource buffers, Vec3 from, Vec3 to, QuarryTier tier, CrystalGlow glow,
+                                       float time) {
+        renderRingedBeam(poseStack, buffers, from, to, tier, glow, 0.12f, time, true);
+    }
+
+    // continued = the rings come in full size from the uplink and only fade out far away
+    private static void renderRingedBeam(PoseStack poseStack, MultiBufferSource buffers, Vec3 from, Vec3 to, QuarryTier tier, CrystalGlow glow,
+                                         float width, float time, boolean continued) {
         LaserBeamRenderer.render(poseStack, buffers, from, to, color(glow, time), width, time);
         int level = tier.ordinal();
         Vec3 dir = to.subtract(from);
@@ -76,8 +88,9 @@ public final class TierBeamRenderer {
             long index = Math.round((time * speed - along) / spacing);
             boolean big = CrystalObeliskBlockEntity.isBigRing(index);
             // grows out of the crystal, fades in and out at both ends
-            float grow = (float) Math.min(1, along / (big ? 3 : 2));
-            float fade = (float) Math.min(1, Math.min(along, length - along) / 4);
+            float grow = continued ? 1 : (float) Math.min(1, along / (big ? 3 : 2));
+            float fade = continued ? (float) Math.min(Math.min(1, along), (length - along) / (length * 0.6))
+                : (float) Math.min(1, Math.min(along, length - along) / 4);
             float radius = base * (big ? 1.8f : 1) * (0.4f + 0.6f * grow) * (1 + 0.08f * Mth.sin(time * 0.5f + i));
             Vec3 at = from.add(axis.scale(along));
             int ringColor = color(glow, time + i * 20);

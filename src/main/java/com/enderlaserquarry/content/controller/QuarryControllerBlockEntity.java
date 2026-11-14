@@ -129,8 +129,9 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
     private static final int LIQUID_BUDGET = 256;
     private static final int BEAM_UPDATE_INTERVAL = 4;
     private static final int PARTICLES_PER_TICK = 2;
-    // How far the void mining beam goes past the satellite
+    // How far the void mining beam goes past the satellite, and how far it leans from straight up
     private static final int SPACE_BEAM_LENGTH = 400;
+    private static final double SPACE_BEAM_TILT = Math.toRadians(55);
 
     // findNextTarget ran out of budget
     private static final BlockPos SCANNING = new BlockPos(0, Integer.MIN_VALUE, 0);
@@ -1877,6 +1878,18 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
     }
 
+    // Out past the satellite, leaning towards where the asteroid sits on the space map (map north = world north)
+    public static BlockPos spaceBeamTarget(LaunchPadBlockEntity pad, Asteroid asteroid) {
+        double dx = asteroid.x() - AsteroidField.MAP_UNITS / 2.0;
+        double dz = asteroid.y() - AsteroidField.MAP_UNITS / 2.0;
+        // one in the middle of the map still leans, its id picks the way
+        double heading = dx == 0 && dz == 0 ? asteroid.id() * 2.4 : Math.atan2(dz, dx);
+        double out = Math.sin(SPACE_BEAM_TILT) * SPACE_BEAM_LENGTH;
+        double up = Math.cos(SPACE_BEAM_TILT) * SPACE_BEAM_LENGTH;
+        return pad.getPadCenter().offset((int) Math.round(Math.cos(heading) * out), pad.getOrbitAltitude() + (int) Math.round(up),
+            (int) Math.round(Math.sin(heading) * out));
+    }
+
     // Asteroid mining: no chunk, no wall, every "block" is picked from the asteroid's composition
     private void tickVoidMining(ServerLevel serverLevel, CrystalObeliskBlockEntity obelisk, LaunchPadBlockEntity pad) {
         if (getTier() != QuarryTier.ENDER) {
@@ -1932,7 +1945,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
         int limit = (int) Math.min(speed, asteroid.remaining());
         double costScale = MiningRules.enchantCostScale(obelisk.getCrystalEnchantments());
-        BlockPos space = pad.getPadCenter().above(pad.getOrbitAltitude() + SPACE_BEAM_LENGTH);
+        BlockPos space = spaceBeamTarget(pad, asteroid);
 
         boolean drewEnergy = false;
         int mined = 0;
