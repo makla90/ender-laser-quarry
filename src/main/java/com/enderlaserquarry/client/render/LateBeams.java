@@ -37,7 +37,7 @@ public final class LateBeams {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        // Fabulous draws weather into its own layer and merges the layers by their depth, so there the beam writes it
+        // WORKAROUND: Fabulous draws weather into its own layer and merges the layers by their depth, so there the beam writes it
         RenderType type = minecraft.levelRenderer.getWeatherTarget() != null ? RenderType.lightning() : ModRenderTypes.beam();
         MultiBufferSource.BufferSource source = minecraft.renderBuffers().bufferSource();
         RECORDER.replay(source.getBuffer(type));

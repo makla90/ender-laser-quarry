@@ -131,7 +131,7 @@ public final class RemoteSatellites {
         buffers.endBatch();
     }
 
-    // dev client test
+    // debug: how many remote satellites are drawn
     public static int debugCount() {
         return GHOSTS.size();
     }

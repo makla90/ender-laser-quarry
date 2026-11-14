@@ -85,7 +85,7 @@ public final class QuarryStates {
     public static final MachineState OBELISK_INCOMPLETE = error("obelisk_incomplete");
     public static final MachineState NO_CRYSTAL = error("no_crystal");
     public static final MachineState CRYSTAL_BROKEN = error("crystal_broken");
-    // warning only, mining goes on (Ender IO has no warning type, IDLE shows above ACTIVE)
+    // WORKAROUND: warning only, mining goes on (Ender IO has no warning type, IDLE shows above ACTIVE)
     public static final MachineState CRYSTAL_WORN = new MachineState(MachineStateType.IDLE,
         Component.translatable("gui.ender_laser_quarry.status.crystal_worn").withStyle(ChatFormatting.YELLOW));
     public static final MachineState CRYSTAL_TIER_TOO_LOW = error("crystal_tier_too_low");

@@ -28,7 +28,7 @@ public final class MiningRules {
     // values() copies the array every call
     private static final Direction[] DIRECTIONS = Direction.values();
 
-    // UPDATE_CLIENTS alone still sends shape updates and water floods the hole
+    // WORKAROUND: UPDATE_CLIENTS alone still sends shape updates and water floods the hole
     public static final int SILENT = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private static final Map<Block, Boolean> OUR_BLOCKS = new ConcurrentHashMap<>();
@@ -89,8 +89,7 @@ public final class MiningRules {
             Math.round((QuarryConfig.ENERGY_PER_BLOCK.get() + hardness * QuarryConfig.ENERGY_PER_HARDNESS.get()) * scale));
     }
 
-    // Silk Touch / Fortune make every mined block pricier
-    // only Silk Touch and Fortune cost more, Mending and Unbreaking don't
+    // only Silk Touch and Fortune make mined blocks pricier, Mending and Unbreaking don't
     public static double enchantCostScale(ItemEnchantments enchantments) {
         boolean costly = enchantments.keySet().stream().anyMatch(e -> e.is(Enchantments.SILK_TOUCH) || e.is(Enchantments.FORTUNE));
         return costly ? QuarryConfig.ENCHANT_COST_MULTIPLIER.get() : 1.0;

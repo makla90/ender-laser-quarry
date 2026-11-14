@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 /**
- * Frame block with connected textures, like Ender IO's capacitor banks.
+ * Frame block with connected textures.
  */
 public abstract class ConnectedFrameBlock extends Block {
     public static final BooleanProperty NORTH = PipeBlock.NORTH;

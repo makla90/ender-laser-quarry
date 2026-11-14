@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 /**
  * The sampling dimensions don't count as custom world settings, or every world would open with the
  * "experimental settings" warning.
+ * PORT: vanilla internals, recheck on every Minecraft update.
  */
 @Mixin(WorldDimensions.class)
 public abstract class WorldDimensionsMixin {

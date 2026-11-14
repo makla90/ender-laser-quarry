@@ -396,7 +396,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
         return new ChunkPos(chunk.x - pad.x, chunk.z - pad.z);
     }
 
-    // dev client test: drive the planner without a mouse
+    // debug: drives the planner without a mouse
     public void debugSetPlanner(boolean on) {
         if (on != planning && (canPlan() || planning)) {
             togglePlanner();
@@ -462,7 +462,7 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
             int originZ = (chunk.z - min.z) * 16;
             byte[] data = image.pixels();
             for (int i = 0; i < 256; i++) {
-                // MapColor is ABGR like NativeImage
+                // PORT: MapColor is ABGR like NativeImage here, ARGB in 26.1
                 pixels.setPixelRGBA(originX + (i & 15), originZ + (i >> 4), MapColor.getColorFromPackedId(data[i] & 0xFF));
             }
         }
@@ -1235,7 +1235,6 @@ public class QuarryControllerScreen extends MachineScreen<QuarryControllerMenu> 
 
     // endregion
 
-    // hatching over unmapped chunks, the one being scanned in green
     // box select preview: outline + count, red when it would go over the queue limit
     private void renderBox(GuiGraphics g, ChunkPos min) {
         int left = screenX((Math.min(boxStart.x, boxEnd.x) - min.x) * 16);

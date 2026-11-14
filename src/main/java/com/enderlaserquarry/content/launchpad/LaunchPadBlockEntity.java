@@ -349,7 +349,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         BlockPos oldCenter = padCenter;
         boolean nowPlating = updatePadCenter();
         BlockPos center = getPadCenter();
-        // heightmap instead of sky light, light updates lag behind
+        // WORKAROUND: heightmap instead of sky light, light updates lag behind
         boolean nowSky = level.getHeight(Heightmap.Types.WORLD_SURFACE, center.getX(), center.getZ()) <= center.getY() + 1;
         BlockPos nowRadar = findRadar(center);
         // claimed even while the pad is incomplete
@@ -364,7 +364,7 @@ public class LaunchPadBlockEntity extends MachineBlockEntity implements FluidTan
         radarPos = nowRadar;
         markCenter(platingOk ? center : null);
 
-        // items restored from the dropped block don't fire a slot change
+        // WORKAROUND: items restored from the dropped block don't fire a slot change
         boolean nowRocketOnPad = phase == FlightPhase.IDLE && !ROCKET.getItemStack(this).isEmpty();
         if (nowRocketOnPad != rocketOnPad) {
             rocketOnPad = nowRocketOnPad;

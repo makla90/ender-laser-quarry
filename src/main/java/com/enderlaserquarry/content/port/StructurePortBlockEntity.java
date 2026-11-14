@@ -167,7 +167,7 @@ public class StructurePortBlockEntity extends MachineBlockEntity {
         coreTick = NEVER;
     }
 
-    // tests: how often the multiblock was searched
+    // debug counter: how often the multiblock was searched
     public int getCoreLookups() {
         return coreLookups;
     }

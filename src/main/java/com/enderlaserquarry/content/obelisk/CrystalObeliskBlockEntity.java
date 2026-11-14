@@ -96,7 +96,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
     private ItemStack crystal = ItemStack.EMPTY;
     // blocks worn since the last durability point
     private int wearBlocks;
-    // runtime, for tests: all blocks counted
+    // not saved, debug counter: all blocks worn
     private long wornBlocksTotal;
     // wear marks the obelisk dirty once per tick, not once per block
     private long wearDirtyTick = Long.MIN_VALUE / 2;
@@ -247,7 +247,7 @@ public class CrystalObeliskBlockEntity extends BlockEntity implements PortedMult
         return wornBlocksTotal;
     }
 
-    // tests: blocks per durability point instead of the config, 0 = config
+    // debug override: blocks per durability point instead of the config, 0 = config
     public void debugSetBlocksPerPoint(int blocks) {
         debugBlocksPerPoint = blocks;
     }

@@ -30,7 +30,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Clicks on frame blocks go to the multiblock core (GUI, buckets). Also capacitor swapping by right click like in 1.12,
+ * Clicks on frame blocks go to the multiblock core (GUI, buckets). Also capacitor swapping by right click,
  * and coolant buckets.
  */
 @EventBusSubscriber(modid = EnderLaserQuarry.MOD_ID)

@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Region files of the sampling dimensions (chunks, entities, POI) are never opened: reading one would create it.
+ * PORT: vanilla internals, recheck on every Minecraft update.
  */
 @Mixin(RegionFileStorage.class)
 public abstract class RegionFileStorageMixin {

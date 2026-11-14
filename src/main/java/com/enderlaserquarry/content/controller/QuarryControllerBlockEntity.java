@@ -1247,7 +1247,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         return mined;
     }
 
-    // One draw per tick (Ender IO caps each draw), 1.5x the block cost per block left since the next
+    // WORKAROUND: one draw per tick (Ender IO caps each draw), 1.5x the block cost per block left since the next
     // ones are often harder. Leftovers stay in energyProgress.
     private boolean drawLaserEnergy(CrystalObeliskBlockEntity obelisk, int cost, int blocksLeft) {
         long wanted = (long) cost * blocksLeft * 3 / 2 - energyProgress;
@@ -1407,7 +1407,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         return debugPerBlockClaims != null ? debugPerBlockClaims : "per_block".equals(QuarryConfig.CLAIM_CHECK_MODE.get());
     }
 
-    // tests: per_block (true) or per_section (false), null = the config
+    // debug override: per_block (true) or per_section (false), null = the config
     public void debugSetPerBlockClaims(@Nullable Boolean perBlock) {
         debugPerBlockClaims = perBlock;
         breakClaims.clear();
@@ -1476,7 +1476,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
     }
 
-    // tests: chunks skipped because of a claim
+    // debug counter: chunks skipped because of a claim
     public int getClaimSkipped() {
         return claimSkipped;
     }
@@ -1532,7 +1532,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         }
     }
 
-    // tests: everything that wore the crystal (mined blocks + deleted liquids)
+    // debug counter: everything that wore the crystal (mined blocks + deleted liquids)
     public long getWornCount() {
         return liquidsAndBlocksWorn;
     }
@@ -1588,7 +1588,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         return signature;
     }
 
-    // tests: how often a full output was retried
+    // debug counter: how often a full output was retried
     public int getOutputRetries() {
         return outputRetries;
     }
@@ -1903,7 +1903,7 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
         Asteroid asteroid = field.get(id);
         AsteroidComposition rock = AsteroidComposition.of(serverLevel.getServer(), asteroid.biome());
         if (rock == null || !BiomeSampling.knowsRock(serverLevel.getServer(), asteroid)) {
-            // queued before analyzing existed, or the mods changed: the player analyzes it (again)
+            // not measured (a legacy queue entry, or the mods changed): the player analyzes it (again)
             fail(QuarryStates.ASTEROID_UNMEASURED);
             return 0;
         }

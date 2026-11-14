@@ -3,7 +3,7 @@ package com.enderlaserquarry.client.screen;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
- * Draws vanilla-style GUI panels and slots in code, so screens need no background textures (yet).
+ * Draws vanilla-style GUI panels and slots in code, so screens need no background textures.
  */
 public final class GuiPanels {
     private static final int BORDER = 0xFF000000;

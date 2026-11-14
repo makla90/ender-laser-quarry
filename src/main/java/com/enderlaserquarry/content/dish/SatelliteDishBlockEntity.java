@@ -103,7 +103,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     private long lastPoweredTick = NEVER;
     private int usedSum;
     private int usage;
-    // 0 none, 1 basic, 2 double layer, 3 octadic
+    // strip colour index, see getCapacitorTier
     private int capacitorTier;
     public static final int STRIP_WRONG_CAPACITOR = -1;
 
