@@ -2,6 +2,11 @@
   "multipart": [
     {
       "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_port_joined"
+      }
+    },
+    {
+      "apply": {
         "model": "ender_laser_quarry:block/launch_pad_edge_n"
       },
       "when": {
@@ -30,11 +35,6 @@
       },
       "when": {
         "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/launch_pad_port_joined"
       }
     }
   ]

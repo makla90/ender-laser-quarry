@@ -52,7 +52,8 @@ final class ConnectedTop {
     }
 
     // The joined top and every piece are drawn as these same cells: coplanar quads with identical corners always let
-    // the later one win, while a smaller quad lying on a bigger one z-fights.
+    // the later one win, while a smaller quad lying on a bigger one z-fights. One cell per grid square, never merged:
+    // a merged rectangle has its neighbours' corners on its edges (T-junctions), which show as sparkling pixel gaps.
     static List<Cell> cells(boolean strip) {
         List<Piece> pieces = pieces(strip);
         TreeSet<Integer> xCuts = new TreeSet<>(List.of(0, 16));
@@ -65,36 +66,13 @@ final class ConnectedTop {
         }
         int[] xs = xCuts.stream().mapToInt(Integer::intValue).toArray();
         int[] ys = yCuts.stream().mapToInt(Integer::intValue).toArray();
-        List<Cell> done = new ArrayList<>();
-        // runs of equal cover along a row, grown downwards while the next row has the same run
-        List<Cell> open = new ArrayList<>();
+        List<Cell> cells = new ArrayList<>();
         for (int j = 0; j + 1 < ys.length; j++) {
-            List<Cell> row = new ArrayList<>();
             for (int i = 0; i + 1 < xs.length; i++) {
-                int mask = cover(pieces, xs[i], ys[j]);
-                Cell last = row.isEmpty() ? null : row.getLast();
-                if (last != null && last.pieces() == mask) {
-                    row.set(row.size() - 1, new Cell(new Rect(last.rect().x0(), ys[j], xs[i + 1], ys[j + 1]), mask));
-                } else {
-                    row.add(new Cell(new Rect(xs[i], ys[j], xs[i + 1], ys[j + 1]), mask));
-                }
+                cells.add(new Cell(new Rect(xs[i], ys[j], xs[i + 1], ys[j + 1]), cover(pieces, xs[i], ys[j])));
             }
-            List<Cell> next = new ArrayList<>();
-            for (Cell run : row) {
-                Cell above = open.stream().filter(c -> c.pieces() == run.pieces()
-                    && c.rect().x0() == run.rect().x0() && c.rect().x1() == run.rect().x1()).findFirst().orElse(null);
-                if (above != null) {
-                    open.remove(above);
-                    next.add(new Cell(new Rect(above.rect().x0(), above.rect().y0(), run.rect().x1(), run.rect().y1()), run.pieces()));
-                } else {
-                    next.add(run);
-                }
-            }
-            done.addAll(open);
-            open = next;
         }
-        done.addAll(open);
-        return done;
+        return cells;
     }
 
     // which pieces cover the grid cell starting at x, y

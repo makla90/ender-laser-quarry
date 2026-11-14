@@ -2,6 +2,582 @@
   "multipart": [
     {
       "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_n"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_e"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_ne"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_s"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_ns"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_es"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nes"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "tier": "basic",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_w"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nw"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_ew"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_new"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_sw"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nsw"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_esw"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nesw"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "tier": "basic",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_n"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_e"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_ne"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_s"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_ns"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_es"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nes"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_w"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nw"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_ew"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_new"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_sw"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nsw"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_esw"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nesw"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "tier": "enhanced",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_n"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_e"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_ne"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_s"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_ns"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_es"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nes"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "tier": "ender",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_w"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nw"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_ew"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_new"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_sw"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nsw"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_esw"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nesw"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "tier": "ender",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
         "model": "ender_laser_quarry:block/laser_quarry_plating_piece_n"
       },
       "when": {
@@ -2062,582 +2638,6 @@
         "east": "false",
         "south": "false",
         "tier": "ender"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "false",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_n"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "false",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_e"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "false",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_ne"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "false",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_s"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "true",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_ns"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "true",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_es"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "true",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nes"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "true",
-        "tier": "basic",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_w"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "false",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nw"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "false",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_ew"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "false",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_new"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "false",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_sw"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "true",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nsw"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "true",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_esw"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "true",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/laser_quarry_port_frame_nesw"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "true",
-        "tier": "basic",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_n"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_e"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_ne"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_s"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_ns"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_es"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nes"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_w"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nw"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_ew"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_new"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "false",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_sw"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nsw"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_esw"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/enhanced_laser_quarry_port_frame_nesw"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "true",
-        "tier": "enhanced",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "false",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_n"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "false",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_e"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "false",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_ne"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "false",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_s"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "true",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_ns"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "true",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_es"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "true",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nes"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "true",
-        "tier": "ender",
-        "west": "false"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_w"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "false",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nw"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "false",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_ew"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "false",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_new"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "false",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_sw"
-      },
-      "when": {
-        "east": "false",
-        "north": "false",
-        "south": "true",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nsw"
-      },
-      "when": {
-        "east": "false",
-        "north": "true",
-        "south": "true",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_esw"
-      },
-      "when": {
-        "east": "true",
-        "north": "false",
-        "south": "true",
-        "tier": "ender",
-        "west": "true"
-      }
-    },
-    {
-      "apply": {
-        "model": "ender_laser_quarry:block/ender_laser_quarry_port_frame_nesw"
-      },
-      "when": {
-        "east": "true",
-        "north": "true",
-        "south": "true",
-        "tier": "ender",
-        "west": "true"
       }
     }
   ]

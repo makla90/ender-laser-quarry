@@ -100,19 +100,19 @@ public class ElqBlockStateProvider extends BlockStateProvider {
         Block block = ModBlocks.QUARRY_PORT.get();
         quarryPortModel("laser_quarry_port", "laser_quarry_plating_top", "", null);
         MultiPartBlockStateBuilder parts = getMultipartBuilder(block);
-        // pieces first: Ender IO's IO overlay of the base goes on top of them
-        for (QuarryTier tier : QuarryTier.values()) {
-            String t = TIER_PREFIX[tier.ordinal()];
-            for (CrystalGlow glow : CrystalGlow.values()) {
-                withPieces(parts, t + "laser_quarry_plating", true, glowSuffix(glow), t + "laser_quarry_plating_side",
-                    p -> p.condition(TieredPortBlock.TIER, tier).condition(CrystalGlow.PROPERTY, glow));
-            }
-        }
+        // base first, the pieces lie on the same cells and the later quad wins; Ender IO's IO overlay floats just above
         for (QuarryTier tier : QuarryTier.values()) {
             String t = TIER_PREFIX[tier.ordinal()];
             for (BlockState state : joinStates(block)) {
                 joins(state, parts.part().modelFile(quarryPortModel(t + "laser_quarry_port_frame" + connection(state),
                     t + "laser_quarry_plating_top_nesw", t, state)).addModel().condition(TieredPortBlock.TIER, tier)).end();
+            }
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            for (CrystalGlow glow : CrystalGlow.values()) {
+                withPieces(parts, t + "laser_quarry_plating", true, glowSuffix(glow), t + "laser_quarry_plating_side",
+                    p -> p.condition(TieredPortBlock.TIER, tier).condition(CrystalGlow.PROPERTY, glow));
             }
         }
     }
@@ -136,14 +136,15 @@ public class ElqBlockStateProvider extends BlockStateProvider {
     private void dishPort() {
         dishPortModel("satellite_dish_port", "", "satellite_dish_plating_top");
         MultiPartBlockStateBuilder parts = getMultipartBuilder(ModBlocks.SATELLITE_DISH_PORT.get());
-        for (QuarryTier tier : QuarryTier.values()) {
-            String t = TIER_PREFIX[tier.ordinal()];
-            withPieces(parts, t + "satellite_dish_plating", false, "", t + "satellite_dish_plating_side", p -> p.condition(TieredPortBlock.TIER, tier));
-        }
+        // base first, see quarryPort
         for (QuarryTier tier : QuarryTier.values()) {
             String t = TIER_PREFIX[tier.ordinal()];
             parts.part().modelFile(dishPortModel(t + "satellite_dish_port_joined", t, t + "satellite_dish_plating_top_nesw"))
                 .addModel().condition(TieredPortBlock.TIER, tier).end();
+        }
+        for (QuarryTier tier : QuarryTier.values()) {
+            String t = TIER_PREFIX[tier.ordinal()];
+            withPieces(parts, t + "satellite_dish_plating", false, "", t + "satellite_dish_plating_side", p -> p.condition(TieredPortBlock.TIER, tier));
         }
     }
 
@@ -257,9 +258,10 @@ public class ElqBlockStateProvider extends BlockStateProvider {
 
     private void launchPadPort() {
         padPort("launch_pad_port", "launch_pad_plating_top");
-        // base last, so Ender IO's IO overlay is drawn over the edges
-        MultiPartBlockStateBuilder parts = withPadEdges(getMultipartBuilder(ModBlocks.LAUNCH_PAD_PORT.get()));
+        // base first, the edges lie on its top; Ender IO's IO overlay floats just above both
+        MultiPartBlockStateBuilder parts = getMultipartBuilder(ModBlocks.LAUNCH_PAD_PORT.get());
         parts.part().modelFile(padPort("launch_pad_port_joined", "launch_pad_plating_top_nesw")).addModel().end();
+        withPadEdges(parts);
     }
 
     private ModelFile padPort(String name, String top) {
