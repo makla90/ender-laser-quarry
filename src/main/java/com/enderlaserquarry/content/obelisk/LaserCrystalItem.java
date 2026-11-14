@@ -2,6 +2,7 @@ package com.enderlaserquarry.content.obelisk;
 
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
+import com.enderlaserquarry.content.Tooltips;
 import com.enderlaserquarry.content.controller.MiningRules;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -111,33 +112,37 @@ public class LaserCrystalItem extends Item implements Tiered {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal").withStyle(ChatFormatting.GRAY));
-        if (tier == QuarryTier.BASIC) {
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.pulsating_laser_crystal.tier").withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Tooltips.line("laser_crystal"));
+        addState(stack, tooltip);
+        if (Tooltips.details(flag, tooltip)) {
+            if (tier == QuarryTier.BASIC) {
+                tooltip.add(Tooltips.line("pulsating_laser_crystal.tier"));
+            }
+            addDetails(stack, tooltip);
         }
-        addEnchantHint(stack, tooltip);
-        addWearHint(stack, tooltip);
     }
 
-    protected static void addWearHint(ItemStack stack, List<Component> tooltip) {
+    // always shown: enchant cost, worn or broken
+    protected static void addState(ItemStack stack, List<Component> tooltip) {
+        if (!stack.getEnchantments().isEmpty()) {
+            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal.enchant_cost",
+                formatMultiplier(MiningRules.enchantCostScale(stack.getEnchantments()))).withStyle(ChatFormatting.GOLD));
+        }
         if (isBroken(stack)) {
             tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal.broken").withStyle(ChatFormatting.RED));
         } else if (isWorn(stack)) {
             tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal.worn").withStyle(ChatFormatting.YELLOW));
         }
-        if (stack.getItem() instanceof LaserCrystalItem crystal) {
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal.wear", crystal.blocksPerPoint())
-                .withStyle(ChatFormatting.DARK_GRAY));
-        }
     }
 
-    protected static void addEnchantHint(ItemStack stack, List<Component> tooltip) {
+    protected static void addDetails(ItemStack stack, List<Component> tooltip) {
         if (stack.getEnchantments().isEmpty()) {
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal.enchantable").withStyle(ChatFormatting.DARK_GRAY));
-        } else {
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.laser_crystal.enchant_cost",
-                formatMultiplier(MiningRules.enchantCostScale(stack.getEnchantments()))).withStyle(ChatFormatting.GOLD));
+            tooltip.add(Tooltips.line("laser_crystal.enchantable"));
         }
+        if (stack.getItem() instanceof LaserCrystalItem crystal) {
+            tooltip.add(Tooltips.line("laser_crystal.wear", crystal.blocksPerPoint()));
+        }
+        tooltip.add(Tooltips.line("laser_crystal.repair"));
     }
 
     public static String formatMultiplier(double multiplier) {

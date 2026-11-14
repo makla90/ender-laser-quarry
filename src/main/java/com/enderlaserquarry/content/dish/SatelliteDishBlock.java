@@ -4,7 +4,7 @@ import com.enderio.enderio.foundation.block.MachineBlock;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
 import com.enderlaserquarry.init.ModBlockEntities;
-import net.minecraft.ChatFormatting;
+import com.enderlaserquarry.content.Tooltips;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -31,15 +31,17 @@ public class SatelliteDishBlock extends MachineBlock<SatelliteDishBlockEntity> i
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.speed", SatelliteDishBlockEntity.blocksPerTick(1, tier),
-            SatelliteDishBlockEntity.blocksPerTick(2, tier), SatelliteDishBlockEntity.blocksPerTick(3, tier)).withStyle(ChatFormatting.GRAY));
-        if (EndergyCapacitors.isLoaded()) {
-            tooltip.add((tier == QuarryTier.ENDER
-                ? Component.translatable("tooltip.ender_laser_quarry.dish.endergy", SatelliteDishBlockEntity.blocksPerTick(5, tier))
-                : Component.translatable("tooltip.ender_laser_quarry.dish.no_endergy")).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Tooltips.line("dish"));
+        if (!Tooltips.details(flag, tooltip)) {
+            return;
         }
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.range", tier.dishRange()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.controller", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.dish.plating", tier.displayName()).withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Tooltips.line("dish.capacitor"));
+        if (EndergyCapacitors.isLoaded()) {
+            tooltip.add(Tooltips.line(tier == QuarryTier.ENDER ? "dish.endergy" : "dish.no_endergy"));
+        }
+        tooltip.add(Tooltips.line("dish.range", tier.dishRange()));
+        tooltip.add(Tooltips.line("dish.plating", tier.displayName()));
+        tooltip.add(Tooltips.line("dish.port"));
+        tooltip.add(Tooltips.line("dish.controller", tier.displayName()));
     }
 }

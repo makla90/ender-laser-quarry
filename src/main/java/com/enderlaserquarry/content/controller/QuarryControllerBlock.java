@@ -4,7 +4,7 @@ import com.enderio.enderio.foundation.block.MachineBlock;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
 import com.enderlaserquarry.init.ModBlockEntities;
-import net.minecraft.ChatFormatting;
+import com.enderlaserquarry.content.Tooltips;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -45,14 +45,15 @@ public class QuarryControllerBlock extends MachineBlock<QuarryControllerBlockEnt
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
+        tooltip.add(Tooltips.line("controller"));
+        if (!Tooltips.details(flag, tooltip)) {
+            return;
+        }
         int across = tier.chunkRadius() * 2 + 1;
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.controller.stats", tier.maxChunks(), tier.maxDishes(),
-            tier.maxBlocksPerTick()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.controller.area", across, across).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.controller.link_range", tier.linkRange()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.controller.satellite", tier.displayName())
-            .withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.controller.plating", tier.displayName())
-            .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Tooltips.line("controller.stats", tier.maxChunks(), tier.maxDishes()));
+        tooltip.add(Tooltips.line("controller.area", across, across));
+        tooltip.add(Tooltips.line("controller.link_range", tier.linkRange()));
+        tooltip.add(Tooltips.line("controller.plating", tier.displayName()));
+        tooltip.add(Tooltips.line("controller.satellite", tier.displayName()));
     }
 }

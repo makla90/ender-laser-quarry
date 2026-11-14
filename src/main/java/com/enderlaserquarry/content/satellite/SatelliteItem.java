@@ -3,6 +3,7 @@ package com.enderlaserquarry.content.satellite;
 import com.enderlaserquarry.config.QuarryConfig;
 import com.enderlaserquarry.content.QuarryTier;
 import com.enderlaserquarry.content.Tiered;
+import com.enderlaserquarry.content.Tooltips;
 import com.enderlaserquarry.init.ModDataComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -83,15 +84,24 @@ public class SatelliteItem extends Item implements Tiered {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         if (voidSatellite) {
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.void_satellite").withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.void_satellite.needs").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Tooltips.line("void_satellite"));
             tooltip.add(Component.translatable("tooltip.ender_laser_quarry.void_satellite.dew", DEW_FORMAT.format(getDew(stack)),
                 DEW_FORMAT.format(dewCapacity())).withStyle(ChatFormatting.DARK_AQUA));
         } else {
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite").withStyle(ChatFormatting.GRAY));
-            int across = tier.chunkRadius() * 2 + 1;
-            tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite.area", across, across).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Tooltips.line("satellite"));
         }
-        tooltip.add(Component.translatable("tooltip.ender_laser_quarry.satellite.launch").withStyle(ChatFormatting.DARK_GRAY));
+        if (!Tooltips.details(flag, tooltip)) {
+            return;
+        }
+        if (voidSatellite) {
+            tooltip.add(Tooltips.line("void_satellite.scan"));
+            tooltip.add(Tooltips.line("void_satellite.no_ground"));
+            tooltip.add(Tooltips.line("void_satellite.needs"));
+        } else {
+            int across = tier.chunkRadius() * 2 + 1;
+            tooltip.add(Tooltips.line("satellite.area", across, across));
+            tooltip.add(Tooltips.line("satellite.controller", tier.displayName()));
+        }
+        tooltip.add(Tooltips.line("satellite.launch"));
     }
 }
