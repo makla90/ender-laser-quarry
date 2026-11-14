@@ -205,7 +205,7 @@ public final class TierBeamRenderer {
     }
 
     // flat ring in the plane of a and b
-    private static void ring(VertexConsumer consumer, Matrix4f pose, Vec3 center, Vec3 a, Vec3 b, float radius, float thickness,
+    static void ring(VertexConsumer consumer, Matrix4f pose, Vec3 center, Vec3 a, Vec3 b, float radius, float thickness,
                              int rgb, float alpha) {
         if (alpha <= 0.01f) {
             return;
