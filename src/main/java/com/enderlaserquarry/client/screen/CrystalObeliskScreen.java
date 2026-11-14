@@ -16,19 +16,22 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Crystal slot in the middle, the obelisk's status under it. */
+/** Status icon and crystal slot on the left, enchantments right of them, the obelisk's status under it. */
 public class CrystalObeliskScreen extends EnderContainerScreen<CrystalObeliskMenu> {
     private static final int TEXT_COLOR = 0xFF404040;
     /** Slot face colour, mostly opaque: the crystal shows faintly in the empty slot. */
     private static final int GHOST_COVER = 0xB08B8B8B;
-    private static final int STATUS_Y = 44;
+    private static final int ENCHANT_X = CrystalObeliskMenu.CRYSTAL_X + 22;
+    /** First line under the title. */
+    private static final int ENCHANT_TOP = 17;
+    private static final int STATUS_Y = 56;
     /** Enchantment names, like their tooltip purple, darkened for the light panel. */
     private static final int ENCHANT_COLOR = 0xFF7A2FBF;
 
     private final ItemStack ghost = new ItemStack(ModItems.LASER_CRYSTAL.get());
 
     public CrystalObeliskScreen(CrystalObeliskMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title, 176, 166);
+        super(menu, playerInventory, title, 176, CrystalObeliskMenu.PLAYER_INV_Y + 82);
         // no "Inventory" label: the status lines use that room
         inventoryLabelY = -10_000;
         shouldRenderLabels = true;
@@ -80,20 +83,18 @@ public class CrystalObeliskScreen extends EnderContainerScreen<CrystalObeliskMen
         }
         var enchantments = menu.getSlot(0).getItem().getEnchantments();
         boolean showCost = !enchantments.isEmpty() && menu.getCostMultiplier() > 1;
-        // up to 4 lines (Fortune / Silk Touch, Unbreaking, Mending, cost): never down into the status lines
-        int enchantY = Math.max(6, CrystalObeliskMenu.CRYSTAL_Y + (18 - 9 * (enchantments.size() + (showCost ? 1 : 0))) / 2);
-        int enchantWidth = imageWidth - CrystalObeliskMenu.CRYSTAL_X - 26;
+        // centred on the crystal; 4 lines (Fortune / Silk Touch, Unbreaking, Mending, cost) fill ENCHANT_TOP..STATUS_Y
+        int enchantY = Math.max(ENCHANT_TOP, CrystalObeliskMenu.CRYSTAL_Y + 1 + (16 - 9 * (enchantments.size() + (showCost ? 1 : 0))) / 2);
+        int enchantWidth = imageWidth - ENCHANT_X - 6;
         for (var entry : enchantments.entrySet()) {
             Component name = Enchantment.getFullname(entry.getKey(), entry.getIntValue());
-            g.text(font, font.plainSubstrByWidth(name.getString(), enchantWidth),
-                CrystalObeliskMenu.CRYSTAL_X + 22, enchantY, ENCHANT_COLOR, false);
+            g.text(font, font.plainSubstrByWidth(name.getString(), enchantWidth), ENCHANT_X, enchantY, ENCHANT_COLOR, false);
             enchantY += 9;
         }
         if (showCost) {
             Component cost = Component.translatable("gui.ender_laser_quarry.obelisk.enchant_cost",
                 LaserCrystalItem.formatMultiplier(menu.getCostMultiplier()));
-            g.text(font, font.plainSubstrByWidth(cost.getString(), enchantWidth),
-                CrystalObeliskMenu.CRYSTAL_X + 22, enchantY, TEXT_COLOR, false);
+            g.text(font, font.plainSubstrByWidth(cost.getString(), enchantWidth), ENCHANT_X, enchantY, TEXT_COLOR, false);
         }
 
         int y = STATUS_Y;

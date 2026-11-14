@@ -24,10 +24,10 @@ import java.util.stream.Stream;
  * Obelisk GUI: crystal slot and status.
  */
 public class CrystalObeliskMenu extends BaseBlockEntityMenu<CrystalObeliskBlockEntity> {
-    public static final int CRYSTAL_X = 80;
-    public static final int CRYSTAL_Y = 20;
+    public static final int CRYSTAL_X = 30;
+    public static final int CRYSTAL_Y = 26;
     public static final int PLAYER_INV_X = 8;
-    public static final int PLAYER_INV_Y = 84;
+    public static final int PLAYER_INV_Y = 96;
 
     // synced as an index, -1 = ready
     private static final List<MachineState> PROBLEMS = Stream.concat(Stream.of(QuarryStates.OBELISK_INCOMPLETE,
