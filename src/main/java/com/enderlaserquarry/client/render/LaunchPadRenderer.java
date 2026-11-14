@@ -350,14 +350,27 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
             }
         }
 
+        // scan: wireframe over the chunk with a sweep line and a beam fan, the mapped ones fade out behind it
+        BlockPos origin = pad.getPadCenter();
+        Vec3 lens = null;
         if (scanning != null) {
-            // scan beam
-            BlockPos origin = pad.getPadCenter();
             double lensZ = SatelliteModel.LENS_Z / 16.0 * scale;
-            Vec3 lens = pos.add(Math.sin(yaw) * lensZ, SatelliteModel.LENS_Y / 16.0 * scale, Math.cos(yaw) * lensZ);
+            lens = pos.add(Math.sin(yaw) * lensZ, SatelliteModel.LENS_Y / 16.0 * scale, Math.cos(yaw) * lensZ);
+        }
+        // the Void Satellite scanning space: radar sweep, sonar rings and blips around it
+        if (isSpaceScanning(pad)) {
+            SpaceScanFx.render(poseStack, pos, time, pad.getBlockPos().asLong());
+        }
+        if (!ScanMesh.render(pad, scanning, poseStack, origin, lens, time) && scanning != null) {
+            // chunk not loaded on this client: just the beam, down to the pad's height
             Vec3 ground = new Vec3(scanning.getMiddleBlockX() + 0.5 - origin.getX(), 1.0, scanning.getMiddleBlockZ() + 0.5 - origin.getZ());
             LaserBeamRenderer.render(poseStack, buffers, lens, ground, SCAN_BEAM, 0.05f, time);
         }
+    }
+
+    private static boolean isSpaceScanning(LaunchPadBlockEntity pad) {
+        var radar = pad.getRadar();
+        return radar != null && radar.isSpaceScanning() && pad.isVoidSatelliteUp();
     }
 
     // wing tips: steady red left, green right, white double strobe like an aircraft
@@ -458,7 +471,8 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
         }
         if (pad.hasSatelliteInOrbit()) {
             Vec3 orbit = Vec3.atLowerCornerOf(center).add(LaunchPadBlockEntity.LAUNCH_POINT).add(pad.getOrbitAnchor(0));
-            double reach = LaunchPadBlockEntity.ORBIT_RADIUS + LaunchPadBlockEntity.SATELLITE_ORBIT_SCALE * 2;
+            // the space scan's sweep reaches far out around the satellite
+            double reach = LaunchPadBlockEntity.ORBIT_RADIUS + LaunchPadBlockEntity.SATELLITE_ORBIT_SCALE * 2 + (isSpaceScanning(pad) ? 105 : 0);
             minX = Math.min(minX, orbit.x - reach);
             minZ = Math.min(minZ, orbit.z - reach);
             maxX = Math.max(maxX, orbit.x + reach);
@@ -466,6 +480,8 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
             maxZ = Math.max(maxZ, orbit.z + reach);
             ChunkPos scanning = pad.getScanningChunk();
             if (scanning != null) {
+                // the scan mesh lies on the terrain far below a high pad
+                minY = Math.min(minY, pad.getLevel() != null ? pad.getLevel().getMinY() : minY);
                 minX = Math.min(minX, scanning.getMinBlockX());
                 minZ = Math.min(minZ, scanning.getMinBlockZ());
                 maxX = Math.max(maxX, scanning.getMaxBlockX() + 1);
