@@ -3,7 +3,7 @@
   "category": "misc",
   "key": {
     "B": {
-      "item": "minecraft:blast_furnace"
+      "item": "enderio:soul_engine"
     },
     "D": {
       "tag": "c:ingots/dark_steel"

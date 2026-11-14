@@ -57,7 +57,7 @@ public class ElqRecipeProvider extends RecipeProvider {
             "APA", "PDP", "APA");
         upgrade(ModItems.LASER_CRYSTAL.get(), keys('Q', enlightened, 'N', of(Items.NETHER_STAR), 'E', c("gems/enticing_crystal"),
             'P', of(ModItems.PULSATING_LASER_CRYSTAL.get()), 'S', soularium), "QNQ", "EPE", "QSQ");
-        upgrade(ModItems.VOID_LASER_CRYSTAL.get(), keys('P', c("gems/prescient_crystal"), 'B', of(Items.DRAGON_BREATH), 'E', endSteel,
+        upgrade(ModItems.VOID_LASER_CRYSTAL.get(), keys('P', c("gems/prescient_crystal"), 'B', c("gems/ender_crystal"), 'E', endSteel,
             'L', of(ModItems.LASER_CRYSTAL.get())), "PBP", "ELE", "PBP");
 
         // quarry core
@@ -109,7 +109,7 @@ public class ElqRecipeProvider extends RecipeProvider {
         shaped(ModItems.ROCKET.get(), 1, keys('B', eio("dark_steel_bars"), 'C', of(Items.COMPASS), 'D', darkSteel,
             'T', eio("pressurized_fluid_tank"), 'E', of(ModItems.ROCKET_ENGINE.get())), "BCB", "DTD", "DED");
         shaped(ModItems.ROCKET_ENGINE.get(), 1, keys('D', darkSteel, 'F', of(Items.FIRE_CHARGE), 'R', redstoneAlloy,
-            'B', of(Items.BLAST_FURNACE), 'I', eio("industrial_insulation")), "DFD", "RBR", "DID");
+            'B', eio("soul_engine"), 'I', eio("industrial_insulation")), "DFD", "RBR", "DID");
         shaped(ModItems.SATELLITE.get(), 1, keys('D', darkSteel, 'T', transceiver, 'P', eio("energetic_photovoltaic_module"),
             'M', of(ModItems.REFLECTOR_MIRROR.get()), 'C', basicCapacitor), "DTD", "PMP", "DCD");
         upgrade(ModItems.ENHANCED_SATELLITE.get(), keys('E', energetic, 'Z', eio("z_logic_controller"), 'P', eio("pulsating_photovoltaic_module"),
@@ -118,7 +118,7 @@ public class ElqRecipeProvider extends RecipeProvider {
             'B', of(ModItems.ENHANCED_SATELLITE.get()), 'C', c("gems/prescient_crystal")), "ERE", "PBP", "ECE");
         // the Void Satellite throws the beam out to the asteroids
         upgrade(ModItems.VOID_SATELLITE.get(), keys('R', of(Items.END_ROD), 'V', of(ModItems.VOID_REFLECTOR.get()), 'G', of(ModItems.CHORUS_GYROSCOPE.get()),
-            'B', of(ModItems.ENDER_SATELLITE.get()), 'E', endSteel, 'D', of(Items.DRAGON_BREATH)), "RVR", "GBG", "EDE");
+            'B', of(ModItems.ENDER_SATELLITE.get()), 'E', endSteel, 'D', of(Items.END_CRYSTAL)), "RVR", "GBG", "EDE");
 
         // parts
         shaped(ModItems.LASER_EMITTER.get(), 1, keys('Q', fusedQuartz, 'R', redstoneAlloy, 'P', c("gems/pulsating_crystal"), 'C', conductive,

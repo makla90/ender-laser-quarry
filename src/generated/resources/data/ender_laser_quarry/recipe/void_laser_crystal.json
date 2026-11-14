@@ -3,7 +3,7 @@
   "category": "misc",
   "key": {
     "B": {
-      "item": "minecraft:dragon_breath"
+      "tag": "c:gems/ender_crystal"
     },
     "E": {
       "tag": "c:ingots/end_steel"
