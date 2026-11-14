@@ -337,7 +337,7 @@ public class LaunchPadRenderer extends LiveRenderer<LaunchPadBlockEntity> {
 
         boolean reflecting = targetCentre != null;
         int surfaceColor = reflecting ? ARGB.color((int) (215 + 40 * Mth.sin(time * 0.6f)), 255, 255, 255) : 0xFFB8C0CC;
-        // get it again, the cutout buffer may have flushed it
+        // WORKAROUND: get it again, the cutout buffer may have flushed it
         glow =buffers.getBuffer(RenderTypes.entityTranslucentEmissive(texture));
         satellite.mirrorSurface.render(poseStack, glow, reflecting ? LightCoordsUtil.FULL_BRIGHT : light, OverlayTexture.NO_OVERLAY, surfaceColor);
         poseStack.popPose();

@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 /**
  * Our own render types: entity cutout pushed towards the camera, for overlays lying right on block faces, and an
- * additive glow (vanilla eyes blends translucent now), and the beams: lightning without depth writes.
+ * additive glow (vanilla eyes blends translucent in 26.1), and the beams: lightning without depth writes.
  */
 @EventBusSubscriber(modid = EnderLaserQuarry.MOD_ID, value = Dist.CLIENT)
 public final class ModRenderTypes {

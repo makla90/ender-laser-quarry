@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Block entity renderer that draws straight from the block entity: the render state only carries it and the partial
+ * PORT: block entity renderer for the 26.1 render states that draws straight from the block entity: the render state only carries it and the partial
  * tick, {@link #render} draws into recorded buffers that go to the submit pipeline afterwards.
  */
 public abstract class LiveRenderer<T extends BlockEntity> implements BlockEntityRenderer<T, LiveRenderer.State<T>> {

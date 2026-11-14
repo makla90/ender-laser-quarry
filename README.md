@@ -9,7 +9,7 @@ satellite reflects it down onto the chunks you picked on a map. The satellite ge
 own launch pad, and maps the ground around it so you can see what you are about to mine. Late game, a Void Laser
 Crystal turns the beam into space and mines asteroids instead.
 
-> **Status: early development (0.6.2).** Expect changes, and back up your world before trying it.
+> **Status: early development (0.6.3).** Expect changes, and back up your world before trying it.
 ## Requirements
 
 | | Version |

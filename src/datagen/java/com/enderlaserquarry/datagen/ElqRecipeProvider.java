@@ -32,8 +32,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Every recipe (design decisions D2). Material ladder = Ender IO's own: Basic dark steel / basic capacitor, Enhanced
- * energetic + soularium / double-layer, Ender vibrant + end steel / octadic. No recipe book unlocks, like before.
+ * Every recipe. Material ladder = Ender IO's own: Basic dark steel / basic capacitor, Enhanced
+ * energetic + soularium / double-layer, Ender vibrant + end steel / octadic. No recipe book unlocks.
  */
 public class ElqRecipeProvider extends RecipeProvider {
     private final RecipeOutput out;
@@ -133,7 +133,7 @@ public class ElqRecipeProvider extends RecipeProvider {
             'B', of(ModItems.SATELLITE.get()), 'D', of(Items.DAYLIGHT_DETECTOR)), "EZE", "PBP", "EDE");
         upgrade(ModItems.ENDER_SATELLITE.get(), keys('E', endSteel, 'R', resonator, 'P', eio("vibrant_photovoltaic_module"),
             'B', of(ModItems.ENHANCED_SATELLITE.get()), 'C', c("gems/prescient_crystal")), "ERE", "PBP", "ECE");
-        // D14: the Void Satellite throws the beam out to the asteroids
+        // the Void Satellite throws the beam out to the asteroids
         upgrade(ModItems.VOID_SATELLITE.get(), keys('R', of(Items.END_ROD), 'V', of(ModItems.VOID_REFLECTOR.get()), 'G', of(ModItems.CHORUS_GYROSCOPE.get()),
             'B', of(ModItems.ENDER_SATELLITE.get()), 'E', endSteel, 'D', of(Items.DRAGON_BREATH)), "RVR", "GBG", "EDE");
 

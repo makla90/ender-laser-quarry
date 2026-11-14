@@ -45,7 +45,7 @@ public final class ModItems {
     public static final DeferredItem<RocketItem> ROCKET = ITEMS.registerItem("rocket",
         RocketItem::new, () -> new Item.Properties().stacksTo(1));
 
-    // Basic keeps the old id
+    // Basic has no tier prefix in its id, existing worlds rely on it
     public static final DeferredItem<SatelliteItem> SATELLITE = ITEMS.registerItem("satellite",
         props -> new SatelliteItem(QuarryTier.BASIC, props), () -> new Item.Properties().stacksTo(1));
     public static final DeferredItem<SatelliteItem> ENHANCED_SATELLITE = ITEMS.registerItem("enhanced_satellite",

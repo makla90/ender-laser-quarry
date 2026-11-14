@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * C2ME reads and writes region files on its own thread, past the vanilla storage: keep the sampling dimensions off disk there too.
+ * PORT: targets C2ME internals, recheck on every C2ME update.
  */
 @Pseudo
 @Mixin(targets = "com.ishland.c2me.rewrites.chunkio.common.C2MEStorageThread", remap = false)

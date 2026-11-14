@@ -109,7 +109,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     private long lastPoweredTick = NEVER;
     private int usedSum;
     private int usage;
-    // 0 none, 1 basic, 2 double layer, 3 octadic
+    // strip colour index, see getCapacitorTier
     private int capacitorTier;
     public static final int STRIP_WRONG_CAPACITOR = -1;
 
@@ -311,7 +311,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     }
 
     // wears capacitors that wear (Endergy's Totemic), once per mined chunk
-    // Ender IO 9 hands the extension a copy of the slot (its storage builds a new stack), so wear the stack and put it back
+    // PORT: Ender IO 9 hands the extension a copy of the slot (its storage builds a new stack), so wear the stack and put it back
     public void wearCapacitor() {
         if (!(level instanceof ServerLevel serverLevel)) {
             return;

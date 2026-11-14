@@ -18,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Sampling dimensions never touch the disk: nothing is read, nothing is saved, unloading a chunk deletes it.
+ * PORT: vanilla internals, recheck on every Minecraft update.
  */
 @Mixin(ChunkMap.class)
 public abstract class ChunkMapMixin {

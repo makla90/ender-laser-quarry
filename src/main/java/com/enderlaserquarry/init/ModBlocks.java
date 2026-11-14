@@ -61,7 +61,7 @@ public final class ModBlocks {
         return null;
     }
 
-    // Basic keeps the old id
+    // Basic has no tier prefix in its id, existing worlds rely on it
     public static final DeferredBlock<SatelliteDishBlock> SATELLITE_DISH = BLOCKS.registerBlock(
         "satellite_dish", props -> new SatelliteDishBlock(QuarryTier.BASIC, props), () -> machineProps());
     public static final DeferredBlock<SatelliteDishBlock> ENHANCED_SATELLITE_DISH = BLOCKS.registerBlock(
@@ -85,7 +85,7 @@ public final class ModBlocks {
         };
     }
 
-    // Basic keeps the old id
+    // Basic has no tier prefix in its id, existing worlds rely on it
     public static final DeferredBlock<QuarryControllerBlock> QUARRY_CONTROLLER = BLOCKS.registerBlock(
         "quarry_controller", props -> new QuarryControllerBlock(QuarryTier.BASIC, props), () -> machineProps());
     public static final DeferredBlock<QuarryControllerBlock> ENHANCED_QUARRY_CONTROLLER = BLOCKS.registerBlock(

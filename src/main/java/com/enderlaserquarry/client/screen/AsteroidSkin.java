@@ -100,7 +100,7 @@ final class AsteroidSkin {
         if (level != null) {
             holder = level.registryAccess().lookupOrThrow(Registries.BIOME).get(ResourceKey.create(Registries.BIOME, id));
         }
-        // ARGB in 26.1: without the mask the colour is negative, which means "no sea"
+        // PORT: ARGB in 26.1: without the mask the colour is negative, which means "no sea"
         int water = holder.map(h -> h.value().getWaterColor() & 0xFFFFFF).orElse(0x3F76E4);
         int foliage = holder.map(h -> h.value().getFoliageColor() & 0xFFFFFF).orElse(0x59AE30);
         switch (id.toString()) {

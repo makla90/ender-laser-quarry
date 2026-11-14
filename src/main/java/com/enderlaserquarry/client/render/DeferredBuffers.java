@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A buffer source for the old immediate-style drawing code: vertices are recorded (already transformed by the pose
+ * PORT: lets immediate-style drawing code feed the 26.1 submit pipeline. Vertices are recorded (already transformed by the pose
  * they were added with) and handed to the submit pipeline once per render type by {@link #submit}.
  */
 public final class DeferredBuffers implements MultiBufferSource {

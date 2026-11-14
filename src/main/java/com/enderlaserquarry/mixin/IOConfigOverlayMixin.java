@@ -20,8 +20,9 @@ import java.util.Map;
 import java.util.function.ToDoubleFunction;
 
 /**
- * Face picking in Ender IO's IO view for multiblocks with many ports: the mouse ray was only a few blocks long and the
- * port nearest the scene middle won instead of the front-most one.
+ * WORKAROUND: face picking in Ender IO's IO view for multiblocks with many ports. Ender IO's mouse ray is only a few
+ * blocks long and the port nearest the scene middle wins instead of the front-most one.
+ * PORT: targets Ender IO internals, recheck on every Ender IO update.
  */
 @Mixin(value = IOConfigOverlay.class, remap = false)
 public abstract class IOConfigOverlayMixin {
