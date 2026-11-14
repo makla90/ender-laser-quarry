@@ -171,7 +171,7 @@ public class ElqModelProvider extends ModelProvider {
         String base = t + "satellite_dish_plating";
         bottomTop(base, base + "_top", base + "_side", t + "satellite_dish_bottom");
         MultiPartGenerator parts = MultiPartGenerator.multiPart(block)
-            .with(plain(bottomTop(base + "_joined", base + "_top_nesw", base + "_side", t + "satellite_dish_bottom")));
+            .with(plain(cellBottomTop(base + "_joined", base + "_top_nesw", base + "_side", t + "satellite_dish_bottom")));
         return withPieces(parts, base, false, "", base + "_side", UnaryOperator.identity());
     }
 
@@ -184,7 +184,7 @@ public class ElqModelProvider extends ModelProvider {
         }
         for (QuarryTier tier : QuarryTier.values()) {
             String t = TIER_PREFIX[tier.ordinal()];
-            parts.with(BlockModelGenerators.condition(TieredPortBlock.TIER, tier), ioOverlay(bottomTop(t + "satellite_dish_port_joined",
+            parts.with(BlockModelGenerators.condition(TieredPortBlock.TIER, tier), ioOverlay(cellBottomTop(t + "satellite_dish_port_joined",
                 t + "satellite_dish_plating_top_nesw", t + "satellite_dish_port_side", t + "satellite_dish_port_bottom")));
         }
         return parts;
@@ -193,11 +193,16 @@ public class ElqModelProvider extends ModelProvider {
     // every ConnectedTop piece of <family>_edge_<side><glow>, shown while its side is open (and its neighbours fit)
     private MultiPartGenerator withPieces(MultiPartGenerator parts, String family, boolean strip, String glow, String particle,
                                           UnaryOperator<ConditionBuilder> extra) {
-        for (ConnectedTop.Piece piece : ConnectedTop.pieces(strip)) {
+        List<ConnectedTop.Piece> pieces = ConnectedTop.pieces(strip);
+        List<ConnectedTop.Cell> cells = ConnectedTop.cells(strip);
+        for (int p = 0; p < pieces.size(); p++) {
+            ConnectedTop.Piece piece = pieces.get(p);
+            int bit = 1 << p;
             ConditionBuilder condition = extra.apply(BlockModelGenerators.condition()).term(joinProperty(piece.side()), false);
             piece.neighbours().forEach((side, joined) -> condition.term(joinProperty(side), joined));
             parts.with(condition, plain(pieceModel(family + "_piece_" + piece.name() + glow,
-                family + "_edge_" + ConnectedTop.letter(piece.side()) + glow, particle, piece.rects())));
+                family + "_edge_" + ConnectedTop.letter(piece.side()) + glow, particle,
+                cells.stream().filter(c -> (c.pieces() & bit) != 0).map(ConnectedTop.Cell::rect).toList())));
         }
         return parts;
     }
@@ -207,24 +212,71 @@ public class ElqModelProvider extends ModelProvider {
         return made.computeIfAbsent(rl("block/" + name), id -> {
             ExtendedModelTemplateBuilder builder = ExtendedModelTemplateBuilder.builder()
                 .requiredTextureSlot(OVERLAY).requiredTextureSlot(TextureSlot.PARTICLE);
-            for (ConnectedTop.Rect r : rects) {
-                builder.element(e -> e.from(r.x0(), 16, r.y0()).to(r.x1(), 16, r.y1())
-                    .face(Direction.UP, face -> face.uvs(r.x0(), r.y0(), r.x1(), r.y1()).texture(OVERLAY).cullface(Direction.UP)));
-            }
+            topCells(builder, rects, OVERLAY);
             return builder.build().create(id, new TextureMapping().put(OVERLAY, mat(texture)).put(TextureSlot.PARTICLE, mat(particle)), models);
         });
     }
 
-    // quarry plating / port cube; the side faces show where the grooves end next to joined neighbours (none for the item)
+    private static void topCells(ExtendedModelTemplateBuilder builder, List<ConnectedTop.Rect> rects, TextureSlot texture) {
+        for (ConnectedTop.Rect r : rects) {
+            builder.element(e -> e.from(r.x0(), 16, r.y0()).to(r.x1(), 16, r.y1())
+                .face(Direction.UP, face -> face.uvs(r.x0(), r.y0(), r.x1(), r.y1()).texture(texture).cullface(Direction.UP)));
+        }
+    }
+
+    // a cube whose top is cut into the ConnectedTop cells, so the pieces drawn over it don't flicker
+    private Identifier cellTopCube(String name, boolean strip, TextureMapping textures) {
+        return made.computeIfAbsent(rl("block/" + name), id -> {
+            ExtendedModelTemplateBuilder builder = ExtendedModelTemplateBuilder.builder().requiredTextureSlot(TextureSlot.PARTICLE)
+                .requiredTextureSlot(TextureSlot.UP).requiredTextureSlot(TextureSlot.DOWN)
+                .requiredTextureSlot(TextureSlot.NORTH).requiredTextureSlot(TextureSlot.SOUTH)
+                .requiredTextureSlot(TextureSlot.EAST).requiredTextureSlot(TextureSlot.WEST);
+            builder.element(e -> {
+                e.from(0, 0, 0).to(16, 16, 16);
+                for (Direction side : List.of(Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST)) {
+                    e.face(side, face -> face.texture(faceSlot(side)).cullface(side));
+                }
+            });
+            topCells(builder, ConnectedTop.cells(strip).stream().map(ConnectedTop.Cell::rect).toList(), TextureSlot.UP);
+            return builder.build().create(id, textures, models);
+        });
+    }
+
+    private static TextureSlot faceSlot(Direction side) {
+        return switch (side) {
+            case DOWN -> TextureSlot.DOWN;
+            case UP -> TextureSlot.UP;
+            case NORTH -> TextureSlot.NORTH;
+            case SOUTH -> TextureSlot.SOUTH;
+            case EAST -> TextureSlot.EAST;
+            case WEST -> TextureSlot.WEST;
+        };
+    }
+
+    // joined dish plating / port: plain sides, cell top
+    private Identifier cellBottomTop(String name, String top, String side, String bottom) {
+        return cellTopCube(name, false, new TextureMapping()
+            .put(TextureSlot.PARTICLE, mat(side))
+            .put(TextureSlot.UP, mat(top))
+            .put(TextureSlot.DOWN, mat(bottom))
+            .put(TextureSlot.NORTH, mat(side))
+            .put(TextureSlot.SOUTH, mat(side))
+            .put(TextureSlot.EAST, mat(side))
+            .put(TextureSlot.WEST, mat(side)));
+    }
+
+    // quarry plating / port cube; the side faces show where the grooves end next to joined neighbours (none for the
+    // item, which keeps a plain cube)
     private Identifier quarryCube(String name, String top, String side, String bottom, BlockState state) {
-        return model(name, ModelTemplates.CUBE, new TextureMapping()
+        TextureMapping textures = new TextureMapping()
             .put(TextureSlot.PARTICLE, mat(side))
             .put(TextureSlot.UP, mat(top))
             .put(TextureSlot.DOWN, mat(bottom))
             .put(TextureSlot.NORTH, mat(side + (state == null ? "" : sideJoin(state, Direction.NORTH))))
             .put(TextureSlot.SOUTH, mat(side + (state == null ? "" : sideJoin(state, Direction.SOUTH))))
             .put(TextureSlot.EAST, mat(side + (state == null ? "" : sideJoin(state, Direction.EAST))))
-            .put(TextureSlot.WEST, mat(side + (state == null ? "" : sideJoin(state, Direction.WEST)))));
+            .put(TextureSlot.WEST, mat(side + (state == null ? "" : sideJoin(state, Direction.WEST))));
+        return state == null ? model(name, ModelTemplates.CUBE, textures) : cellTopCube(name, true, textures);
     }
 
     // one state per combination of joined sides, everything else at its default
