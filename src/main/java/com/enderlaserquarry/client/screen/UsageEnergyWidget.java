@@ -23,7 +23,8 @@ public class UsageEnergyWidget extends CapacitorEnergyWidget {
 
     public UsageEnergyWidget(int x, int y, int width, int height, Supplier<IMachineEnergyStorage> storage,
                              Supplier<Boolean> capacitorInstalled, Supplier<List<Component>> usageLines) {
-        super(x, y, width, height, storage, capacitorInstalled);
+        // PORT: Ender IO 8.2.13 takes a plain IEnergyStorage supplier
+        super(x, y, width, height, () -> storage.get(), capacitorInstalled);
         this.storage = storage;
         this.usageLines = usageLines;
     }
