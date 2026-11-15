@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "ender_laser_quarry:launch_pad_port"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "ender_laser_quarry:blocks/launch_pad_port"
+}

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "ender_laser_quarry:block/dev_trash_can"
+    }
+  }
+}

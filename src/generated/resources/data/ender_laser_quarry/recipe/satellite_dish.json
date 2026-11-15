@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "tag": "c:ingots/conductive_alloy"
+    },
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "G": {
+      "tag": "c:gears/iron"
+    },
+    "L": {
+      "item": "ender_laser_quarry:laser_emitter"
+    },
+    "P": {
+      "item": "ender_laser_quarry:parabolic_dish"
+    },
+    "V": {
+      "item": "enderio:void_chassis"
+    }
+  },
+  "pattern": [
+    "GPG",
+    "CVC",
+    "DLD"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:satellite_dish"
+  }
+}

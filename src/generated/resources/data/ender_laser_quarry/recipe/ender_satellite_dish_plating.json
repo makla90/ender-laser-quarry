@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "E": {
+      "tag": "c:ingots/end_steel"
+    },
+    "G": {
+      "tag": "c:gears/vibrant"
+    },
+    "P": {
+      "item": "ender_laser_quarry:enhanced_satellite_dish_plating"
+    }
+  },
+  "pattern": [
+    "PEP",
+    "EGE",
+    "PEP"
+  ],
+  "result": {
+    "count": 4,
+    "id": "ender_laser_quarry:ender_satellite_dish_plating"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "enderio:alloy_smelting",
+  "energy": 6400,
+  "experience": 0.3,
+  "inputs": [
+    {
+      "count": 1,
+      "item": "enderio:fused_quartz"
+    },
+    {
+      "count": 3,
+      "tag": "c:ingots/gold"
+    },
+    {
+      "count": 1,
+      "tag": "c:ingots/dark_steel"
+    }
+  ],
+  "output": {
+    "count": 1,
+    "id": "ender_laser_quarry:reflector_mirror"
+  }
+}

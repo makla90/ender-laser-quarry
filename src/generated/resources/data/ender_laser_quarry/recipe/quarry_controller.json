@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "enderio:basic_capacitor"
+    },
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "G": {
+      "tag": "c:gears/dark_steel"
+    },
+    "M": {
+      "item": "minecraft:map"
+    },
+    "T": {
+      "item": "ender_laser_quarry:signal_transceiver"
+    },
+    "V": {
+      "item": "enderio:void_chassis"
+    }
+  },
+  "pattern": [
+    "GMG",
+    "CVC",
+    "DTD"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:quarry_controller"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "enderio:dark_steel_bars"
+    },
+    "C": {
+      "item": "minecraft:compass"
+    },
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "E": {
+      "item": "ender_laser_quarry:rocket_engine"
+    },
+    "T": {
+      "item": "enderio:pressurized_fluid_tank"
+    }
+  },
+  "pattern": [
+    "BCB",
+    "DTD",
+    "DED"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:rocket"
+  }
+}

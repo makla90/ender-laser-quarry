@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": {
+      "tag": "c:ingots/dark_steel"
+    },
+    "G": {
+      "tag": "c:gears/dark_steel"
+    },
+    "I": {
+      "tag": "c:storage_blocks/iron"
+    },
+    "P": {
+      "item": "ender_laser_quarry:parabolic_dish"
+    },
+    "T": {
+      "item": "ender_laser_quarry:signal_transceiver"
+    },
+    "V": {
+      "item": "enderio:void_chassis"
+    }
+  },
+  "pattern": [
+    "GPG",
+    "IVI",
+    "DTD"
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:launch_pad_controller"
+  }
+}

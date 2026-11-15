@@ -1,0 +1,46 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ground_radar_joined"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_n"
+      },
+      "when": {
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_e"
+      },
+      "when": {
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_s"
+      },
+      "when": {
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_w"
+      },
+      "when": {
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/ground_radar_ring"
+      }
+    }
+  ]
+}

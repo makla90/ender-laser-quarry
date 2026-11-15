@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity"
+            }
+          ],
+          "name": "ender_laser_quarry:ender_satellite_dish"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "ender_laser_quarry:blocks/ender_satellite_dish"
+}

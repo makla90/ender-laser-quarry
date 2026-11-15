@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "tag": "c:gems/ender_crystal"
+    },
+    "E": {
+      "tag": "c:ingots/end_steel"
+    },
+    "P": {
+      "item": "ender_laser_quarry:enhanced_laser_quarry_plating"
+    }
+  },
+  "pattern": [
+    "PEP",
+    "ECE",
+    "PEP"
+  ],
+  "result": {
+    "count": 4,
+    "id": "ender_laser_quarry:ender_laser_quarry_plating"
+  }
+}

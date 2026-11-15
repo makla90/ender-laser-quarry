@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "ender_laser_quarry:item/laser_linker"
+  }
+}

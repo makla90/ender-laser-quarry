@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "tag": "c:ingots/conductive_alloy"
+    },
+    "I": {
+      "tag": "c:ingots/iron"
+    },
+    "N": {
+      "tag": "c:nuggets/conductive_alloy"
+    },
+    "R": {
+      "tag": "c:dusts/redstone"
+    }
+  },
+  "pattern": [
+    " NR",
+    "NCN",
+    "IN "
+  ],
+  "result": {
+    "count": 1,
+    "id": "ender_laser_quarry:laser_linker"
+  }
+}

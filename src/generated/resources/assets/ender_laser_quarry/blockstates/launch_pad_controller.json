@@ -1,0 +1,74 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_controller_joined"
+      },
+      "when": {
+        "facing": "north"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_controller_joined",
+        "uvlock": true,
+        "y": 90
+      },
+      "when": {
+        "facing": "east"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_controller_joined",
+        "uvlock": true,
+        "y": 180
+      },
+      "when": {
+        "facing": "south"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_controller_joined",
+        "uvlock": true,
+        "y": 270
+      },
+      "when": {
+        "facing": "west"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_n"
+      },
+      "when": {
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_e"
+      },
+      "when": {
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_s"
+      },
+      "when": {
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "ender_laser_quarry:block/launch_pad_edge_w"
+      },
+      "when": {
+        "west": "false"
+      }
+    }
+  ]
+}

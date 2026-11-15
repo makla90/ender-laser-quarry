@@ -1,0 +1,77 @@
+{
+  "textures": {
+    "antenna": "ender_laser_quarry:block/quarry_controller_antenna",
+    "particle": "#antenna"
+  },
+  "elements": [
+    {
+      "from": [
+        7.25,
+        24,
+        7.25
+      ],
+      "to": [
+        8.75,
+        25.5,
+        8.75
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            12,
+            12,
+            16,
+            16
+          ],
+          "texture": "#antenna"
+        },
+        "south": {
+          "uv": [
+            12,
+            12,
+            16,
+            16
+          ],
+          "texture": "#antenna"
+        },
+        "east": {
+          "uv": [
+            12,
+            12,
+            16,
+            16
+          ],
+          "texture": "#antenna"
+        },
+        "west": {
+          "uv": [
+            12,
+            12,
+            16,
+            16
+          ],
+          "texture": "#antenna"
+        },
+        "up": {
+          "uv": [
+            12,
+            12,
+            16,
+            16
+          ],
+          "texture": "#antenna"
+        },
+        "down": {
+          "uv": [
+            12,
+            12,
+            16,
+            16
+          ],
+          "texture": "#antenna"
+        }
+      }
+    }
+  ]
+}

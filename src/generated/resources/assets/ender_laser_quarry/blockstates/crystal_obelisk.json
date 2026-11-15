@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "crystal=laser": {
+      "model": "ender_laser_quarry:block/crystal_obelisk_laser"
+    },
+    "crystal=none": {
+      "model": "ender_laser_quarry:block/crystal_obelisk"
+    },
+    "crystal=pulsating": {
+      "model": "ender_laser_quarry:block/crystal_obelisk_pulsating"
+    },
+    "crystal=void": {
+      "model": "ender_laser_quarry:block/crystal_obelisk_void"
+    }
+  }
+}
