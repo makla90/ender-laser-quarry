@@ -75,6 +75,8 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     private static final String POWERED = "Powered";
 
     private static final int BEAM_LINGER_TICKS = 10;
+    // a trickle fed dish is often empty when the laser asks, so it stays powered a bit after its last energy
+    private static final int POWER_GRACE_TICKS = 40;
     private static final int STRUCTURE_CHECK_INTERVAL = 10;
 
     public static final float MODEL_SCALE = 0.65f;
@@ -298,6 +300,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
         if (drawn > 0) {
             usedSum += drawn;
             lastBeamTick = level.getGameTime();
+            lastPoweredTick = lastBeamTick;
         }
         return drawn;
     }
@@ -326,7 +329,7 @@ public class SatelliteDishBlockEntity extends PoweredMachineBlockEntity implemen
     // Unpowered dishes don't count for the obelisk
     public boolean isPowered() {
         if (level != null && !level.isClientSide()) {
-            return getEnergyStorage().getEnergyStored() > 0;
+            return getEnergyStorage().getEnergyStored() > 0 || level.getGameTime() - lastPoweredTick <= POWER_GRACE_TICKS;
         }
         return powered;
     }

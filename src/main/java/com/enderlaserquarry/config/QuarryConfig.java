@@ -93,17 +93,19 @@ public final class QuarryConfig {
         var builder = new ModConfigSpec.Builder();
 
         builder.push("satellite_dish");
-        DISH_CAPACITY = builder.comment("Base energy buffer of the dish. Scaled by capacitor level squared.")
-            .defineInRange("capacity", 250_000, 1, Integer.MAX_VALUE);
-        DISH_USAGE = builder.comment("Base max µI/t (RF/t) the dish can beam to the laser. Scaled by capacitor level squared.")
-            .defineInRange("usage", 2_500, 1, Integer.MAX_VALUE);
+        DISH_CAPACITY = builder.comment("Base energy buffer of the dish in µI (RF). Scaled by capacitor level squared and the tier's dish speed,",
+                "like the dish's speed, so the default holds about a minute of a dish mining deepslate at full speed.")
+            .defineInRange("capacity", 200_000, 1, Integer.MAX_VALUE);
+        DISH_USAGE = builder.comment("Base max µI/t (RF/t) the dish can beam to the laser. Scaled like the capacity, so this is the most",
+                "a block may cost before the dish needs more than one tick per block of its speed.")
+            .defineInRange("usage", 300, 1, Integer.MAX_VALUE);
         builder.pop();
 
         builder.push("mining");
-        ENERGY_PER_BLOCK = builder.comment("Flat RF cost to laser one block.")
-            .defineInRange("energyPerBlock", 1_000, 0, Integer.MAX_VALUE);
-        ENERGY_PER_HARDNESS = builder.comment("Extra RF per point of block hardness (stone = 1.5, obsidian = 50).")
-            .defineInRange("energyPerHardness", 100, 0, Integer.MAX_VALUE);
+        ENERGY_PER_BLOCK = builder.comment("Flat µI (RF) cost to laser one block. The same for every tier and capacitor, a better setup only mines faster.")
+            .defineInRange("energyPerBlock", 150, 0, Integer.MAX_VALUE);
+        ENERGY_PER_HARDNESS = builder.comment("Extra µI (RF) per point of block hardness (stone = 1.5, obsidian = 50).")
+            .defineInRange("energyPerHardness", 10, 0, Integer.MAX_VALUE);
         ENCHANT_COST_MULTIPLIER = builder.comment("Energy cost multiplier per mined block while the crystal has Silk Touch or Fortune.")
             .defineInRange("enchantCostMultiplier", 1.5, 1.0, 100.0);
         MINE_BLOCK_ENTITIES = builder.comment("Whether the laser may destroy blocks with block entities (chests, machines...).")
@@ -250,8 +252,9 @@ public final class QuarryConfig {
         builder.pop();
 
         builder.push("coolant");
-        COOLANT_ENERGY_PER_MB = builder.comment("Laser energy (µI) one mB of coolant takes away. Lower = thirstier quarry.")
-            .defineInRange("energyPerMb", 20_000, 1, Integer.MAX_VALUE);
+        COOLANT_ENERGY_PER_MB = builder.comment("Laser energy (µI) one mB of coolant takes away. Lower = thirstier quarry.",
+                "The default is about 0.06 mB per stone or deepslate block with the default block costs.")
+            .defineInRange("energyPerMb", 2_800, 1, Integer.MAX_VALUE);
         UNCOOLED_WEAR_MULTIPLIER = builder.comment("With an empty coolant tank the quarry keeps running, but the crystal wears this many times faster.",
             "The controller GUI warning says 3x, so change that text too if you change this.")
             .defineInRange("uncooledWearMultiplier", 3, 1, 100);

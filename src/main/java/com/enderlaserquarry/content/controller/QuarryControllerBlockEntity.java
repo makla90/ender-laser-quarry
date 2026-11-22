@@ -1231,10 +1231,8 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
                     return mined;
                 }
                 drewEnergy = true;
+                // an empty tick on weak power just mines nothing, the obelisk powers down once the dishes stay dry
                 if (!drawLaserEnergy(obelisk, cost, speed - mined)) {
-                    if (mined == 0) {
-                        fail(MachineState.NO_POWER);
-                    }
                     return mined;
                 }
             }
@@ -1975,9 +1973,6 @@ public class QuarryControllerBlockEntity extends PoweredMachineBlockEntity imple
                 }
                 drewEnergy = true;
                 if (!drawLaserEnergy(obelisk, cost, limit - mined)) {
-                    if (mined == 0) {
-                        fail(MachineState.NO_POWER);
-                    }
                     break;
                 }
             }

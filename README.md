@@ -11,7 +11,7 @@ asteroids instead.
 
 ![Eight satellite dishes beam into the Laser Crystal, which beams up to the satellite](docs/screenshots/base.jpg)
 
-> **Beta (0.7.52).** This is the first public test version. Things may still change between versions, so back up your
+> **Beta (0.8.0).** This is the first public test version. Things may still change between versions, so back up your
 > world before you try it. Feedback and bug reports are very welcome in the
 > [issues](https://github.com/makla90/ender-laser-quarry/issues).
 
